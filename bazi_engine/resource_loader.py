@@ -8,9 +8,14 @@ malformed required data instead of substituting fabricated defaults.
 from __future__ import annotations
 
 import json
+import sys
 from importlib.resources import files
-from importlib.resources.abc import Traversable
 from typing import Any
+
+if sys.version_info >= (3, 11):
+    from importlib.resources.abc import Traversable
+else:  # pragma: no cover - exercised by the Python 3.10 distribution job
+    from importlib.resources import Traversable  # type: ignore[attr-defined]
 
 
 class PackageResourceError(RuntimeError):
