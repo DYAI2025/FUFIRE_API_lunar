@@ -1,0 +1,521 @@
+{
+  "$id": "<https://bazodiac.example/schemas/ValidateResponse.schema.json>",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "definitions": {
+    "ArtifactEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "expires_utc": {
+          "format": "date-time",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "hash_sha256": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "logical_id": {
+          "type": "string"
+        },
+        "notes": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "present": {
+          "type": "boolean"
+        },
+        "signature_ok": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "stale": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "verified": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "logical_id",
+        "present"
+      ],
+      "type": "object"
+    },
+    "ComponentStatus": {
+      "additionalProperties": false,
+      "properties": {
+        "notes": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "status": {
+          "enum": [
+            "OK",
+            "DEGRADED",
+            "FAIL"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "type": "object"
+    },
+    "DiscretizationEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "boundary_distance_deg": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "branch_coordinate_convention": {
+          "enum": [
+            "SHIFT_BOUNDARIES",
+            "SHIFT_LONGITUDES"
+          ],
+          "type": "string"
+        },
+        "classification_unstable": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "interval_convention": {
+          "enum": [
+            "HALF_OPEN"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "interval_convention",
+        "branch_coordinate_convention"
+      ],
+      "type": "object"
+    },
+    "EphemerisEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "bodies": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "ephemeris_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "time_scale": {
+          "enum": [
+            "TT",
+            "TDB",
+            "UTC",
+            "UT1",
+            null
+          ],
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "ErrorCode": {
+      "enum": [
+        "REFDATA_NETWORK_FORBIDDEN",
+        "REFDATA_MANIFEST_MISSING",
+        "EPHEMERIS_HASH_MISMATCH",
+        "EPHEMERIS_MISSING",
+        "TZDB_SIGNATURE_INVALID",
+        "LEAP_SECONDS_FILE_EXPIRED",
+        "MISSING_TT",
+        "EOP_MISSING",
+        "EOP_STALE",
+        "EOP_PREDICTED_REGION_USED",
+        "DST_AMBIGUOUS_LOCAL_TIME",
+        "DST_NONEXISTENT_LOCAL_TIME",
+        "INCONSISTENT_BRANCH_ORIGIN_FOR_SHIFTED_LONGITUDES",
+        "MISSING_DAY_CYCLE_ANCHOR",
+        "MISSING_AYANAMSA_ID",
+        "INTERP_DERIVATION_EMPTY",
+        "INTERP_LINT_FAIL"
+      ],
+      "type": "string"
+    },
+    "FramesEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "ayanamsa_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "epoch_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "obliquity_model_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "precession_model_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "zodiac_mode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "InterpEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "lint_status": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            null
+          ],
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "statements_returned": {
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "Issue": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "$ref": "#/definitions/ErrorCode"
+        },
+        "details": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "path": {
+          "description": "JSON pointer-like location, if applicable.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "severity": {
+          "default": "ERROR",
+          "enum": [
+            "ERROR",
+            "WARNING"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ],
+      "type": "object"
+    },
+    "RefDataEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "allow_network": {
+          "type": "boolean"
+        },
+        "artifacts": {
+          "additionalProperties": false,
+          "properties": {
+            "eop": {
+              "$ref": "#/definitions/ArtifactEvidence"
+            },
+            "ephemeris": {
+              "$ref": "#/definitions/ArtifactEvidence"
+            },
+            "leaps": {
+              "$ref": "#/definitions/ArtifactEvidence"
+            },
+            "tzdb": {
+              "$ref": "#/definitions/ArtifactEvidence"
+            }
+          },
+          "type": "object"
+        },
+        "mode": {
+          "enum": [
+            "BUNDLED_OFFLINE",
+            "LOCAL_MIRROR",
+            "PROVIDER_BACKED"
+          ],
+          "type": "string"
+        },
+        "refdata_pack_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "refdata_pack_id",
+        "allow_network",
+        "mode",
+        "artifacts"
+      ],
+      "type": "object"
+    },
+    "ReproEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "config_fingerprint": {
+          "type": "string"
+        },
+        "float_format_policy": {
+          "additionalProperties": false,
+          "properties": {
+            "fixed_decimals": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "mode": {
+              "enum": [
+                "fixed",
+                "shortest_roundtrip"
+              ],
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "json_canonicalization": {
+          "additionalProperties": false,
+          "properties": {
+            "sorted_keys": {
+              "type": "boolean"
+            },
+            "utf8": {
+              "type": "boolean"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "required": [
+        "config_fingerprint",
+        "float_format_policy",
+        "json_canonicalization"
+      ],
+      "type": "object"
+    },
+    "TimeEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "dst_policy": {
+          "enum": [
+            "error",
+            "earlier",
+            "later"
+          ],
+          "type": "string"
+        },
+        "eot_provenance": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "time_standard": {
+          "enum": [
+            "CIVIL",
+            "LMT",
+            "TLST"
+          ],
+          "type": "string"
+        },
+        "tlst_quality": {
+          "enum": [
+            "ok",
+            "degraded",
+            "missing"
+          ],
+          "type": "string"
+        },
+        "tt_quality": {
+          "enum": [
+            "ok",
+            "missing"
+          ],
+          "type": "string"
+        },
+        "uncertainty_budget_sec": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "ut1_quality": {
+          "enum": [
+            "ok",
+            "predicted",
+            "missing"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "time_standard",
+        "dst_policy",
+        "ut1_quality",
+        "tt_quality",
+        "tlst_quality"
+      ],
+      "type": "object"
+    }
+  },
+  "properties": {
+    "compliance_components": {
+      "additionalProperties": false,
+      "properties": {
+        "DISCRETIZATION": {
+          "$ref": "#/definitions/ComponentStatus"
+        },
+        "EPHEMERIS": {
+          "$ref": "#/definitions/ComponentStatus"
+        },
+        "FRAMES": {
+          "$ref": "#/definitions/ComponentStatus"
+        },
+        "INTERPRETATION_POLICY": {
+          "$ref": "#/definitions/ComponentStatus"
+        },
+        "REFDATA": {
+          "$ref": "#/definitions/ComponentStatus"
+        },
+        "REPRODUCIBILITY": {
+          "$ref": "#/definitions/ComponentStatus"
+        },
+        "TIME": {
+          "$ref": "#/definitions/ComponentStatus"
+        }
+      },
+      "required": [
+        "REFDATA",
+        "TIME",
+        "FRAMES",
+        "EPHEMERIS",
+        "DISCRETIZATION",
+        "REPRODUCIBILITY",
+        "INTERPRETATION_POLICY"
+      ],
+      "type": "object"
+    },
+    "compliance_status": {
+      "enum": [
+        "COMPLIANT",
+        "DEGRADED",
+        "NON_COMPLIANT"
+      ],
+      "type": "string"
+    },
+    "errors": {
+      "items": {
+        "$ref": "#/definitions/Issue"
+      },
+      "type": "array"
+    },
+    "evidence": {
+      "additionalProperties": false,
+      "properties": {
+        "discretization": {
+          "$ref": "#/definitions/DiscretizationEvidence"
+        },
+        "ephemeris": {
+          "$ref": "#/definitions/EphemerisEvidence"
+        },
+        "frames": {
+          "$ref": "#/definitions/FramesEvidence"
+        },
+        "interpretation": {
+          "$ref": "#/definitions/InterpEvidence"
+        },
+        "refdata": {
+          "$ref": "#/definitions/RefDataEvidence"
+        },
+        "reproducibility": {
+          "$ref": "#/definitions/ReproEvidence"
+        },
+        "time": {
+          "$ref": "#/definitions/TimeEvidence"
+        }
+      },
+      "required": [
+        "refdata",
+        "time",
+        "discretization",
+        "reproducibility"
+      ],
+      "type": "object"
+    },
+    "warnings": {
+      "items": {
+        "$ref": "#/definitions/Issue"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "compliance_status",
+    "compliance_components",
+    "errors",
+    "warnings",
+    "evidence"
+  ],
+  "title": "ValidateResponse",
+  "type": "object"
+}

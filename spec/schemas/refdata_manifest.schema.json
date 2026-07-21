@@ -1,0 +1,19 @@
+{
+  "$id": "<https://bazodiac.example/schemas/refdata_manifest.schema.json>",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": true,
+  "properties": {
+    "artifacts": {
+      "type": "array"
+    },
+    "pack_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "pack_id",
+    "artifacts"
+  ],
+  "title": "RefDataManifest",
+  "type": "object"
+}

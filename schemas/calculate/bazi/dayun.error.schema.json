@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fufire.example/schemas/calculate/bazi/dayun.error.schema.json",
+  "title": "DaYunErrorEnvelope",
+  "description": "Error envelope returned by POST /calculate/bazi/dayun when a required direction basis is missing under strict=true (HTTP 422). Mirrors `spec/schemas/ErrorEnvelope.schema.json` (the canonical FuFirE error envelope, Draft-07) and tightens `error` and `detail.precision` for the dayun endpoint. The shape is inlined rather than composed via `allOf` + cross-draft `$ref` to keep our 2020-12 validator chain simple. Keep this file in sync with `spec/schemas/ErrorEnvelope.schema.json`. TODO: replace `$id` host before production release.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["error", "message", "request_id"],
+  "properties": {
+    "error": {
+      "type": "string",
+      "description": "Machine-readable snake_case error code. Pinned to the only error currently emitted by this endpoint; extend to an enum if more arise.",
+      "const": "direction_basis_missing"
+    },
+    "message": {
+      "type": "string",
+      "description": "Human-readable error summary (German UI copy lives in `detail` or upstream)."
+    },
+    "detail": {
+      "type": "object",
+      "description": "Structured diagnostic data. For this endpoint, carries the `precision` block so downstream UI can render the missing-state panel without re-deriving it.",
+      "additionalProperties": true,
+      "properties": {
+        "precision": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["birth_time_known", "direction_basis", "provisional_fields"],
+          "description": "Mirrors `precision` from dayun.response.schema.json so clients can recover the same shape regardless of success or failure.",
+          "properties": {
+            "birth_time_known": { "type": "boolean" },
+            "direction_basis": {
+              "type": ["string", "null"],
+              "enum": ["explicit", "year_stem_yinyang_and_sex", null]
+            },
+            "provisional_fields": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "status": {
+      "type": "integer",
+      "description": "HTTP status code mirrored in the body for clients that cannot inspect headers.",
+      "minimum": 400,
+      "maximum": 599
+    },
+    "path": {
+      "type": "string",
+      "description": "Request path that produced this error."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC ISO 8601 timestamp of the error."
+    },
+    "request_id": {
+      "type": "string",
+      "description": "UUID v4 correlating this response to the X-Request-ID header."
+    }
+  },
+  "examples": [
+    {
+      "error": "direction_basis_missing",
+      "message": "Richtungsgrundlage fehlt: weder explizite Vorgabe noch Geschlechtsangabe verfügbar.",
+      "detail": {
+        "precision": {
+          "birth_time_known": true,
+          "direction_basis": null,
+          "provisional_fields": ["dayun.direction"]
+        }
+      },
+      "status": 422,
+      "path": "/calculate/bazi/dayun",
+      "timestamp": "2026-05-22T22:00:00Z",
+      "request_id": "550e8400-e29b-41d4-a716-446655440000"
+    }
+  ]
+}

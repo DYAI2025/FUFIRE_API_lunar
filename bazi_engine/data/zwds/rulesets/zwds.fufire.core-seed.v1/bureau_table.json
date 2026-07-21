@@ -1,0 +1,428 @@
+{
+  "bureau_table_id": "core-seed.bureau.60.v1",
+  "formula_id": "five-elements-bureau.mnemonic-v1",
+  "source_status": "SOURCE_REVIEWED",
+  "note": "The 60 valid-parity (stem0, branch0) -> five-elements bureau id pairs, derived from bazi_engine/zwds/bureau.py BUREAU_TABLE, sorted by (stem0, branch0). A pair is valid iff (stem0 - branch0) % 2 == 0.",
+  "pairs": [
+    {
+      "stem_id": "JIA",
+      "branch_id": "ZI",
+      "stem0": 0,
+      "branch0": 0,
+      "bureau_id": "METAL_4"
+    },
+    {
+      "stem_id": "JIA",
+      "branch_id": "YIN",
+      "stem0": 0,
+      "branch0": 2,
+      "bureau_id": "WATER_2"
+    },
+    {
+      "stem_id": "JIA",
+      "branch_id": "CHEN",
+      "stem0": 0,
+      "branch0": 4,
+      "bureau_id": "FIRE_6"
+    },
+    {
+      "stem_id": "JIA",
+      "branch_id": "WU",
+      "stem0": 0,
+      "branch0": 6,
+      "bureau_id": "METAL_4"
+    },
+    {
+      "stem_id": "JIA",
+      "branch_id": "SHEN",
+      "stem0": 0,
+      "branch0": 8,
+      "bureau_id": "WATER_2"
+    },
+    {
+      "stem_id": "JIA",
+      "branch_id": "XU",
+      "stem0": 0,
+      "branch0": 10,
+      "bureau_id": "FIRE_6"
+    },
+    {
+      "stem_id": "YI",
+      "branch_id": "CHOU",
+      "stem0": 1,
+      "branch0": 1,
+      "bureau_id": "METAL_4"
+    },
+    {
+      "stem_id": "YI",
+      "branch_id": "MAO",
+      "stem0": 1,
+      "branch0": 3,
+      "bureau_id": "WATER_2"
+    },
+    {
+      "stem_id": "YI",
+      "branch_id": "SI",
+      "stem0": 1,
+      "branch0": 5,
+      "bureau_id": "FIRE_6"
+    },
+    {
+      "stem_id": "YI",
+      "branch_id": "WEI",
+      "stem0": 1,
+      "branch0": 7,
+      "bureau_id": "METAL_4"
+    },
+    {
+      "stem_id": "YI",
+      "branch_id": "YOU",
+      "stem0": 1,
+      "branch0": 9,
+      "bureau_id": "WATER_2"
+    },
+    {
+      "stem_id": "YI",
+      "branch_id": "HAI",
+      "stem0": 1,
+      "branch0": 11,
+      "bureau_id": "FIRE_6"
+    },
+    {
+      "stem_id": "BING",
+      "branch_id": "ZI",
+      "stem0": 2,
+      "branch0": 0,
+      "bureau_id": "WATER_2"
+    },
+    {
+      "stem_id": "BING",
+      "branch_id": "YIN",
+      "stem0": 2,
+      "branch0": 2,
+      "bureau_id": "FIRE_6"
+    },
+    {
+      "stem_id": "BING",
+      "branch_id": "CHEN",
+      "stem0": 2,
+      "branch0": 4,
+      "bureau_id": "EARTH_5"
+    },
+    {
+      "stem_id": "BING",
+      "branch_id": "WU",
+      "stem0": 2,
+      "branch0": 6,
+      "bureau_id": "WATER_2"
+    },
+    {
+      "stem_id": "BING",
+      "branch_id": "SHEN",
+      "stem0": 2,
+      "branch0": 8,
+      "bureau_id": "FIRE_6"
+    },
+    {
+      "stem_id": "BING",
+      "branch_id": "XU",
+      "stem0": 2,
+      "branch0": 10,
+      "bureau_id": "EARTH_5"
+    },
+    {
+      "stem_id": "DING",
+      "branch_id": "CHOU",
+      "stem0": 3,
+      "branch0": 1,
+      "bureau_id": "WATER_2"
+    },
+    {
+      "stem_id": "DING",
+      "branch_id": "MAO",
+      "stem0": 3,
+      "branch0": 3,
+      "bureau_id": "FIRE_6"
+    },
+    {
+      "stem_id": "DING",
+      "branch_id": "SI",
+      "stem0": 3,
+      "branch0": 5,
+      "bureau_id": "EARTH_5"
+    },
+    {
+      "stem_id": "DING",
+      "branch_id": "WEI",
+      "stem0": 3,
+      "branch0": 7,
+      "bureau_id": "WATER_2"
+    },
+    {
+      "stem_id": "DING",
+      "branch_id": "YOU",
+      "stem0": 3,
+      "branch0": 9,
+      "bureau_id": "FIRE_6"
+    },
+    {
+      "stem_id": "DING",
+      "branch_id": "HAI",
+      "stem0": 3,
+      "branch0": 11,
+      "bureau_id": "EARTH_5"
+    },
+    {
+      "stem_id": "WU",
+      "branch_id": "ZI",
+      "stem0": 4,
+      "branch0": 0,
+      "bureau_id": "FIRE_6"
+    },
+    {
+      "stem_id": "WU",
+      "branch_id": "YIN",
+      "stem0": 4,
+      "branch0": 2,
+      "bureau_id": "EARTH_5"
+    },
+    {
+      "stem_id": "WU",
+      "branch_id": "CHEN",
+      "stem0": 4,
+      "branch0": 4,
+      "bureau_id": "WOOD_3"
+    },
+    {
+      "stem_id": "WU",
+      "branch_id": "WU",
+      "stem0": 4,
+      "branch0": 6,
+      "bureau_id": "FIRE_6"
+    },
+    {
+      "stem_id": "WU",
+      "branch_id": "SHEN",
+      "stem0": 4,
+      "branch0": 8,
+      "bureau_id": "EARTH_5"
+    },
+    {
+      "stem_id": "WU",
+      "branch_id": "XU",
+      "stem0": 4,
+      "branch0": 10,
+      "bureau_id": "WOOD_3"
+    },
+    {
+      "stem_id": "JI",
+      "branch_id": "CHOU",
+      "stem0": 5,
+      "branch0": 1,
+      "bureau_id": "FIRE_6"
+    },
+    {
+      "stem_id": "JI",
+      "branch_id": "MAO",
+      "stem0": 5,
+      "branch0": 3,
+      "bureau_id": "EARTH_5"
+    },
+    {
+      "stem_id": "JI",
+      "branch_id": "SI",
+      "stem0": 5,
+      "branch0": 5,
+      "bureau_id": "WOOD_3"
+    },
+    {
+      "stem_id": "JI",
+      "branch_id": "WEI",
+      "stem0": 5,
+      "branch0": 7,
+      "bureau_id": "FIRE_6"
+    },
+    {
+      "stem_id": "JI",
+      "branch_id": "YOU",
+      "stem0": 5,
+      "branch0": 9,
+      "bureau_id": "EARTH_5"
+    },
+    {
+      "stem_id": "JI",
+      "branch_id": "HAI",
+      "stem0": 5,
+      "branch0": 11,
+      "bureau_id": "WOOD_3"
+    },
+    {
+      "stem_id": "GENG",
+      "branch_id": "ZI",
+      "stem0": 6,
+      "branch0": 0,
+      "bureau_id": "EARTH_5"
+    },
+    {
+      "stem_id": "GENG",
+      "branch_id": "YIN",
+      "stem0": 6,
+      "branch0": 2,
+      "bureau_id": "WOOD_3"
+    },
+    {
+      "stem_id": "GENG",
+      "branch_id": "CHEN",
+      "stem0": 6,
+      "branch0": 4,
+      "bureau_id": "METAL_4"
+    },
+    {
+      "stem_id": "GENG",
+      "branch_id": "WU",
+      "stem0": 6,
+      "branch0": 6,
+      "bureau_id": "EARTH_5"
+    },
+    {
+      "stem_id": "GENG",
+      "branch_id": "SHEN",
+      "stem0": 6,
+      "branch0": 8,
+      "bureau_id": "WOOD_3"
+    },
+    {
+      "stem_id": "GENG",
+      "branch_id": "XU",
+      "stem0": 6,
+      "branch0": 10,
+      "bureau_id": "METAL_4"
+    },
+    {
+      "stem_id": "XIN",
+      "branch_id": "CHOU",
+      "stem0": 7,
+      "branch0": 1,
+      "bureau_id": "EARTH_5"
+    },
+    {
+      "stem_id": "XIN",
+      "branch_id": "MAO",
+      "stem0": 7,
+      "branch0": 3,
+      "bureau_id": "WOOD_3"
+    },
+    {
+      "stem_id": "XIN",
+      "branch_id": "SI",
+      "stem0": 7,
+      "branch0": 5,
+      "bureau_id": "METAL_4"
+    },
+    {
+      "stem_id": "XIN",
+      "branch_id": "WEI",
+      "stem0": 7,
+      "branch0": 7,
+      "bureau_id": "EARTH_5"
+    },
+    {
+      "stem_id": "XIN",
+      "branch_id": "YOU",
+      "stem0": 7,
+      "branch0": 9,
+      "bureau_id": "WOOD_3"
+    },
+    {
+      "stem_id": "XIN",
+      "branch_id": "HAI",
+      "stem0": 7,
+      "branch0": 11,
+      "bureau_id": "METAL_4"
+    },
+    {
+      "stem_id": "REN",
+      "branch_id": "ZI",
+      "stem0": 8,
+      "branch0": 0,
+      "bureau_id": "WOOD_3"
+    },
+    {
+      "stem_id": "REN",
+      "branch_id": "YIN",
+      "stem0": 8,
+      "branch0": 2,
+      "bureau_id": "METAL_4"
+    },
+    {
+      "stem_id": "REN",
+      "branch_id": "CHEN",
+      "stem0": 8,
+      "branch0": 4,
+      "bureau_id": "WATER_2"
+    },
+    {
+      "stem_id": "REN",
+      "branch_id": "WU",
+      "stem0": 8,
+      "branch0": 6,
+      "bureau_id": "WOOD_3"
+    },
+    {
+      "stem_id": "REN",
+      "branch_id": "SHEN",
+      "stem0": 8,
+      "branch0": 8,
+      "bureau_id": "METAL_4"
+    },
+    {
+      "stem_id": "REN",
+      "branch_id": "XU",
+      "stem0": 8,
+      "branch0": 10,
+      "bureau_id": "WATER_2"
+    },
+    {
+      "stem_id": "GUI",
+      "branch_id": "CHOU",
+      "stem0": 9,
+      "branch0": 1,
+      "bureau_id": "WOOD_3"
+    },
+    {
+      "stem_id": "GUI",
+      "branch_id": "MAO",
+      "stem0": 9,
+      "branch0": 3,
+      "bureau_id": "METAL_4"
+    },
+    {
+      "stem_id": "GUI",
+      "branch_id": "SI",
+      "stem0": 9,
+      "branch0": 5,
+      "bureau_id": "WATER_2"
+    },
+    {
+      "stem_id": "GUI",
+      "branch_id": "WEI",
+      "stem0": 9,
+      "branch0": 7,
+      "bureau_id": "WOOD_3"
+    },
+    {
+      "stem_id": "GUI",
+      "branch_id": "YOU",
+      "stem0": 9,
+      "branch0": 9,
+      "bureau_id": "METAL_4"
+    },
+    {
+      "stem_id": "GUI",
+      "branch_id": "HAI",
+      "stem0": 9,
+      "branch0": 11,
+      "bureau_id": "WATER_2"
+    }
+  ]
+}

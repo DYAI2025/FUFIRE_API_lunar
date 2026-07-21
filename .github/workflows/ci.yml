@@ -1,0 +1,295 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libswe-dev
+
+      - name: Install Python dependencies
+        # Install the SHIPPED lockfile first so runtime deps are the exact
+        # pinned versions the Docker image ships and the committed ephemeris
+        # snapshots were generated against; the editable install then adds dev
+        # tools without upgrading the already-satisfied runtime pins.
+        # (An unpinned tzdata bump, e.g. 2026.2 -> 2026.3, otherwise breaks the
+        # provenance-recording snapshot tests; an unpinned starlette bump breaks
+        # the route-table introspection test. -c/constraint can't be used: the
+        # lock has extras like uvicorn[standard], which pip forbids in a -c file.)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.lock
+          pip install -e ".[dev]"
+
+      - name: Cache Swiss Ephemeris data
+        id: ephe-cache
+        uses: actions/cache@v6
+        with:
+          path: /tmp/ephe
+          key: swisseph-v1-${{ hashFiles('Dockerfile.ephe-base') }}
+
+      - name: Download Swiss Ephemeris data (cache miss only)
+        if: steps.ephe-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/ephe
+          base="https://raw.githubusercontent.com/aloistr/swisseph/master/ephe"
+          for f in sepl_18.se1 semo_18.se1 seas_18.se1 seplm06.se1; do
+            curl -fL --retry 5 --retry-delay 2 -o "/tmp/ephe/$f" "$base/$f"
+            echo "Downloaded $f ($(wc -c < /tmp/ephe/$f) bytes)"
+            if file -b --mime-type "/tmp/ephe/$f" | grep -qE 'text/|application/xml'; then
+              echo "ERROR: $f is not a binary ephemeris file" && exit 1
+            fi
+          done
+          echo "All ephemeris files verified as binary"
+
+      - name: Generate SWIEPH snapshots if missing
+        run: |
+          if [ ! -d tests/snapshots/swieph ] || [ -z "$(ls tests/snapshots/swieph/ 2>/dev/null)" ]; then
+            echo "SWIEPH snapshots missing — generating..."
+            UPDATE_SNAPSHOTS=1 pytest tests/test_snapshot_stability.py -q --tb=short
+          fi
+        env:
+          SE_EPHE_PATH: /tmp/ephe
+
+      - name: Run tests with coverage
+        run: pytest -v --tb=short --cov=bazi_engine --cov-report=term-missing --cov-fail-under=75
+        env:
+          SE_EPHE_PATH: /tmp/ephe
+
+      - name: Generate coverage XML
+        if: matrix.python-version == '3.12'
+        run: coverage xml
+
+      - name: Upload coverage report
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-xml
+          path: coverage.xml
+
+      - name: Check OpenAPI spec drift
+        run: python scripts/export_openapi.py --check
+        env:
+          SE_EPHE_PATH: /tmp/ephe
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.lock
+          pip install -e ".[dev]"
+
+      - name: Run mypy
+        run: mypy bazi_engine --ignore-missing-imports
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.lock
+          pip install -e ".[dev]"
+
+      - name: Run ruff check
+        run: ruff check bazi_engine/ tests/ scripts/ --output-format=github
+
+  complexity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install radon
+        run: pip install radon>=6.0
+
+      - name: Complexity gate (CC>15 for new code)
+        run: python scripts/check_complexity.py --check
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install security tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install pip-audit bandit
+
+      # --no-deps + --disable-pip audits exactly the pinned lock lines (what
+      # the prod image installs) without resolving or building an ephemeral
+      # env — deterministic and hermetic. No --ignore-vuln: the lockfile is
+      # clean (starlette>=1.3.1 + idna>=3.18 fixed the 2026 CVEs). If a new
+      # advisory lands, fix it (re-lock) rather than suppressing it here.
+      - name: Audit locked dependencies (pip-audit)
+        run: pip-audit -r requirements.lock --strict --no-deps --disable-pip
+
+      - name: SAST (bandit, medium+ severity)
+        run: bandit -r bazi_engine -ll
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build image (validates ephemeris SHA + multi-stage build)
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: false
+          tags: fufire-engine:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  codegen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "20"
+
+      - name: Validate OpenAPI spec
+        run: npx -y @redocly/cli lint spec/openapi/openapi.json --skip-rule security-defined --skip-rule no-path-trailing-slash
+
+      - name: Prepare OpenAPI CodeGen spec
+        run: node scripts/prepare-openapi-codegen-spec.mjs
+
+      - name: Generate TypeScript client
+        uses: docker://openapitools/openapi-generator-cli:v7.6.0
+        with:
+          args: >-
+            generate
+            -i spec/openapi/openapi.codegen.json
+            -g typescript-fetch
+            -o /github/workspace/generated/ts-client
+            --openapi-normalizer DISABLE_ALL=true
+            --additional-properties=prefixParameterInterfaces=true,stringEnums=true,withoutRuntimeChecks=true
+
+      - name: Fix generated file ownership
+        run: sudo chown -R $(id -u):$(id -g) generated/ts-client
+
+      - name: Compile generated client
+        run: |
+          cd generated/ts-client
+          [ -f package.json ] || echo '{"private":true}' > package.json
+          npm install typescript --save-dev
+          npx tsc --noEmit --esModuleInterop --target es2020 --module node16 --moduleResolution node16 index.ts
+
+  # Publishes the OpenAPI contract with sha256+commit provenance so downstream
+  # consumers can pin against an auditable artifact (contract authority, FUFIRE-001).
+  contract-artifact:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      # pyswisseph links the native libswe at import time; without it,
+      # `import bazi_engine` (→ import swisseph) raises
+      # "libswe.so.2.0: cannot open shared object file" before the spec can be
+      # generated. Mirrors the `test` job's system-dependency step.
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libswe-dev
+
+      - name: Install package
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.lock
+          pip install -e .
+
+      - name: Verify contract is drift-free
+        run: python scripts/export_openapi.py --check
+
+      - name: Write provenance (sha256 + commit)
+        run: |
+          python - <<'EOF'
+          import hashlib, json, os
+
+          spec_path = "spec/openapi/openapi.json"
+          raw = open(spec_path, "rb").read()
+          provenance = {
+              "artifact": spec_path,
+              "sha256": hashlib.sha256(raw).hexdigest(),
+              "commit": os.environ["GITHUB_SHA"],
+              "ref": os.environ["GITHUB_REF"],
+              "version": json.loads(raw)["info"]["version"],
+          }
+          with open("openapi.provenance.json", "w") as fh:
+              json.dump(provenance, fh, indent=2)
+          print(json.dumps(provenance, indent=2))
+          EOF
+
+      - name: Upload contract artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: openapi-contract
+          path: |
+            spec/openapi/openapi.json
+            openapi.provenance.json

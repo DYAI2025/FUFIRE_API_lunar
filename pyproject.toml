@@ -1,0 +1,101 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bazi_engine"
+version = "1.4.0"
+description = "Astronomical BaZi (Four Pillars) calculation engine"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "pyswisseph>=2.10.3",
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "jsonschema>=4.20.0",
+    "cachetools>=5.3.0",
+    "slowapi>=0.1.9",
+    "httpx>=0.27.0",
+    # FQ-ATT-02 (T7): pins the IANA tzdata release backing
+    # provenance._detect_tzdb_version() so it can never fall back to the
+    # literal "unknown" string. OQ-6: pinned to latest stable at
+    # implementation time (2026.2, 2026-07-01). Upgrade policy: bump on new
+    # IANA tzdata release, re-lock (requirements.lock + uv.lock), no code
+    # change needed -- _detect_tzdb_version() reads the installed package
+    # version dynamically via importlib.metadata.
+    "tzdata>=2026.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "httpx>=0.27.0",
+    "pytest-cov>=6.0",
+    "radon>=6.0",
+    "respx>=0.21.0",
+    "ruff>=0.8",
+    "mypy>=1.13",
+    "tomli>=2.0; python_version<'3.11'",
+]
+skyfield = ["skyfield>=1.45"]
+
+[tool.setuptools.packages.find]
+include = ["bazi_engine*"]
+
+[tool.setuptools.package-data]
+bazi_engine = ["py.typed"]
+"bazi_engine.bafe" = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Note: the "swieph" marker is registered dynamically in tests/conftest.py
+# (coupled to its SE1 auto-skip logic); the "anyio" marker is registered by
+# the anyio pytest plugin. Neither is duplicated here.
+markers = [
+    "integration: requires a reachable LeanDeep marker service (tools/leandeep_client.py); auto-skipped when unreachable",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+# CI default (E4/E7/E9/F) + import sorting and bugbear.
+# UP (pyupgrade) deliberately staged for a later dedicated pass — enabling it
+# now would touch >1000 annotations across the codebase in one diff.
+# The ignored B-rules are behavior-adjacent (exception chaining, zip strict,
+# loop vars); they need reviewed per-finding fixes, not a bulk autofix.
+select = ["E4", "E7", "E9", "F", "I", "B"]
+ignore = ["B007", "B008", "B017", "B904", "B905"]
+
+[tool.ruff.lint.per-file-ignores]
+# Deliberate late imports after module-level skip guards / path setup.
+"tests/test_aspects.py" = ["E402"]
+"tests/test_bazi_golden_case_schema.py" = ["E402"]
+# test_golden.py is byte-pinned against main by tests/test_match_service_boundary.py
+# (AC-003a) — exempt from import sorting so lint can never break that guard.
+"tests/test_golden.py" = ["E402", "I001"]
+"tests/test_integration_fusion.py" = ["E402"]
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+no_implicit_optional = true
+
+[tool.coverage.run]
+source = ["bazi_engine"]
+omit = [
+    "bazi_engine/cli.py",
+    "bazi_engine/research/*",
+]
+
+[tool.coverage.report]
+fail_under = 75
+show_missing = true
+skip_covered = true
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.",
+    "if TYPE_CHECKING:",
+]

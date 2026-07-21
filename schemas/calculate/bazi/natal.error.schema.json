@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fufire.example/schemas/calculate/bazi/natal.error.schema.json",
+  "title": "NatalErrorEnvelope",
+  "description": "Error envelope returned by POST /calculate/bazi/natal. Mirrors `spec/schemas/ErrorEnvelope.schema.json` (the canonical FuFirE error envelope, Draft-07) — the shape is inlined rather than composed via `allOf` + cross-draft `$ref` to keep the 2020-12 validator chain simple; keep in sync with that file. Unlike the dayun error schema this endpoint has no endpoint-specific error code, so `error` stays an open string: typical values are `validation_error` (422, malformed request), the engine's DST/time-resolution error codes (422), `ephemeris_unavailable` (503), `rate_limit_exceeded` (429) and `internal_error` (500). TODO: replace `$id` host before production release.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["error", "message", "request_id"],
+  "properties": {
+    "error": {
+      "type": "string",
+      "description": "Machine-readable snake_case error code (see description for typical values)."
+    },
+    "message": {
+      "type": "string",
+      "description": "Human-readable error summary. Never echoes raw birth data (PII discipline: the validation handler strips Pydantic's input/url/ctx echoes)."
+    },
+    "detail": {
+      "type": "object",
+      "description": "Structured diagnostic data (e.g. redacted field-level validation errors under `errors`).",
+      "additionalProperties": true
+    },
+    "status": {
+      "type": "integer",
+      "description": "HTTP status code mirrored in the body for clients that cannot inspect headers.",
+      "minimum": 400,
+      "maximum": 599
+    },
+    "path": {
+      "type": "string",
+      "description": "Request path that produced this error."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC ISO 8601 timestamp of the error."
+    },
+    "request_id": {
+      "type": "string",
+      "description": "UUID v4 correlating this response to the X-Request-ID header."
+    }
+  },
+  "examples": [
+    {
+      "error": "validation_error",
+      "message": "Request validation failed",
+      "detail": {
+        "errors": [
+          {
+            "type": "less_than_equal",
+            "loc": ["body", "lat"],
+            "msg": "Input should be less than or equal to 90"
+          }
+        ]
+      },
+      "status": 422,
+      "path": "/calculate/bazi/natal",
+      "timestamp": "2026-07-14T22:00:00Z",
+      "request_id": "550e8400-e29b-41d4-a716-446655440000"
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "source_ledger_id": "core-seed.sources.v1",
+  "source_status": "SOURCE_NEEDED",
+  "notes": "This is a core-seed, SOURCE_NEEDED ruleset. Its formulas are implementation-corroborated (iztro comparator, S-05/S-06) and finite-domain coherent, but NOT historically source-reviewed against an identified primary edition. The Four-Transformations table's Geng (庚) and Ren (壬) HUA_KE cells are contested between schools/editions (see transformations.json). No combination of schema validation, finite-domain testing, and implementation comparison is labeled historically verified.",
+  "claim_language": {
+    "COMPUTATIONALLY_COHERENT": "finite-domain or invariant checks passed.",
+    "IMPLEMENTATION_CORROBORATED": "another implementation follows the same rule.",
+    "SOURCE_REVIEWED": "a selected ruleset source has been reviewed and recorded.",
+    "SOURCE_NEEDED": "insufficient authority for a final rule or historical claim.",
+    "BLOCKED": "must not be presented as fact or universal behavior."
+  },
+  "sources": [
+    {
+      "id": "S-01",
+      "source": "User guide `Eingefügter Text.txt`",
+      "class": "user-provided synthesis",
+      "supports": "Formula seed, stated conventions, terminology, claims under audit",
+      "limits": "Not an identified primary edition; contains at least one token error and unsupported completeness claims"
+    },
+    {
+      "id": "S-02",
+      "source": "FuFirE `bazi_engine/time_utils.py`, lines 39–40 and 63–76",
+      "class": "inspected project code",
+      "supports": "Supported DST enums: `earlier/later`, `error/shift_forward`",
+      "limits": "Does not supply a Chinese lunisolar calendar"
+    },
+    {
+      "id": "S-03",
+      "source": "FuFirE `bazi_engine/dayun/direction.py`, lines 5–10 and 21–25",
+      "class": "inspected project code",
+      "supports": "Existing explicit/traditional flow-direction semantics",
+      "limits": "BaZi Da-Yun reuse must be named and tested for the selected ZWDS ruleset"
+    },
+    {
+      "id": "S-04",
+      "source": "Chinese Wikipedia article on 紫微斗數, history and calculation sections",
+      "class": "secondary, caution",
+      "supports": "Describes Chen Tuan as traditional attribution; documents 14 major stars, calculation sequence, Four-Transformation variants, and late-Zi alternatives",
+      "limits": "Article itself flags source-quality issues; use only to prove that competing conventions exist, not as final authority"
+    },
+    {
+      "id": "S-05",
+      "source": "`SylarLong/iztro` commit `2dfe3ec...`, `palace.ts`, `location.ts`, `majorStar.ts`",
+      "class": "implementation comparator",
+      "supports": "Corroborates core formula structure and exposes configurable conventions",
+      "limits": "Software agreement is not historical proof"
+    },
+    {
+      "id": "S-06",
+      "source": "`SylarLong/iztro` tests `star.test.ts`, `palace.test.ts`",
+      "class": "implementation test corpus",
+      "supports": "Concrete comparator vectors for palace, bureau and star placement",
+      "limits": "Not an independent practitioner-approved FuFirE golden corpus"
+    },
+    {
+      "id": "S-07",
+      "source": "Unicode/typed ID policy in project skill",
+      "class": "technical symbol control",
+      "supports": "Separating Heavenly Stem, Earthly Branch and animal tokens",
+      "limits": "Not an authority for ZWDS school selection"
+    }
+  ]
+}

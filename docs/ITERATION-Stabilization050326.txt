@@ -1,0 +1,148 @@
+Zielbild: OpenAPI als Source of Truth (Contract), Engine bleibt scope-locked
+
+OpenAPI beschreibt alle Requests/Responses inkl. Fehlerfälle.
+
+Runtime bleibt unverändert (keine Feature-Erweiterung), aber:
+
+Docs und Codegen funktionieren zuverlässig.
+
+Contract-Tests verhindern Drift.
+
+JSON Schema Draft-07 für /validate bleibt zunächst als Laufzeit-Validator (Stabilität), wird aber in OpenAPI sauber referenziert.
+
+Iterativer Refactoring-Plan: “Contract über OpenAPI” (scope-locked)
+ITERATION C0 — OpenAPI-Baseline einfrieren (kein Behavior-Change)
+
+Ziel: Wir haben einen stabilen, versionierten OpenAPI-Contract als Artefakt.
+
+Schritte
+
+OpenAPI exportieren und committen (z. B. spec/openapi/openapi.3.1.json und optional .yaml).
+
+CI-Gate: “Export neu generieren → diff muss leer sein” (kein unbemerkter Contract-Drift).
+
+Explizit definieren, dass OpenAPI der Contract ist (CONTRACT.md):
+
+“Implementierung muss OpenAPI erfüllen, nicht umgekehrt.”
+
+DoD / Gate
+
+✅ openapi.3.1.json im Repo, aus app.openapi() generiert.
+
+✅ CI bricht, wenn OpenAPI ohne bewusste Änderung driftet.
+
+✅ info.version ist an Engine-Version gekoppelt.
+
+ITERATION C1 — /validate in OpenAPI korrekt “typisieren” (ohne Laufzeitänderung)
+
+Ziel: /validate ist in OpenAPI kein “any object” mehr, sondern referenziert die echten Schemas.
+
+Schritte (minimal-invasiv)
+
+In app.py custom_openapi() ergänzen:
+
+Lade spec/schemas/ValidateRequest.schema.json und ValidateResponse.schema.json.
+
+In components.schemas als ValidateRequest / ValidateResponse einhängen.
+
+Patch für paths["/validate"].post:
+
+requestBody.content.application/json.schema = {"$ref": "#/components/schemas/ValidateRequest"}
+
+responses["200"].content.application/json.schema = {"$ref": "#/components/schemas/ValidateResponse"}
+
+Zusätzlich 500 Response dokumentieren (Error-Envelope / Problem+JSON; siehe C2).
+
+Vorteil: Runtime bleibt exakt gleich; du machst nur den Contract sichtbar und maschinenlesbar.
+
+DoD / Gate
+
+✅ /validate ist in OpenAPI mit ValidateRequest/ValidateResponse verknüpft.
+
+✅ OpenAPI exportiert ohne Inline-“any object” für /validate.
+
+✅ Ein Test validiert: Spec enthält die $ref und die Komponenten-Schemas.
+
+ITERATION C2 — Responses für alle Endpoints in OpenAPI “schließen” (Contract completeness)
+
+Ziel: Für jede Route ist Request und Response schema-definiert (nicht “additionalProperties:any”).
+
+Schritte
+
+Für /calculate/bazi und /calculate/western echte ResponseModel (Pydantic) definieren.
+
+Start mit minimal stabilem Modell: nur Felder, die heute immer vorhanden sind (aus Characterization Tests).
+
+Für Info-Routen (/, /build, /api, /info/wuxing-mapping) ebenfalls ResponseModels oder responses-Schemas.
+
+Fehlerfälle einheitlich dokumentieren:
+
+422 (Validation)
+
+503 (Ephemeris unavailable)
+
+500 (Unhandled)
+
+(Webhook: 401/403 bei Auth)
+
+Optional: “Problem Details” (RFC 9457 / application/problem+json) als Standard-Error-Schema.
+
+DoD / Gate
+
+✅ 100% der Routes haben in OpenAPI ein konkretes Response-Schema (kein “object any” außer bewusst).
+
+✅ Fehlerresponses sind für alle Routes dokumentiert (mindestens 422/500; plus 503/401/403 wo zutreffend).
+
+✅ Characterization Tests belegen: Runtime-Responses erfüllen die neuen Modelle (keine Semantikänderung).
+
+ITERATION C3 — Kompatibilitäts- und Tooling-Gate (für “meiste Systeme”)
+
+Ziel: Der Contract ist nicht nur “da”, sondern in typischen Toolchains nutzbar.
+
+Schritte
+
+Codegen-Sanity-Check in CI:
+
+openapi-generator (z. B. Typescript, Python client) muss ohne Fehler generieren und kompilieren.
+
+Contract-Testing:
+
+z. B. Schemathesis/Prism/Dredd (mindestens schema conformance, nicht zwangsläufig fuzzing in Phase 1).
+
+Optional (Kompatibilität):
+
+Da OpenAPI 3.1 nicht überall gleich gut unterstützt wird: zweites Artefakt bereitstellen (openapi.3.0.yaml/json) per Converter oder FastAPI auf openapi_version="3.0.2" stellen.
+
+Empfehlung für Stabilisierung: 3.1 behalten (wegen JSON-Schema-Nähe, gerade bei /validate) und zusätzlich 3.0 exportieren, falls Verbraucher das brauchen.
+
+DoD / Gate
+
+✅ Mindestens ein Client (TS oder Python) wird aus der OpenAPI erfolgreich generiert und baut.
+
+✅ Contract-Tests laufen in CI.
+
+✅ (Falls “meiste Systeme” kritisch): zusätzliches OpenAPI-3.0-Artefakt existiert und ist konsistent.
+
+Entscheidung: OpenAPI-only vs. JSON-Schema für /validate
+
+Für Phase 1 (Stabilisierung, scope locked) ist die robusteste Linie:
+
+OpenAPI ist der Contract (Source of Truth für Integrationen).
+
+/validate darf weiter Draft-07 JSON Schema zur Laufzeit verwenden (stabil, unverändert), aber:
+
+OpenAPI muss diese Schemas referenzieren (C1).
+
+Eine spätere Dialekt-Migration (Draft-07 → 2020-12) ist ein Phase-2 Thema, weil das subtil Verhalten ändern kann.
+
+DECISION-REVIEW
+
+Zentrale Entscheidung: OpenAPI wird zum führenden Contract, ohne die Runtime-Semantik jetzt zu verändern; wir schließen zuerst die Spec-Lücken (/validate, untypisierte Responses) und sichern das durch CI-Gates ab.
+
+Warum: Das erfüllt “Standard/Kompatibilität” und “geschlossen genau das tun”, weil wir Drift verhindern und Verhalten über Characterization Tests festnageln.
+
+Nächstes Mal anpassen: Wenn externe Systeme zwingend 3.0 brauchen, 3.0-Artefakt früh als Gate aufnehmen (C3), statt es später “nebenbei” nachzuziehen.
+
+Meta-Status
+
+Kategorie: (2) Faktisch + ableitbar (aktueller Repo-Stand + FastAPI/OpenAPI-Mechanik) und (3) logisch/indiziell (Toolchain-/Kompatibilitätsmaßnahmen abhängig von euren Konsumenten)

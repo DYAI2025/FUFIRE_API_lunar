@@ -1,0 +1,433 @@
+{
+  "branch_order": [
+    "Zi",
+    "Chou",
+    "Yin",
+    "Mao",
+    "Chen",
+    "Si",
+    "Wu",
+    "Wei",
+    "Shen",
+    "You",
+    "Xu",
+    "Hai"
+  ],
+  "day_change_policy": {
+    "interval_convention": "HALF_OPEN",
+    "mode": "zi_hour_start",
+    "time_standard_for_day_rollover": "TLST",
+    "zi_start_hour": 23.0
+  },
+  "day_cycle_anchor": {
+    "anchor_jdn": 2419451,
+    "anchor_label": "Assumed JiaZi day (verify!)",
+    "anchor_sexagenary_index_0based": 0,
+    "anchor_type": "JDN",
+    "anchor_verification": "unverified"
+  },
+  "hidden_stems": {
+    "branch_to_hidden": {
+      "Chen": [
+        "Wu",
+        "Yi",
+        "Gui"
+      ],
+      "Chou": [
+        "Ji",
+        "Gui",
+        "Xin"
+      ],
+      "Hai": [
+        "Ren",
+        "Jia"
+      ],
+      "Mao": [
+        "Yi"
+      ],
+      "Shen": [
+        "Geng",
+        "Ren",
+        "Wu"
+      ],
+      "Si": [
+        "Bing",
+        "Geng",
+        "Wu"
+      ],
+      "Wei": [
+        "Ji",
+        "Yi",
+        "Ding"
+      ],
+      "Wu": [
+        "Ding",
+        "Ji"
+      ],
+      "Xu": [
+        "Wu",
+        "Xin",
+        "Ding"
+      ],
+      "Yin": [
+        "Jia",
+        "Bing",
+        "Wu"
+      ],
+      "You": [
+        "Xin"
+      ],
+      "Zi": [
+        "Gui"
+      ]
+    },
+    "mode": "table",
+    "ordering": "principal_central_residual"
+  },
+  "hidden_stems_weighting": {
+    "mode": "role_weights",
+    "role_weights": {
+      "central": 0.5,
+      "principal": 1.0,
+      "residual": 0.3
+    }
+  },
+  "hour_branch_rule": {
+    "formula_reference": "floor(((TLST_hours + 1) % 24) / 2)",
+    "interval_convention": "HALF_OPEN",
+    "mode": "bin_2h",
+    "time_standard": "TLST"
+  },
+  "hour_stem_rule": {
+    "groups": [
+      {
+        "day_stems": [
+          0,
+          5
+        ],
+        "hour_stems_by_hour_branch": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          0,
+          1
+        ]
+      },
+      {
+        "day_stems": [
+          1,
+          6
+        ],
+        "hour_stems_by_hour_branch": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "day_stems": [
+          2,
+          7
+        ],
+        "hour_stems_by_hour_branch": [
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      {
+        "day_stems": [
+          3,
+          8
+        ],
+        "hour_stems_by_hour_branch": [
+          6,
+          7,
+          8,
+          9,
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "day_stems": [
+          4,
+          9
+        ],
+        "hour_stems_by_hour_branch": [
+          8,
+          9,
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ]
+      }
+    ],
+    "mode": "table_groups",
+    "validation": {
+      "hour_branch_range": [
+        0,
+        11
+      ],
+      "require_length_12": true
+    }
+  },
+  "month_boundary": {
+    "mode": "JIEQI_CROSSING",
+    "month_index_0_definition": "Yin_month_at_start_longitude",
+    "month_order_by_index": [
+      "Yin",
+      "Mao",
+      "Chen",
+      "Si",
+      "Wu",
+      "Wei",
+      "Shen",
+      "You",
+      "Xu",
+      "Hai",
+      "Zi",
+      "Chou"
+    ],
+    "month_start_solar_longitude_deg": 315.0,
+    "step_deg": 30.0,
+    "time_scale": "TT",
+    "zodiac_mode": "tropical"
+  },
+  "month_stem_rule": {
+    "groups": [
+      {
+        "month_stems_by_month_index": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          0,
+          1,
+          2,
+          3
+        ],
+        "year_stems": [
+          0,
+          5
+        ]
+      },
+      {
+        "month_stems_by_month_index": [
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "year_stems": [
+          1,
+          6
+        ]
+      },
+      {
+        "month_stems_by_month_index": [
+          6,
+          7,
+          8,
+          9,
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "year_stems": [
+          2,
+          7
+        ]
+      },
+      {
+        "month_stems_by_month_index": [
+          8,
+          9,
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
+        "year_stems": [
+          3,
+          8
+        ]
+      },
+      {
+        "month_stems_by_month_index": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          0,
+          1
+        ],
+        "year_stems": [
+          4,
+          9
+        ]
+      }
+    ],
+    "mode": "table_groups",
+    "validation": {
+      "month_index_range": [
+        0,
+        11
+      ],
+      "require_length_12": true
+    }
+  },
+  "ruleset_id": "standard_bazi_2026",
+  "ruleset_version": "1.0.0",
+  "source_provenance": {
+    "notes": [
+      "Month/Hour stem group tables provided by project.",
+      "Hidden stems table matches common published tables.",
+      "Day-cycle anchor MUST be verified and pinned.",
+      "ten_gods + spouse_star_convention added 2026-07-04 (MISSING-002 resolved): sourced from systematisches_handbuch_der_bazi_hehun_kompatibili.md (Tabelle 8: 10x10 Shi Shen matrix; Tabelle 10: spouse-star convention). Cross-validated against systemische_hehun_kompatibilitaetsanalyse.md's two worked charts (Person A/B) via the live engine (bazi_engine.cli --standard LMT) -- see tests/test_match_ten_gods.py. Additive keys only; ruleset_version intentionally NOT bumped (pinned '1.0.0' in unrelated product-wide tests)."
+    ]
+  },
+  "stem_order": [
+    "Jia",
+    "Yi",
+    "Bing",
+    "Ding",
+    "Wu",
+    "Ji",
+    "Geng",
+    "Xin",
+    "Ren",
+    "Gui"
+  ],
+  "ten_gods": {
+    "mode": "element_relation_plus_polarity_rule",
+    "relation_to_god": {
+      "same_element": {
+        "same_polarity": "Friend",
+        "diff_polarity": "RobWealth"
+      },
+      "resource_element": {
+        "same_polarity": "IndirectRes",
+        "diff_polarity": "DirectRes"
+      },
+      "output_element": {
+        "same_polarity": "EatingGod",
+        "diff_polarity": "HurtingOfficer"
+      },
+      "wealth_element": {
+        "same_polarity": "IndirectWealth",
+        "diff_polarity": "DirectWealth"
+      },
+      "officer_element": {
+        "same_polarity": "SevenKilling",
+        "diff_polarity": "DirectOfficer"
+      }
+    },
+    "confidence_when_sourced": 1.0,
+    "source_provenance": {
+      "citation": "systematisches_handbuch_der_bazi_hehun_kompatibili.md, Tabelle 8 (explicit 10x10 Shi Shen matrix)",
+      "cross_validation": "Closed rule hand-verified against every cell of the DM=Jia/甲 row (all 5 relation types); independently reproduced against systemische_hehun_kompatibilitaetsanalyse.md's two worked charts (Person A, Person B; both DM=Wu/戊) via the live engine -- see tests/test_match_ten_gods.py::test_ten_gods_matches_worked_example_charts.",
+      "reviewed_by": "orchestrator (Opus 4.8), 2026-07-04"
+    }
+  },
+  "spouse_star_convention": {
+    "mode": "single_primary_god_per_gender",
+    "by_convention": "narrow_doc2",
+    "male": [
+      "DirectWealth"
+    ],
+    "female": [
+      "DirectOfficer"
+    ],
+    "disruption_signal": {
+      "male": {
+        "god": "IndirectWealth",
+        "meaning": "unstable relationship history when mixed with the primary wealth star"
+      },
+      "female": {
+        "god": "SevenKilling",
+        "meaning": "suppression/oppression risk when dominant without resource support"
+      }
+    },
+    "neutral_or_unspecified_gender": "report_both_conventions_element_only",
+    "source_provenance": {
+      "citation": "systematisches_handbuch_der_bazi_hehun_kompatibili.md, Tabelle 10 (spouse-star convention)",
+      "note": "Narrower than a broader classical convention some sources use (both polarities as co-equal spouse stars); this table encodes ONLY what the cited source states -- the broader convention was explicitly NOT adopted absent its own citation.",
+      "reviewed_by": "orchestrator (Opus 4.8), 2026-07-04"
+    }
+  },
+  "year_boundary": {
+    "label": "LiChun-based year boundary",
+    "mode": "solar_longitude_crossing",
+    "solar_longitude_deg": 315.0,
+    "time_scale": "TT",
+    "zodiac_mode": "tropical"
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "placement_rules_id": "core-seed.placement-rules.v1",
+  "source_status": "SOURCE_NEEDED",
+  "note": "Descriptive placement-formula provenance for the core-seed ruleset (design-pack zwds_formula_spec.md §9–§13). Offsets are 0-based branch indices (ZI=0..HAI=11). This file records the formula ids and offset tables that the star/relation modules implement; it is metadata for provenance, not a runtime lookup table.",
+  "ziwei_tianfu": {
+    "formula_id": "ziwei-anchor.v1",
+    "anchor_branch_id": "YIN",
+    "anchor_index": 2,
+    "ziwei_rule": "k = ceil(d / B); delta = k*B - d; step = (k + delta) if delta even else (k - delta); ziwei_b = mod12(YIN + step - 1)  (§9)",
+    "tianfu_rule": "tianfu_b = mod12(4 - ziwei_b)  (§9)",
+    "source_status": "SOURCE_REVIEWED"
+  },
+  "major_star_offsets": {
+    "formula_id": "major-star-offsets.v1",
+    "family_id": "MAJOR_14",
+    "source_status": "SOURCE_REVIEWED",
+    "ziwei_offsets": {
+      "ZI_WEI": 0,
+      "TIAN_JI": -1,
+      "TAI_YANG": -3,
+      "WU_QU": -4,
+      "TIAN_TONG": -5,
+      "LIAN_ZHEN": -8
+    },
+    "tianfu_offsets": {
+      "TIAN_FU": 0,
+      "TAI_YIN": 1,
+      "TAN_LANG": 2,
+      "JU_MEN": 3,
+      "TIAN_XIANG": 4,
+      "TIAN_LIANG": 5,
+      "QI_SHA": 6,
+      "PO_JUN": 10
+    }
+  },
+  "guide_auxiliary": {
+    "formula_id": "guide-auxiliary-placement.v1",
+    "family_id": "GUIDE_AUX_4",
+    "source_status": "SOURCE_NEEDED",
+    "anchors": {
+      "CHEN": 4,
+      "XU": 10
+    },
+    "rules": {
+      "ZUO_FU": "mod12(CHEN + (m - 1))",
+      "YOU_BI": "mod12(XU - (m - 1))",
+      "WEN_QU": "mod12(CHEN + hour_branch_index)",
+      "WEN_CHANG": "mod12(XU - hour_branch_index)"
+    }
+  },
+  "san_fang_si_zheng": {
+    "formula_id": "san-fang-si-zheng.v1",
+    "source_status": "SOURCE_REVIEWED",
+    "harmony_offsets": [4, 8],
+    "opposition_offset": 6,
+    "rule": "harmony = (mod12(p+4), mod12(p+8)); opposition = mod12(p+6)  (§13)"
+  }
+}

@@ -1,0 +1,4266 @@
+{
+  "metadata": {
+    "source_repo": "https://github.com/katelouie/stellium",
+    "source_path": "src/stellium/data/notables/births/*.yaml",
+    "generated_at": "2026-04-25",
+    "record_count": 176
+  },
+  "records": [
+    {
+      "name": "Frank Lloyd Wright",
+      "category": "architects",
+      "date_local": "1867-06-08T17:00:00",
+      "timezone": "America/Chicago",
+      "latitude": 43.3355,
+      "longitude": -90.3854,
+      "data_quality": "AA",
+      "sources": [
+        "https://www.astro.com/astro-databank/Wright,_Frank_Lloyd"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Gem",
+        "moon": "Vir",
+        "ascendant": "Sco"
+      },
+      "reference_positions_deg": {
+        "sun": 77.61259022615992,
+        "moon": 163.62237483520596,
+        "ascendant": 225.46850938983522
+      },
+      "kerykeion_utc_time_hours": 22.85
+    },
+    {
+      "name": "Zaha Hadid",
+      "category": "architects",
+      "date_local": "1950-10-31T12:00:00",
+      "timezone": "Asia/Baghdad",
+      "latitude": 33.3152,
+      "longitude": 44.3661,
+      "data_quality": "X",
+      "sources": [
+        "https://www.astro.com/astro-databank/Hadid,_Zaha"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Sco",
+        "moon": "Can",
+        "ascendant": "Cap"
+      },
+      "reference_positions_deg": {
+        "sun": 217.36971621659106,
+        "moon": 97.43943201293742,
+        "ascendant": 291.5420626790735
+      },
+      "kerykeion_utc_time_hours": 9.0
+    },
+    {
+      "name": "I.M. Pei",
+      "category": "architects",
+      "date_local": "1917-04-26T12:00:00",
+      "timezone": "Asia/Shanghai",
+      "latitude": 23.1291,
+      "longitude": 113.2644,
+      "data_quality": "X",
+      "sources": [
+        "Wikidata"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Tau",
+        "moon": "Can",
+        "ascendant": "Leo"
+      },
+      "reference_positions_deg": {
+        "sun": 35.34820055477895,
+        "moon": 91.48987280394641,
+        "ascendant": 123.2227408307482
+      },
+      "kerykeion_utc_time_hours": 4.0
+    },
+    {
+      "name": "Frida Kahlo",
+      "category": "artists",
+      "date_local": "1907-07-06T08:30:00",
+      "timezone": "America/Mexico_City",
+      "latitude": 19.3467,
+      "longitude": -99.1618,
+      "data_quality": "C",
+      "sources": [
+        "Stellium Test Suite"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Can",
+        "moon": "Tau",
+        "ascendant": "Leo"
+      },
+      "reference_positions_deg": {
+        "sun": 103.37600636575189,
+        "moon": 59.71488099082165,
+        "ascendant": 143.60196723378598
+      },
+      "kerykeion_utc_time_hours": 15.116666666666667
+    },
+    {
+      "name": "Pablo Picasso",
+      "category": "artists",
+      "date_local": "1881-10-25T23:15:00",
+      "timezone": "Europe/Madrid",
+      "latitude": 36.7213,
+      "longitude": -4.4213,
+      "data_quality": "C",
+      "sources": [
+        "Stellium Test Suite"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Sco",
+        "moon": "Sag",
+        "ascendant": "Leo"
+      },
+      "reference_positions_deg": {
+        "sun": 212.7114766764675,
+        "moon": 248.1912229209158,
+        "ascendant": 125.0940180259012
+      },
+      "kerykeion_utc_time_hours": 23.5
+    },
+    {
+      "name": "Georgia O'Keeffe",
+      "category": "artists",
+      "date_local": "1887-11-15T06:30:00",
+      "timezone": "America/Chicago",
+      "latitude": 43.1833,
+      "longitude": -89.2167,
+      "data_quality": "C",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/O%27Keeffe,_Georgia",
+        "Taeger quotes Astrolog Nr. 61 via Schenk"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Sco",
+        "moon": "Sco",
+        "ascendant": "Sco"
+      },
+      "reference_positions_deg": {
+        "sun": 232.85131138941932,
+        "moon": 235.31598622912662,
+        "ascendant": 226.37273207294302
+      },
+      "kerykeion_utc_time_hours": 12.35
+    },
+    {
+      "name": "Claude Monet",
+      "category": "artists",
+      "date_local": "1840-11-14T12:00:00",
+      "timezone": "Europe/Paris",
+      "latitude": 48.8667,
+      "longitude": 2.3333,
+      "data_quality": "X",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Monet,_Claude",
+        "Baptismal record from Notre-Dame-de-Lorette parish, dated 20 May 1841"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Sco",
+        "moon": "Can",
+        "ascendant": "Cap"
+      },
+      "reference_positions_deg": {
+        "sun": 232.22725782500288,
+        "moon": 117.96397654731093,
+        "ascendant": 295.6226539410219
+      },
+      "kerykeion_utc_time_hours": 11.85
+    },
+    {
+      "name": "Vincent van Gogh",
+      "category": "artists",
+      "date_local": "1853-03-30T11:00:00",
+      "timezone": "Europe/Amsterdam",
+      "latitude": 51.5057,
+      "longitude": 4.6463,
+      "data_quality": "A",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Van_Gogh,_Vincent"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Ari",
+        "moon": "Sag",
+        "ascendant": "Can"
+      },
+      "reference_positions_deg": {
+        "sun": 9.654098478358092,
+        "moon": 260.73964252039406,
+        "ascendant": 111.29939969625241
+      },
+      "kerykeion_utc_time_hours": 10.7
+    },
+    {
+      "name": "Leonardo da Vinci",
+      "category": "artists",
+      "date_local": "1452-04-23T21:40:00",
+      "timezone": "Europe/Rome",
+      "latitude": 43.7833,
+      "longitude": 10.9167,
+      "data_quality": "AA",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Da_Vinci,_Leonardo",
+        "Family diary: 'A grandson of mine was born April 15, Saturday, three hours into the night'",
+        "Leonardo da Vinci, Reynal & Co."
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Tau",
+        "moon": "Pis",
+        "ascendant": "Sag"
+      },
+      "reference_positions_deg": {
+        "sun": 33.6347544066321,
+        "moon": 332.9875527056796,
+        "ascendant": 245.39158912934647
+      },
+      "kerykeion_utc_time_hours": 20.833333333333332
+    },
+    {
+      "name": "Wassily Kandinsky",
+      "category": "artists",
+      "date_local": "1866-12-16T06:00:00",
+      "timezone": "Europe/Moscow",
+      "latitude": 55.6256,
+      "longitude": 37.6064,
+      "data_quality": "C",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Kandinsky,_Wassily"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Sag",
+        "moon": "Ari",
+        "ascendant": "Sco"
+      },
+      "reference_positions_deg": {
+        "sun": 264.00482080329925,
+        "moon": 5.7663989913766045,
+        "ascendant": 236.17037641514344
+      },
+      "kerykeion_utc_time_hours": 3.5
+    },
+    {
+      "name": "Michelangelo",
+      "category": "artists",
+      "date_local": "1475-03-06T01:45:00",
+      "timezone": "Europe/Rome",
+      "latitude": 43.6389,
+      "longitude": 11.9875,
+      "data_quality": "B",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Michelangelo",
+        "A. Gotti, Vita di Michelangelo"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Pis",
+        "moon": "Lib",
+        "ascendant": "Sag"
+      },
+      "reference_positions_deg": {
+        "sun": 345.0793348874235,
+        "moon": 209.24678368150035,
+        "ascendant": 256.5021680663274
+      },
+      "kerykeion_utc_time_hours": 0.9166666666666666
+    },
+    {
+      "name": "Salvador Dali",
+      "category": "artists",
+      "date_local": "1904-05-11T08:45:00",
+      "timezone": "Europe/Madrid",
+      "latitude": 42.2667,
+      "longitude": 2.9617,
+      "data_quality": "AA",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Dali,_Salvador"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Tau",
+        "moon": "Ari",
+        "ascendant": "Can"
+      },
+      "reference_positions_deg": {
+        "sun": 50.213614349634135,
+        "moon": 2.467978227058883,
+        "ascendant": 112.24070257815553
+      },
+      "kerykeion_utc_time_hours": 8.75
+    },
+    {
+      "name": "Andy Warhol",
+      "category": "artists",
+      "date_local": "1928-08-06T06:30:00",
+      "timezone": "America/New_York",
+      "latitude": 40.43,
+      "longitude": -80.0,
+      "data_quality": "B",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Warhol,_Andy",
+        "Ultra Violet, \"Famous For 15 Minutes\""
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Leo",
+        "moon": "Ari",
+        "ascendant": "Leo"
+      },
+      "reference_positions_deg": {
+        "sun": 133.6840696064123,
+        "moon": 13.817166411875563,
+        "ascendant": 134.38360815705542
+      },
+      "kerykeion_utc_time_hours": 10.5
+    },
+    {
+      "name": "Henri Matisse",
+      "category": "artists",
+      "date_local": "1869-12-31T20:00:00",
+      "timezone": "Europe/Paris",
+      "latitude": 50.0914,
+      "longitude": 3.5405,
+      "data_quality": "AA",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Matisse,_Henri",
+        "Birth certificate in Didier Geslain archive, 'sculpteurs' pdf file, p. 78"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Cap",
+        "moon": "Sag",
+        "ascendant": "Leo"
+      },
+      "reference_positions_deg": {
+        "sun": 280.2543390857517,
+        "moon": 265.3739917865824,
+        "ascendant": 145.39694011147364
+      },
+      "kerykeion_utc_time_hours": 19.85
+    },
+    {
+      "name": "Diego Rivera",
+      "category": "artists",
+      "date_local": "1886-12-08T19:30:00",
+      "timezone": "America/Mexico_City",
+      "latitude": 20.9877,
+      "longitude": -101.0,
+      "data_quality": "DD",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Rivera,_Diego"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Sag",
+        "moon": "Tau",
+        "ascendant": "Can"
+      },
+      "reference_positions_deg": {
+        "sun": 256.9746074074059,
+        "moon": 48.47552087105518,
+        "ascendant": 106.24543710690133
+      },
+      "kerykeion_utc_time_hours": 2.1166666666666667
+    },
+    {
+      "name": "Alfred Stieglitz",
+      "category": "artists",
+      "date_local": "1864-01-01T12:00:00",
+      "timezone": "America/New_York",
+      "latitude": 40.7439,
+      "longitude": -74.0322,
+      "data_quality": "X",
+      "sources": [
+        "Astrologify: https://astrologify.com/people/alfred-stieglitz/"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Cap",
+        "moon": "Lib",
+        "ascendant": "Ari"
+      },
+      "reference_positions_deg": {
+        "sun": 280.6074230450786,
+        "moon": 183.65593789457046,
+        "ascendant": 18.17674527235461
+      },
+      "kerykeion_utc_time_hours": 16.933333333333334
+    },
+    {
+      "name": "Pamela Colman Smith",
+      "category": "artists",
+      "date_local": "1878-02-16T12:00:00",
+      "timezone": "Europe/London",
+      "latitude": 51.4833,
+      "longitude": -0.3667,
+      "data_quality": "X",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Smith,_Pamela_Colman",
+        "LMR quotes Elizabeth Hazel who speculates 3:30 PM"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Aqu",
+        "moon": "Leo",
+        "ascendant": "Gem"
+      },
+      "reference_positions_deg": {
+        "sun": 327.73499644857037,
+        "moon": 134.06960460051678,
+        "ascendant": 89.32278638544346
+      },
+      "kerykeion_utc_time_hours": 12.016666666666667
+    },
+    {
+      "name": "Dane Rudhyar",
+      "category": "astrologers",
+      "date_local": "1895-03-23T00:42:00",
+      "timezone": "Europe/Paris",
+      "latitude": 48.8566,
+      "longitude": 2.3522,
+      "data_quality": "AA",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Rudhyar,_Dane"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Ari",
+        "moon": "Aqu",
+        "ascendant": "Sag"
+      },
+      "reference_positions_deg": {
+        "sun": 2.138253168639701,
+        "moon": 324.62079447873964,
+        "ascendant": 253.93484481239074
+      },
+      "kerykeion_utc_time_hours": 0.55
+    },
+    {
+      "name": "William Lilly",
+      "category": "astrologers",
+      "date_local": "1602-05-01T02:00:00",
+      "timezone": "Europe/London",
+      "latitude": 52.8333,
+      "longitude": -1.2667,
+      "data_quality": "A",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Lilly,_William",
+        "Gadbury's Collection of Nativities (1661)"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Tau",
+        "moon": "Vir",
+        "ascendant": "Aqu"
+      },
+      "reference_positions_deg": {
+        "sun": 40.33531392224119,
+        "moon": 158.43736767757247,
+        "ascendant": 310.3974622720437
+      },
+      "kerykeion_utc_time_hours": 2.0166666666666666
+    },
+    {
+      "name": "Evangeline Adams",
+      "category": "astrologers",
+      "date_local": "1868-02-08T08:30:00",
+      "timezone": "America/New_York",
+      "latitude": 40.7333,
+      "longitude": -74.0833,
+      "data_quality": "DD",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Adams,_Evangeline"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Aqu",
+        "moon": "Leo",
+        "ascendant": "Pis"
+      },
+      "reference_positions_deg": {
+        "sun": 319.12091619468816,
+        "moon": 141.3785503980824,
+        "ascendant": 351.94399546631155
+      },
+      "kerykeion_utc_time_hours": 13.433333333333334
+    },
+    {
+      "name": "Alan Leo",
+      "category": "astrologers",
+      "date_local": "1860-08-07T05:49:00",
+      "timezone": "Europe/London",
+      "latitude": 51.5,
+      "longitude": -0.15,
+      "data_quality": "B",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Leo,_Alan"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Leo",
+        "moon": "Ari",
+        "ascendant": "Leo"
+      },
+      "reference_positions_deg": {
+        "sun": 134.87806561681148,
+        "moon": 15.32982348572949,
+        "ascendant": 147.2258499823701
+      },
+      "kerykeion_utc_time_hours": 5.833333333333333
+    },
+    {
+      "name": "B.V. Raman",
+      "category": "astrologers",
+      "date_local": "1912-08-08T19:43:00",
+      "timezone": "Asia/Kolkata",
+      "latitude": 12.9716,
+      "longitude": 77.5946,
+      "data_quality": "AA",
+      "sources": [
+        "Astro.com: https://www.astro.com/astro-databank/Raman,_Bangalore_Venkata"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Leo",
+        "moon": "Gem",
+        "ascendant": "Pis"
+      },
+      "reference_positions_deg": {
+        "sun": 135.6232241274991,
+        "moon": 76.32014937297521,
+        "ascendant": 333.21814569341507
+      },
+      "kerykeion_utc_time_hours": 14.216666666666667
+    },
+    {
+      "name": "K.N. Rao",
+      "category": "astrologers",
+      "date_local": "1931-10-12T07:54:00",
+      "timezone": "Asia/Kolkata",
+      "latitude": 16.1833,
+      "longitude": 81.1333,
+      "data_quality": "AA",
+      "sources": [
+        "Astro.com: https://www.astro.com/astro-databank/Rao,_K.N."
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Lib",
+        "moon": "Lib",
+        "ascendant": "Sco"
+      },
+      "reference_positions_deg": {
+        "sun": 197.80033850432852,
+        "moon": 205.6627714620197,
+        "ascendant": 224.4697765390346
+      },
+      "kerykeion_utc_time_hours": 2.4
+    },
+    {
+      "name": "Bruce Lee",
+      "category": "athletes",
+      "date_local": "1940-11-27T07:12:00",
+      "timezone": "America/Los_Angeles",
+      "latitude": 37.7749,
+      "longitude": -122.4194,
+      "data_quality": "AA",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Lee,_Bruce",
+        "Robert Paige quoting B.C. in Constellations '77"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Sag",
+        "moon": "Sco",
+        "ascendant": "Sag"
+      },
+      "reference_positions_deg": {
+        "sun": 245.2447190573029,
+        "moon": 221.39949588567407,
+        "ascendant": 246.20359867488673
+      },
+      "kerykeion_utc_time_hours": 15.2
+    },
+    {
+      "name": "Muhammad Ali",
+      "category": "athletes",
+      "date_local": "1942-01-17T18:35:00",
+      "timezone": "America/Kentucky/Louisville",
+      "latitude": 38.2527,
+      "longitude": -85.7585,
+      "data_quality": "AA",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Ali,_Muhammad"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Cap",
+        "moon": "Aqu",
+        "ascendant": "Leo"
+      },
+      "reference_positions_deg": {
+        "sun": 297.2929261628838,
+        "moon": 312.43230003910634,
+        "ascendant": 139.53187437523286
+      },
+      "kerykeion_utc_time_hours": 0.5833333333333334
+    },
+    {
+      "name": "Michael Jordan",
+      "category": "athletes",
+      "date_local": "1963-02-17T13:40:00",
+      "timezone": "America/New_York",
+      "latitude": 40.6782,
+      "longitude": -73.9442,
+      "data_quality": "AA",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Jordan,_Michael"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Aqu",
+        "moon": "Sag",
+        "ascendant": "Can"
+      },
+      "reference_positions_deg": {
+        "sun": 328.38245698416637,
+        "moon": 250.00831387810925,
+        "ascendant": 103.11533372746216
+      },
+      "kerykeion_utc_time_hours": 18.666666666666668
+    },
+    {
+      "name": "Serena Williams",
+      "category": "athletes",
+      "date_local": "1981-09-26T20:28:00",
+      "timezone": "America/Detroit",
+      "latitude": 43.4195,
+      "longitude": -83.9508,
+      "data_quality": "AA",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Williams,_Serena"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Lib",
+        "moon": "Vir",
+        "ascendant": "Tau"
+      },
+      "reference_positions_deg": {
+        "sun": 183.81418227596325,
+        "moon": 170.39432749302975,
+        "ascendant": 33.1626196418582
+      },
+      "kerykeion_utc_time_hours": 0.4666666666666667
+    },
+    {
+      "name": "Pel\u00e9",
+      "category": "athletes",
+      "date_local": "1940-10-21T03:00:00",
+      "timezone": "America/Sao_Paulo",
+      "latitude": -21.7149,
+      "longitude": -45.2533,
+      "data_quality": "AA",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Pel\u00e9"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Lib",
+        "moon": "Gem",
+        "ascendant": "Vir"
+      },
+      "reference_positions_deg": {
+        "sun": 207.6912299401314,
+        "moon": 82.00642901265698,
+        "ascendant": 159.5005542094665
+      },
+      "kerykeion_utc_time_hours": 6.0
+    },
+    {
+      "name": "Usain Bolt",
+      "category": "athletes",
+      "date_local": "1986-08-21T12:00:00",
+      "timezone": "America/Jamaica",
+      "latitude": 18.4929,
+      "longitude": -77.6574,
+      "data_quality": "X",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Bolt,_Usain"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Leo",
+        "moon": "Pis",
+        "ascendant": "Sco"
+      },
+      "reference_positions_deg": {
+        "sun": 148.33737952763596,
+        "moon": 353.0641356423758,
+        "ascendant": 233.02289057159106
+      },
+      "kerykeion_utc_time_hours": 17.0
+    },
+    {
+      "name": "Joe DiMaggio",
+      "category": "athletes",
+      "date_local": "1914-11-25T07:00:00",
+      "timezone": "America/Los_Angeles",
+      "latitude": 38.0167,
+      "longitude": -122.1333,
+      "data_quality": "C",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/DiMaggio,_Joe"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Sag",
+        "moon": "Pis",
+        "ascendant": "Sag"
+      },
+      "reference_positions_deg": {
+        "sun": 242.51424188640215,
+        "moon": 344.5212650547258,
+        "ascendant": 241.68264668205654
+      },
+      "kerykeion_utc_time_hours": 15.0
+    },
+    {
+      "name": "Simone Biles",
+      "category": "athletes",
+      "date_local": "1997-03-14T00:30:00",
+      "timezone": "America/New_York",
+      "latitude": 39.9612,
+      "longitude": -82.9988,
+      "data_quality": "C",
+      "sources": [
+        "https://www.astro.com/astro-databank/Biles,_Simone"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Pis",
+        "moon": "Gem",
+        "ascendant": "Sag"
+      },
+      "reference_positions_deg": {
+        "sun": 353.68078177760697,
+        "moon": 62.595040066996,
+        "ascendant": 244.53517391595852
+      },
+      "kerykeion_utc_time_hours": 5.5
+    },
+    {
+      "name": "Jackie Robinson",
+      "category": "athletes",
+      "date_local": "1919-01-31T18:30:00",
+      "timezone": "America/New_York",
+      "latitude": 30.8773,
+      "longitude": -84.2079,
+      "data_quality": "B",
+      "sources": [
+        "https://www.astro.com/astro-databank/Robinson,_Jackie_(1919)"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Aqu",
+        "moon": "Aqu",
+        "ascendant": "Leo"
+      },
+      "reference_positions_deg": {
+        "sun": 311.0613817934567,
+        "moon": 311.2695425697524,
+        "ascendant": 135.88604316040042
+      },
+      "kerykeion_utc_time_hours": 23.5
+    },
+    {
+      "name": "Billie Jean King",
+      "category": "athletes",
+      "date_local": "1943-11-22T11:45:00",
+      "timezone": "America/Los_Angeles",
+      "latitude": 33.7701,
+      "longitude": -118.191,
+      "data_quality": "AA",
+      "sources": [
+        "https://www.astro.com/astro-databank/King,_Billie_Jean"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Sco",
+        "moon": "Lib",
+        "ascendant": "Cap"
+      },
+      "reference_positions_deg": {
+        "sun": 239.5953535100327,
+        "moon": 180.73666194046447,
+        "ascendant": 297.22755691857014
+      },
+      "kerykeion_utc_time_hours": 18.75
+    },
+    {
+      "name": "Steve Jobs",
+      "category": "business",
+      "date_local": "1955-02-24T19:15:00",
+      "timezone": "America/Los_Angeles",
+      "latitude": 37.7749,
+      "longitude": -122.4194,
+      "data_quality": "AA",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Jobs,_Steve"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Pis",
+        "moon": "Ari",
+        "ascendant": "Vir"
+      },
+      "reference_positions_deg": {
+        "sun": 335.748139514337,
+        "moon": 7.747174512805964,
+        "ascendant": 172.29125280818133
+      },
+      "kerykeion_utc_time_hours": 3.25
+    },
+    {
+      "name": "Elon Musk",
+      "category": "business",
+      "date_local": "1971-06-28T07:30:00",
+      "timezone": "Africa/Johannesburg",
+      "latitude": -25.7479,
+      "longitude": 28.2293,
+      "data_quality": "A",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Musk,_Elon",
+        "Walter Isaacson, Elon Musk (2023)"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Can",
+        "moon": "Vir",
+        "ascendant": "Can"
+      },
+      "reference_positions_deg": {
+        "sun": 95.89064137151854,
+        "moon": 158.24251198997385,
+        "ascendant": 103.55488341645
+      },
+      "kerykeion_utc_time_hours": 5.5
+    },
+    {
+      "name": "Walt Disney",
+      "category": "business",
+      "date_local": "1901-12-05T00:35:00",
+      "timezone": "America/Chicago",
+      "latitude": 41.8781,
+      "longitude": -87.6298,
+      "data_quality": "A",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Disney,_Walt"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Sag",
+        "moon": "Lib",
+        "ascendant": "Vir"
+      },
+      "reference_positions_deg": {
+        "sun": 252.44163154715883,
+        "moon": 189.09212833528713,
+        "ascendant": 173.90421590876602
+      },
+      "kerykeion_utc_time_hours": 6.433333333333334
+    },
+    {
+      "name": "Warren Buffett",
+      "category": "business",
+      "date_local": "1930-08-30T15:00:00",
+      "timezone": "America/Chicago",
+      "latitude": 41.16,
+      "longitude": -95.93,
+      "data_quality": "A",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Buffett,_Warren"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Vir",
+        "moon": "Sag",
+        "ascendant": "Sag"
+      },
+      "reference_positions_deg": {
+        "sun": 156.70394042242472,
+        "moon": 244.77075624404952,
+        "ascendant": 252.75035797773478
+      },
+      "kerykeion_utc_time_hours": 20.0
+    },
+    {
+      "name": "Bill Gates",
+      "category": "business",
+      "date_local": "1955-10-28T22:00:00",
+      "timezone": "America/Los_Angeles",
+      "latitude": 47.6,
+      "longitude": -122.3333,
+      "data_quality": "A",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Gates,_Bill"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Sco",
+        "moon": "Ari",
+        "ascendant": "Can"
+      },
+      "reference_positions_deg": {
+        "sun": 215.0397427211601,
+        "moon": 8.24812579913122,
+        "ascendant": 116.96142165458201
+      },
+      "kerykeion_utc_time_hours": 6.0
+    },
+    {
+      "name": "Aristotle Onassis",
+      "category": "business",
+      "date_local": "1906-01-20T12:00:00",
+      "timezone": "Europe/Istanbul",
+      "latitude": 38.4237,
+      "longitude": 27.1428,
+      "data_quality": "X",
+      "sources": [
+        "Astrotheme: https://www.astrotheme.com/astrology/Aristotle_Onassis"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Cap",
+        "moon": "Sag",
+        "ascendant": "Tau"
+      },
+      "reference_positions_deg": {
+        "sun": 299.4626464720951,
+        "moon": 243.25301202395093,
+        "ascendant": 41.815882010235576
+      },
+      "kerykeion_utc_time_hours": 10.05
+    },
+    {
+      "name": "Steve Wozniak",
+      "category": "business",
+      "date_local": "1950-08-11T09:45:00",
+      "timezone": "America/Los_Angeles",
+      "latitude": 37.3333,
+      "longitude": -121.9,
+      "data_quality": "AA",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Wozniak,_Steve",
+        "Quoted BC/BR"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Leo",
+        "moon": "Can",
+        "ascendant": "Vir"
+      },
+      "reference_positions_deg": {
+        "sun": 138.43105086795842,
+        "moon": 114.18498405670267,
+        "ascendant": 179.1216972675524
+      },
+      "kerykeion_utc_time_hours": 16.75
+    },
+    {
+      "name": "Ted Bundy",
+      "category": "criminals",
+      "date_local": "1946-11-24T22:35:00",
+      "timezone": "America/New_York",
+      "latitude": 44.4759,
+      "longitude": -73.2121,
+      "data_quality": "AA",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Bundy,_Ted"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Sag",
+        "moon": "Sag",
+        "ascendant": "Leo"
+      },
+      "reference_positions_deg": {
+        "sun": 242.26807312061786,
+        "moon": 257.68999550388475,
+        "ascendant": 145.03081808108118
+      },
+      "kerykeion_utc_time_hours": 3.5833333333333335
+    },
+    {
+      "name": "Al Capone",
+      "category": "criminals",
+      "date_local": "1899-01-17T09:30:00",
+      "timezone": "America/New_York",
+      "latitude": 40.638,
+      "longitude": -73.933,
+      "data_quality": "C",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Capone,_Al"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Cap",
+        "moon": "Ari",
+        "ascendant": "Pis"
+      },
+      "reference_positions_deg": {
+        "sun": 297.32002063446186,
+        "moon": 14.01479813016018,
+        "ascendant": 341.7487143922569
+      },
+      "kerykeion_utc_time_hours": 14.433333333333334
+    },
+    {
+      "name": "Bonnie Parker",
+      "category": "criminals",
+      "date_local": "1910-10-01T12:00:00",
+      "timezone": "America/Chicago",
+      "latitude": 31.6472,
+      "longitude": -100.0431,
+      "data_quality": "XX",
+      "sources": [
+        "Astro-Seek: https://www.astro-seek.com/birth-chart/bonnie-parker-horoscope"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Lib",
+        "moon": "Vir",
+        "ascendant": "Sag"
+      },
+      "reference_positions_deg": {
+        "sun": 187.67034467774454,
+        "moon": 169.3775049383381,
+        "ascendant": 255.82182996934466
+      },
+      "kerykeion_utc_time_hours": 18.0
+    },
+    {
+      "name": "Amelia Earhart",
+      "category": "explorers",
+      "date_local": "1897-07-24T23:30:00",
+      "timezone": "America/Chicago",
+      "latitude": 39.5458,
+      "longitude": -95.3326,
+      "data_quality": "AA",
+      "sources": [
+        "https://www.astro.com/astro-databank/Earhart,_Amelia"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Leo",
+        "moon": "Gem",
+        "ascendant": "Ari"
+      },
+      "reference_positions_deg": {
+        "sun": 122.47127909866565,
+        "moon": 71.82249959492476,
+        "ascendant": 29.757720492379157
+      },
+      "kerykeion_utc_time_hours": 5.35
+    },
+    {
+      "name": "Neil Armstrong",
+      "category": "explorers",
+      "date_local": "1930-08-05T00:31:00",
+      "timezone": "America/New_York",
+      "latitude": 40.5678,
+      "longitude": -84.1936,
+      "data_quality": "AA",
+      "sources": [
+        "https://www.astro.com/astro-databank/Armstrong,_Neil"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Leo",
+        "moon": "Sag",
+        "ascendant": "Tau"
+      },
+      "reference_positions_deg": {
+        "sun": 132.0289053455469,
+        "moon": 264.8907087456911,
+        "ascendant": 42.9793540062937
+      },
+      "kerykeion_utc_time_hours": 4.516666666666667
+    },
+    {
+      "name": "Yuri Gagarin",
+      "category": "explorers",
+      "date_local": "1934-03-09T00:00:00",
+      "timezone": "Europe/Moscow",
+      "latitude": 55.7167,
+      "longitude": 35.15,
+      "data_quality": "X",
+      "sources": [
+        "https://www.astro.com/astro-databank/Gagarin,_Yuri"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Pis",
+        "moon": "Sag",
+        "ascendant": "Sco"
+      },
+      "reference_positions_deg": {
+        "sun": 347.6073026433357,
+        "moon": 259.18823810627686,
+        "ascendant": 223.68661934075683
+      },
+      "kerykeion_utc_time_hours": 21.0
+    },
+    {
+      "name": "Edmund Hillary",
+      "category": "explorers",
+      "date_local": "1919-07-20T16:00:00",
+      "timezone": "Pacific/Auckland",
+      "latitude": -36.8485,
+      "longitude": 174.7633,
+      "data_quality": "C",
+      "sources": [
+        "https://www.astro.com/astro-databank/Hillary,_Edmund"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Can",
+        "moon": "Ari",
+        "ascendant": "Cap"
+      },
+      "reference_positions_deg": {
+        "sun": 116.40953268289722,
+        "moon": 22.837222509736687,
+        "ascendant": 285.9070152031226
+      },
+      "kerykeion_utc_time_hours": 4.5
+    },
+    {
+      "name": "Jacques Cousteau",
+      "category": "explorers",
+      "date_local": "1910-06-11T13:06:00",
+      "timezone": "Europe/Paris",
+      "latitude": 44.9954,
+      "longitude": -0.4441,
+      "data_quality": "AA",
+      "sources": [
+        "https://www.astro.com/astro-databank/Cousteau,_Jacques"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Gem",
+        "moon": "Leo",
+        "ascendant": "Lib"
+      },
+      "reference_positions_deg": {
+        "sun": 79.70359388911719,
+        "moon": 132.53301683295166,
+        "ascendant": 182.12208269505135
+      },
+      "kerykeion_utc_time_hours": 12.95
+    },
+    {
+      "name": "Martin Luther King Jr.",
+      "category": "leaders",
+      "date_local": "1929-01-15T12:00:00",
+      "timezone": "America/New_York",
+      "latitude": 33.749,
+      "longitude": -84.388,
+      "data_quality": "C",
+      "sources": [
+        "Stellium Test Suite"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Cap",
+        "moon": "Pis",
+        "ascendant": "Ari"
+      },
+      "reference_positions_deg": {
+        "sun": 295.0920363484624,
+        "moon": 349.0459607423859,
+        "ascendant": 23.03883857657089
+      },
+      "kerykeion_utc_time_hours": 17.0
+    },
+    {
+      "name": "Winston Churchill",
+      "category": "leaders",
+      "date_local": "1874-11-30T01:30:00",
+      "timezone": "Europe/London",
+      "latitude": 51.8412,
+      "longitude": -1.3617,
+      "data_quality": "C",
+      "sources": [
+        "Stellium Test Suite"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Sag",
+        "moon": "Leo",
+        "ascendant": "Lib"
+      },
+      "reference_positions_deg": {
+        "sun": 247.71992844586876,
+        "moon": 149.6244251370218,
+        "ascendant": 180.1024783779437
+      },
+      "kerykeion_utc_time_hours": 1.5166666666666666
+    },
+    {
+      "name": "Abraham Lincoln",
+      "category": "leaders",
+      "date_local": "1809-02-12T06:54:00",
+      "timezone": "America/Kentucky/Louisville",
+      "latitude": 37.5667,
+      "longitude": -85.7333,
+      "data_quality": "B",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Lincoln,_Abraham",
+        "William E. Barton, Women Lincoln Loved (1927)",
+        "Carl Sandburg, Abraham Lincoln: The Prairie Years and the War Years"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Aqu",
+        "moon": "Cap",
+        "ascendant": "Aqu"
+      },
+      "reference_positions_deg": {
+        "sun": 323.4576858390551,
+        "moon": 296.9933779458597,
+        "ascendant": 322.1040992494719
+      },
+      "kerykeion_utc_time_hours": 12.616666666666667
+    },
+    {
+      "name": "Barack Obama",
+      "category": "leaders",
+      "date_local": "1961-08-04T19:24:00",
+      "timezone": "Pacific/Honolulu",
+      "latitude": 21.3,
+      "longitude": -157.8667,
+      "data_quality": "AA",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Obama,_Barack"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Leo",
+        "moon": "Gem",
+        "ascendant": "Aqu"
+      },
+      "reference_positions_deg": {
+        "sun": 132.54792933991166,
+        "moon": 63.357615396592294,
+        "ascendant": 318.04461945718197
+      },
+      "kerykeion_utc_time_hours": 5.4
+    },
+    {
+      "name": "Michelle Obama",
+      "category": "leaders",
+      "date_local": "1964-01-17T12:00:00",
+      "timezone": "America/Chicago",
+      "latitude": 41.85,
+      "longitude": -87.65,
+      "data_quality": "X",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Obama,_Michelle"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Cap",
+        "moon": "Pis",
+        "ascendant": "Tau"
+      },
+      "reference_positions_deg": {
+        "sun": 296.6618399572331,
+        "moon": 330.5090029461572,
+        "ascendant": 46.74691625913484
+      },
+      "kerykeion_utc_time_hours": 18.0
+    },
+    {
+      "name": "Prince William",
+      "category": "leaders",
+      "date_local": "1982-06-21T21:03:00",
+      "timezone": "Europe/London",
+      "latitude": 51.5167,
+      "longitude": -0.175,
+      "data_quality": "AA",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/William,_Prince_of_Wales",
+        "The London Gazette, 21 June 1982, p. 8215"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Can",
+        "moon": "Can",
+        "ascendant": "Sag"
+      },
+      "reference_positions_deg": {
+        "sun": 90.1060747590179,
+        "moon": 94.96455195658828,
+        "ascendant": 267.4782035679284
+      },
+      "kerykeion_utc_time_hours": 20.05
+    },
+    {
+      "name": "Kate Middleton",
+      "category": "leaders",
+      "date_local": "1982-01-09T19:00:00",
+      "timezone": "Europe/London",
+      "latitude": 51.4542,
+      "longitude": -0.9731,
+      "data_quality": "C",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Catherine,_Duchess_of_Cambridge"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Cap",
+        "moon": "Can",
+        "ascendant": "Leo"
+      },
+      "reference_positions_deg": {
+        "sun": 289.2008740812469,
+        "moon": 108.69267539360361,
+        "ascendant": 139.99279150930516
+      },
+      "kerykeion_utc_time_hours": 19.0
+    },
+    {
+      "name": "Queen Elizabeth II",
+      "category": "leaders",
+      "date_local": "1926-04-21T02:40:00",
+      "timezone": "Europe/London",
+      "latitude": 51.5086,
+      "longitude": -0.1439,
+      "data_quality": "AA",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Elizabeth_II,_Queen_of_the_United_Kingdom",
+        "The Times [London], 22 April 1926, p. 14"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Tau",
+        "moon": "Leo",
+        "ascendant": "Cap"
+      },
+      "reference_positions_deg": {
+        "sun": 30.205948879221367,
+        "moon": 132.12161269041914,
+        "ascendant": 291.3947817630739
+      },
+      "kerykeion_utc_time_hours": 1.6666666666666665
+    },
+    {
+      "name": "Queen of the United Kingdom Victoria",
+      "category": "leaders",
+      "date_local": "1819-05-24T04:15:00",
+      "timezone": "Europe/London",
+      "latitude": 51.5074,
+      "longitude": -0.1278,
+      "data_quality": "AA",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Victoria,_Queen_of_the_United_Kingdom",
+        "The London Gazette, 26 May 1819"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Gem",
+        "moon": "Gem",
+        "ascendant": "Gem"
+      },
+      "reference_positions_deg": {
+        "sun": 62.11991058938966,
+        "moon": 63.696348914598886,
+        "ascendant": 66.13386085583988
+      },
+      "kerykeion_utc_time_hours": 4.266666666666667
+    },
+    {
+      "name": "Princess of Wales Diana",
+      "category": "leaders",
+      "date_local": "1961-07-01T19:45:00",
+      "timezone": "Europe/London",
+      "latitude": 52.8264,
+      "longitude": 0.5139,
+      "data_quality": "A",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Diana,_Princess_of_Wales"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Can",
+        "moon": "Aqu",
+        "ascendant": "Sag"
+      },
+      "reference_positions_deg": {
+        "sun": 99.66306941989578,
+        "moon": 325.0377717295878,
+        "ascendant": 258.4274535679606
+      },
+      "kerykeion_utc_time_hours": 18.75
+    },
+    {
+      "name": "Nelson Mandela",
+      "category": "leaders",
+      "date_local": "1918-07-18T14:54:00",
+      "timezone": "Africa/Johannesburg",
+      "latitude": -31.95,
+      "longitude": 28.52,
+      "data_quality": "DD",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Mandela,_Nelson"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Can",
+        "moon": "Sco",
+        "ascendant": "Sag"
+      },
+      "reference_positions_deg": {
+        "sun": 115.07079350177395,
+        "moon": 230.2560858683632,
+        "ascendant": 263.6845522478452
+      },
+      "kerykeion_utc_time_hours": 12.9
+    },
+    {
+      "name": "Mohandas Gandhi",
+      "category": "leaders",
+      "date_local": "1869-10-02T07:08:00",
+      "timezone": "Asia/Kolkata",
+      "latitude": 21.603,
+      "longitude": 69.8538,
+      "data_quality": "C",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Gandhi,_Mohandas"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Lib",
+        "moon": "Leo",
+        "ascendant": "Lib"
+      },
+      "reference_positions_deg": {
+        "sun": 188.87391266507464,
+        "moon": 139.18637996853525,
+        "ascendant": 188.7408067034461
+      },
+      "kerykeion_utc_time_hours": 1.25
+    },
+    {
+      "name": "John F. Kennedy",
+      "category": "leaders",
+      "date_local": "1917-05-29T15:00:00",
+      "timezone": "America/New_York",
+      "latitude": 42.3333,
+      "longitude": -71.1167,
+      "data_quality": "A",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Kennedy,_John_F."
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Gem",
+        "moon": "Vir",
+        "ascendant": "Lib"
+      },
+      "reference_positions_deg": {
+        "sun": 67.84354743152832,
+        "moon": 167.20932988581043,
+        "ascendant": 199.99862082106426
+      },
+      "kerykeion_utc_time_hours": 20.0
+    },
+    {
+      "name": "Prince Philip",
+      "category": "leaders",
+      "date_local": "1921-06-10T10:00:00",
+      "timezone": "Europe/Athens",
+      "latitude": 36.3427,
+      "longitude": 28.1978,
+      "data_quality": "AA",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Philip,_Duke_of_Edinburgh"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Gem",
+        "moon": "Leo",
+        "ascendant": "Leo"
+      },
+      "reference_positions_deg": {
+        "sun": 78.87873229371988,
+        "moon": 135.12813354077863,
+        "ascendant": 144.17044609597076
+      },
+      "kerykeion_utc_time_hours": 8.0
+    },
+    {
+      "name": "Jacqueline Kennedy Onassis",
+      "category": "leaders",
+      "date_local": "1929-07-28T14:30:00",
+      "timezone": "America/New_York",
+      "latitude": 40.8833,
+      "longitude": -72.3833,
+      "data_quality": "A",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Onassis,_Jacqueline_Kennedy",
+        "Southampton Hospital records"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Leo",
+        "moon": "Ari",
+        "ascendant": "Sco"
+      },
+      "reference_positions_deg": {
+        "sun": 125.15899320418373,
+        "moon": 25.60379355511022,
+        "ascendant": 227.97411919222577
+      },
+      "kerykeion_utc_time_hours": 18.5
+    },
+    {
+      "name": "Dalai Lama XIV",
+      "category": "leaders",
+      "date_local": "1935-07-06T04:38:00",
+      "timezone": "Asia/Urumqi",
+      "latitude": 36.3833,
+      "longitude": 101.8667,
+      "data_quality": "AA",
+      "sources": [
+        "Astro.com: https://astro.com/samples/sp_dlama_e.htm"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Can",
+        "moon": "Vir",
+        "ascendant": "Can"
+      },
+      "reference_positions_deg": {
+        "sun": 102.95568036352296,
+        "moon": 160.11908122502987,
+        "ascendant": 110.00046001874172
+      },
+      "kerykeion_utc_time_hours": 22.633333333333333
+    },
+    {
+      "name": "Fidel Castro",
+      "category": "leaders",
+      "date_local": "1926-08-13T02:00:00",
+      "timezone": "America/Havana",
+      "latitude": 20.55,
+      "longitude": -75.8833,
+      "data_quality": "AA",
+      "sources": [
+        "Astro-Seek: https://www.astro-seek.com/birth-chart/fidel-castro-horoscope"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Leo",
+        "moon": "Lib",
+        "ascendant": "Gem"
+      },
+      "reference_positions_deg": {
+        "sun": 139.7692124579419,
+        "moon": 191.2120534037354,
+        "ascendant": 89.48039181550706
+      },
+      "kerykeion_utc_time_hours": 7.0
+    },
+    {
+      "name": "Che Guevara",
+      "category": "leaders",
+      "date_local": "1928-05-14T03:05:00",
+      "timezone": "America/Argentina/Cordoba",
+      "latitude": -32.9468,
+      "longitude": -60.6393,
+      "data_quality": "AA",
+      "sources": [
+        "Astro-Seek: https://www.astro-seek.com/birth-chart/ernesto-che-guevara-horoscope"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Tau",
+        "moon": "Pis",
+        "ascendant": "Ari"
+      },
+      "reference_positions_deg": {
+        "sun": 53.22555293902718,
+        "moon": 341.0272243901938,
+        "ascendant": 6.283816132039702
+      },
+      "kerykeion_utc_time_hours": 7.083333333333333
+    },
+    {
+      "name": "Hugo Ch\u00e1vez",
+      "category": "leaders",
+      "date_local": "1954-07-28T04:00:00",
+      "timezone": "America/Caracas",
+      "latitude": 8.7667,
+      "longitude": -69.9333,
+      "data_quality": "AA",
+      "sources": [
+        "Astro-Seek: https://www.astro-seek.com/birth-chart/hugo-chavez-horoscope"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Leo",
+        "moon": "Can",
+        "ascendant": "Can"
+      },
+      "reference_positions_deg": {
+        "sun": 124.72866188483192,
+        "moon": 104.87918950239764,
+        "ascendant": 96.28819750821259
+      },
+      "kerykeion_utc_time_hours": 8.5
+    },
+    {
+      "name": "Patrice Lumumba",
+      "category": "leaders",
+      "date_local": "1925-07-02T12:00:00",
+      "timezone": "Africa/Kinshasa",
+      "latitude": -4.0764,
+      "longitude": 24.5509,
+      "data_quality": "X",
+      "sources": [
+        "Astrotheme: https://www.astrotheme.com/astrology/Patrice_Lumumba"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Can",
+        "moon": "Sco",
+        "ascendant": "Lib"
+      },
+      "reference_positions_deg": {
+        "sun": 100.02007614652935,
+        "moon": 228.12242696648042,
+        "ascendant": 201.77414984390774
+      },
+      "kerykeion_utc_time_hours": 11.0
+    },
+    {
+      "name": "Thomas Sankara",
+      "category": "leaders",
+      "date_local": "1949-12-21T11:50:00",
+      "timezone": "Africa/Ouagadougou",
+      "latitude": 12.9613,
+      "longitude": -2.2634,
+      "data_quality": "A",
+      "sources": [
+        "Infospacetalk: https://www.infospacetalk.com/astrovolta-horoscope-databank/categories/world-leader/capt-thomas-sankara"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Sag",
+        "moon": "Cap",
+        "ascendant": "Pis"
+      },
+      "reference_positions_deg": {
+        "sun": 269.29744500767544,
+        "moon": 291.67076513748844,
+        "ascendant": 353.8961345070363
+      },
+      "kerykeion_utc_time_hours": 11.833333333333334
+    },
+    {
+      "name": "Gamal Abdel Nasser",
+      "category": "leaders",
+      "date_local": "1918-01-15T04:28:00",
+      "timezone": "Africa/Cairo",
+      "latitude": 31.2,
+      "longitude": 29.9,
+      "data_quality": "AA",
+      "sources": [
+        "Astro.com: https://www.astro.com/astro-databank/Nasser,_Gamal_Abdel"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Cap",
+        "moon": "Aqu",
+        "ascendant": "Sag"
+      },
+      "reference_positions_deg": {
+        "sun": 294.1477557819452,
+        "moon": 323.5891205722793,
+        "ascendant": 257.0004995388832
+      },
+      "kerykeion_utc_time_hours": 2.466666666666667
+    },
+    {
+      "name": "Wangari Maathai",
+      "category": "leaders",
+      "date_local": "1940-04-01T12:00:00",
+      "timezone": "Africa/Nairobi",
+      "latitude": -0.55,
+      "longitude": 36.8333,
+      "data_quality": "X",
+      "sources": [
+        "Astro-Charts: https://astro-charts.com/persons/chart/wangari-maathai/"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Ari",
+        "moon": "Aqu",
+        "ascendant": "Can"
+      },
+      "reference_positions_deg": {
+        "sun": 11.496071641736089,
+        "moon": 301.0327333826027,
+        "ascendant": 94.52196585036563
+      },
+      "kerykeion_utc_time_hours": 9.25
+    },
+    {
+      "name": "Rigoberta Mench\u00fa",
+      "category": "leaders",
+      "date_local": "1959-01-09T08:00:00",
+      "timezone": "America/Guatemala",
+      "latitude": 15.3333,
+      "longitude": -90.8333,
+      "data_quality": "A",
+      "sources": [
+        "Astro-Seek: https://www.astro-seek.com/birth-chart/rigoberta-menchu-horoscope"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Cap",
+        "moon": "Cap",
+        "ascendant": "Aqu"
+      },
+      "reference_positions_deg": {
+        "sun": 288.569769390297,
+        "moon": 293.13948217823736,
+        "ascendant": 310.05183799911
+      },
+      "kerykeion_utc_time_hours": 14.0
+    },
+    {
+      "name": "Benazir Bhutto",
+      "category": "leaders",
+      "date_local": "1953-06-21T19:21:00",
+      "timezone": "Asia/Karachi",
+      "latitude": 24.8667,
+      "longitude": 67.05,
+      "data_quality": "AA",
+      "sources": [
+        "Astro-Seek: https://www.astro-seek.com/birth-chart/benazir-bhutto-horoscope"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Gem",
+        "moon": "Lib",
+        "ascendant": "Cap"
+      },
+      "reference_positions_deg": {
+        "sun": 89.89474183317306,
+        "moon": 203.05690664001008,
+        "ascendant": 270.17209867529385
+      },
+      "kerykeion_utc_time_hours": 14.35
+    },
+    {
+      "name": "Indira Gandhi",
+      "category": "leaders",
+      "date_local": "1917-11-19T23:11:00",
+      "timezone": "Asia/Kolkata",
+      "latitude": 25.45,
+      "longitude": 81.85,
+      "data_quality": "AA",
+      "sources": [
+        "Astro.com: https://www.astro.com/astro-databank/Gandhi,_Indira"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Sco",
+        "moon": "Cap",
+        "ascendant": "Leo"
+      },
+      "reference_positions_deg": {
+        "sun": 236.83985701087428,
+        "moon": 298.3027276795704,
+        "ascendant": 140.08750488757562
+      },
+      "kerykeion_utc_time_hours": 17.683333333333334
+    },
+    {
+      "name": "Margaret Thatcher",
+      "category": "leaders",
+      "date_local": "1925-10-13T09:00:00",
+      "timezone": "Europe/London",
+      "latitude": 52.9167,
+      "longitude": -0.6333,
+      "data_quality": "AA",
+      "sources": [
+        "https://www.astro.com/astro-databank/Thatcher,_Margaret"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Lib",
+        "moon": "Leo",
+        "ascendant": "Sco"
+      },
+      "reference_positions_deg": {
+        "sun": 199.5019956584267,
+        "moon": 148.63173501305906,
+        "ascendant": 225.28330442574577
+      },
+      "kerykeion_utc_time_hours": 9.0
+    },
+    {
+      "name": "Angela Merkel",
+      "category": "leaders",
+      "date_local": "1954-07-17T18:00:00",
+      "timezone": "Europe/Berlin",
+      "latitude": 53.5507,
+      "longitude": 9.993,
+      "data_quality": "B",
+      "sources": [
+        "https://www.astro.com/astro-databank/Merkel,_Angela"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Can",
+        "moon": "Aqu",
+        "ascendant": "Sag"
+      },
+      "reference_positions_deg": {
+        "sun": 114.56221984571236,
+        "moon": 315.4560775490084,
+        "ascendant": 256.5194267305655
+      },
+      "kerykeion_utc_time_hours": 17.0
+    },
+    {
+      "name": "Eva Per\u00f3n",
+      "category": "leaders",
+      "date_local": "1919-05-07T05:14:00",
+      "timezone": "America/Argentina/Buenos_Aires",
+      "latitude": -34.6131,
+      "longitude": -58.3772,
+      "data_quality": "B",
+      "sources": [
+        "https://www.astro.com/astro-databank/Per%C3%B3n,_Eva"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Tau",
+        "moon": "Leo",
+        "ascendant": "Tau"
+      },
+      "reference_positions_deg": {
+        "sun": 45.772235659011734,
+        "moon": 140.7287130868781,
+        "ascendant": 32.13452907053013
+      },
+      "kerykeion_utc_time_hours": 9.516666666666667
+    },
+    {
+      "name": "Aung San Suu Kyi",
+      "category": "leaders",
+      "date_local": "1945-06-19T12:00:00",
+      "timezone": "Asia/Kolkata",
+      "latitude": 28.6139,
+      "longitude": 77.209,
+      "data_quality": "X",
+      "sources": [
+        "https://www.astro.com/astro-databank/Aung_San_Suu_Kyi"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Gem",
+        "moon": "Lib",
+        "ascendant": "Vir"
+      },
+      "reference_positions_deg": {
+        "sun": 87.56062912826128,
+        "moon": 195.59221326447337,
+        "ascendant": 159.60818110641878
+      },
+      "kerykeion_utc_time_hours": 5.5
+    },
+    {
+      "name": "Golda Meir",
+      "category": "leaders",
+      "date_local": "1898-05-03T12:00:00",
+      "timezone": "Europe/Kyiv",
+      "latitude": 50.4547,
+      "longitude": 30.5238,
+      "data_quality": "AA",
+      "sources": [
+        "https://www.astro.com/astro-databank/Meir,_Golda"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Tau",
+        "moon": "Lib",
+        "ascendant": "Leo"
+      },
+      "reference_positions_deg": {
+        "sun": 42.96256309294414,
+        "moon": 184.5634095868237,
+        "ascendant": 145.39629297785598
+      },
+      "kerykeion_utc_time_hours": 9.966666666666667
+    },
+    {
+      "name": "Catherine the Great",
+      "category": "leaders",
+      "date_local": "1729-05-02T02:30:00",
+      "timezone": "Europe/Warsaw",
+      "latitude": 53.3833,
+      "longitude": 14.5333,
+      "data_quality": "B",
+      "sources": [
+        "https://www.astro.com/astro-databank/Catherine_the_Great,_Empress"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Tau",
+        "moon": "Gem",
+        "ascendant": "Aqu"
+      },
+      "reference_positions_deg": {
+        "sun": 41.52811850366894,
+        "moon": 82.92089930154206,
+        "ascendant": 315.37216121353345
+      },
+      "kerykeion_utc_time_hours": 1.1
+    },
+    {
+      "name": "Oprah Winfrey",
+      "category": "media",
+      "date_local": "1954-01-29T04:30:00",
+      "timezone": "America/Chicago",
+      "latitude": 33.0579,
+      "longitude": -89.5873,
+      "data_quality": "C",
+      "sources": [
+        "Stellium Test Suite"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Aqu",
+        "moon": "Sag",
+        "ascendant": "Sag"
+      },
+      "reference_positions_deg": {
+        "sun": 308.9931857882974,
+        "moon": 244.53283068742255,
+        "ascendant": 269.68572433825415
+      },
+      "kerykeion_utc_time_hours": 10.5
+    },
+    {
+      "name": "John Lennon",
+      "category": "media",
+      "date_local": "1940-10-09T18:30:00",
+      "timezone": "Europe/London",
+      "latitude": 53.4167,
+      "longitude": -2.9167,
+      "data_quality": "DD",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Lennon,_John"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Lib",
+        "moon": "Aqu",
+        "ascendant": "Ari"
+      },
+      "reference_positions_deg": {
+        "sun": 196.26789199498288,
+        "moon": 303.54657704635156,
+        "ascendant": 19.903020604379495
+      },
+      "kerykeion_utc_time_hours": 17.5
+    },
+    {
+      "name": "Yoko Ono",
+      "category": "media",
+      "date_local": "1933-02-18T20:30:00",
+      "timezone": "Asia/Tokyo",
+      "latitude": 35.7,
+      "longitude": 139.7667,
+      "data_quality": "A",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Ono,_Yoko"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Aqu",
+        "moon": "Sag",
+        "ascendant": "Lib"
+      },
+      "reference_positions_deg": {
+        "sun": 329.3793811250688,
+        "moon": 251.12963503618872,
+        "ascendant": 188.5079630025144
+      },
+      "kerykeion_utc_time_hours": 11.5
+    },
+    {
+      "name": "Paul McCartney",
+      "category": "media",
+      "date_local": "1942-06-18T14:00:00",
+      "timezone": "Europe/London",
+      "latitude": 53.4167,
+      "longitude": -2.9167,
+      "data_quality": "A",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/McCartney,_Paul"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Gem",
+        "moon": "Leo",
+        "ascendant": "Vir"
+      },
+      "reference_positions_deg": {
+        "sun": 86.60896926715652,
+        "moon": 137.43893316274392,
+        "ascendant": 175.30661052665937
+      },
+      "kerykeion_utc_time_hours": 12.0
+    },
+    {
+      "name": "Wolfgang Mozart",
+      "category": "media",
+      "date_local": "1756-01-27T20:00:00",
+      "timezone": "Europe/Vienna",
+      "latitude": 47.8,
+      "longitude": 13.0333,
+      "data_quality": "A",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Mozart,_Wolfgang_Amadeus"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Aqu",
+        "moon": "Sag",
+        "ascendant": "Vir"
+      },
+      "reference_positions_deg": {
+        "sun": 307.37476188926615,
+        "moon": 257.6643112326697,
+        "ascendant": 160.31693026594712
+      },
+      "kerykeion_utc_time_hours": 18.916666666666668
+    },
+    {
+      "name": "Mozart",
+      "category": "media",
+      "date_local": "1756-01-27T20:00:00",
+      "timezone": "Europe/Vienna",
+      "latitude": 47.8,
+      "longitude": 13.0333,
+      "data_quality": "A",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Mozart,_Wolfgang_Amadeus"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Aqu",
+        "moon": "Sag",
+        "ascendant": "Vir"
+      },
+      "reference_positions_deg": {
+        "sun": 307.37476188926615,
+        "moon": 257.6643112326697,
+        "ascendant": 160.31693026594712
+      },
+      "kerykeion_utc_time_hours": 18.916666666666668
+    },
+    {
+      "name": "Brad Pitt",
+      "category": "media",
+      "date_local": "1963-12-18T06:31:00",
+      "timezone": "America/Chicago",
+      "latitude": 35.3333,
+      "longitude": -96.9333,
+      "data_quality": "A",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Pitt,_Brad"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Sag",
+        "moon": "Cap",
+        "ascendant": "Sag"
+      },
+      "reference_positions_deg": {
+        "sun": 265.86189554764354,
+        "moon": 292.8320302743326,
+        "ascendant": 251.8948773785072
+      },
+      "kerykeion_utc_time_hours": 12.516666666666667
+    },
+    {
+      "name": "Angelina Jolie",
+      "category": "media",
+      "date_local": "1975-06-04T09:09:00",
+      "timezone": "America/Los_Angeles",
+      "latitude": 34.0922,
+      "longitude": -118.2944,
+      "data_quality": "AA",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Jolie,_Angelina"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Gem",
+        "moon": "Ari",
+        "ascendant": "Can"
+      },
+      "reference_positions_deg": {
+        "sun": 73.42208254172118,
+        "moon": 13.084360540272806,
+        "ascendant": 118.86976765747985
+      },
+      "kerykeion_utc_time_hours": 16.15
+    },
+    {
+      "name": "Richard Burton",
+      "category": "media",
+      "date_local": "1925-11-10T15:00:00",
+      "timezone": "Europe/London",
+      "latitude": 51.6333,
+      "longitude": -3.7333,
+      "data_quality": "DD",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Burton,_Richard_(1925)"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Sco",
+        "moon": "Vir",
+        "ascendant": "Ari"
+      },
+      "reference_positions_deg": {
+        "sun": 227.7035732582285,
+        "moon": 159.47309228363548,
+        "ascendant": 1.2436849063992967
+      },
+      "kerykeion_utc_time_hours": 15.0
+    },
+    {
+      "name": "Marilyn Monroe",
+      "category": "media",
+      "date_local": "1926-06-01T09:30:00",
+      "timezone": "America/Los_Angeles",
+      "latitude": 34.0522,
+      "longitude": -118.2437,
+      "data_quality": "AA",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Monroe,_Marilyn"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Gem",
+        "moon": "Aqu",
+        "ascendant": "Leo"
+      },
+      "reference_positions_deg": {
+        "sun": 70.44437139733053,
+        "moon": 319.09835562956164,
+        "ascendant": 133.07426787319392
+      },
+      "kerykeion_utc_time_hours": 17.5
+    },
+    {
+      "name": "Elizabeth Taylor",
+      "category": "media",
+      "date_local": "1932-02-27T02:30:00",
+      "timezone": "Europe/London",
+      "latitude": 51.5074,
+      "longitude": -0.1278,
+      "data_quality": "AA",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Taylor,_Elizabeth"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Pis",
+        "moon": "Sco",
+        "ascendant": "Sag"
+      },
+      "reference_positions_deg": {
+        "sun": 337.2960922844426,
+        "moon": 225.74349554052517,
+        "ascendant": 253.2850184889395
+      },
+      "kerykeion_utc_time_hours": 2.5
+    },
+    {
+      "name": "Beyonc\u00e9",
+      "category": "media",
+      "date_local": "1981-09-04T21:47:00",
+      "timezone": "America/Chicago",
+      "latitude": 29.76,
+      "longitude": -95.37,
+      "data_quality": "AA",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Beyonc\u00e9"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Vir",
+        "moon": "Sco",
+        "ascendant": "Ari"
+      },
+      "reference_positions_deg": {
+        "sun": 162.4555594333149,
+        "moon": 236.73451048873264,
+        "ascendant": 29.00340449931042
+      },
+      "kerykeion_utc_time_hours": 2.783333333333333
+    },
+    {
+      "name": "Tom Hanks",
+      "category": "media",
+      "date_local": "1956-07-09T11:17:00",
+      "timezone": "America/Los_Angeles",
+      "latitude": 37.99,
+      "longitude": -122.02,
+      "data_quality": "AA",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Hanks,_Tom"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Can",
+        "moon": "Leo",
+        "ascendant": "Vir"
+      },
+      "reference_positions_deg": {
+        "sun": 107.47667362652496,
+        "moon": 129.86537113048044,
+        "ascendant": 171.76960300869135
+      },
+      "kerykeion_utc_time_hours": 18.283333333333335
+    },
+    {
+      "name": "Jay-Z",
+      "category": "media",
+      "date_local": "1969-12-04T00:10:00",
+      "timezone": "America/New_York",
+      "latitude": 40.6333,
+      "longitude": -73.9333,
+      "data_quality": "C",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Jay_Z"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Sag",
+        "moon": "Lib",
+        "ascendant": "Vir"
+      },
+      "reference_positions_deg": {
+        "sun": 251.88242743551697,
+        "moon": 185.20466213507817,
+        "ascendant": 169.21294289978312
+      },
+      "kerykeion_utc_time_hours": 5.166666666666667
+    },
+    {
+      "name": "Eminem",
+      "category": "media",
+      "date_local": "1972-10-17T12:00:00",
+      "timezone": "America/Chicago",
+      "latitude": 39.7667,
+      "longitude": -94.85,
+      "data_quality": "X",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Eminem",
+        "Missouri birth certificate"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Lib",
+        "moon": "Aqu",
+        "ascendant": "Sag"
+      },
+      "reference_positions_deg": {
+        "sun": 204.42095318257208,
+        "moon": 319.8685194669992,
+        "ascendant": 257.06898186717854
+      },
+      "kerykeion_utc_time_hours": 17.0
+    },
+    {
+      "name": "Mariah Carey",
+      "category": "media",
+      "date_local": "1969-03-27T07:27:00",
+      "timezone": "America/New_York",
+      "latitude": 40.8667,
+      "longitude": -73.4333,
+      "data_quality": "B",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Carey,_Mariah",
+        "Rolling Stone magazine"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Ari",
+        "moon": "Can",
+        "ascendant": "Tau"
+      },
+      "reference_positions_deg": {
+        "sun": 6.663388290809045,
+        "moon": 112.89980784486504,
+        "ascendant": 45.33237261203676
+      },
+      "kerykeion_utc_time_hours": 12.45
+    },
+    {
+      "name": "Dr. Dre",
+      "category": "media",
+      "date_local": "1965-02-18T10:56:00",
+      "timezone": "America/Los_Angeles",
+      "latitude": 34.05,
+      "longitude": -118.25,
+      "data_quality": "AA",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Dr._Dre",
+        "Birth certificate"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Aqu",
+        "moon": "Lib",
+        "ascendant": "Gem"
+      },
+      "reference_positions_deg": {
+        "sun": 329.92173524057216,
+        "moon": 187.09978784774327,
+        "ascendant": 60.930433323451986
+      },
+      "kerykeion_utc_time_hours": 18.933333333333334
+    },
+    {
+      "name": "Kurt Cobain",
+      "category": "media",
+      "date_local": "1967-02-20T19:38:00",
+      "timezone": "America/Los_Angeles",
+      "latitude": 46.9833,
+      "longitude": -123.8167,
+      "data_quality": "AA",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Cobain,_Kurt",
+        "BC/BR in hand"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Pis",
+        "moon": "Can",
+        "ascendant": "Vir"
+      },
+      "reference_positions_deg": {
+        "sun": 331.8157170397404,
+        "moon": 103.39178280364979,
+        "ascendant": 173.3477765749293
+      },
+      "kerykeion_utc_time_hours": 3.6333333333333333
+    },
+    {
+      "name": "Prince",
+      "category": "media",
+      "date_local": "1958-06-07T18:17:00",
+      "timezone": "America/Chicago",
+      "latitude": 44.9833,
+      "longitude": -93.2667,
+      "data_quality": "AA",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Prince_(musician)",
+        "BC/BR in hand from Frank C. Clifford"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Gem",
+        "moon": "Pis",
+        "ascendant": "Sco"
+      },
+      "reference_positions_deg": {
+        "sun": 76.67723456655249,
+        "moon": 331.98640828134717,
+        "ascendant": 226.69712489704148
+      },
+      "kerykeion_utc_time_hours": 23.283333333333335
+    },
+    {
+      "name": "Leslie Cheung",
+      "category": "media",
+      "date_local": "1956-09-12T18:15:00",
+      "timezone": "Asia/Hong_Kong",
+      "latitude": 22.2856,
+      "longitude": 114.1577,
+      "data_quality": "AA",
+      "sources": [
+        "Astro-Seek: https://www.astro-seek.com/birth-chart/leslie-cheung-horoscope"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Vir",
+        "moon": "Sag",
+        "ascendant": "Aqu"
+      },
+      "reference_positions_deg": {
+        "sun": 169.57586200288173,
+        "moon": 263.7521439287446,
+        "ascendant": 326.78907602011066
+      },
+      "kerykeion_utc_time_hours": 9.25
+    },
+    {
+      "name": "Anita Mui",
+      "category": "media",
+      "date_local": "1963-10-10T08:35:00",
+      "timezone": "Asia/Hong_Kong",
+      "latitude": 22.2856,
+      "longitude": 114.1577,
+      "data_quality": "AA",
+      "sources": [
+        "Astro-Seek: https://www.astro-seek.com/birth-chart/anita-mui-horoscope"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Lib",
+        "moon": "Can",
+        "ascendant": "Sco"
+      },
+      "reference_positions_deg": {
+        "sun": 195.94582986692632,
+        "moon": 108.11126891326889,
+        "ascendant": 212.78599256321564
+      },
+      "kerykeion_utc_time_hours": 23.583333333333332
+    },
+    {
+      "name": "Selena Quintanilla",
+      "category": "media",
+      "date_local": "1971-04-16T07:30:00",
+      "timezone": "America/Chicago",
+      "latitude": 29.0297,
+      "longitude": -95.4008,
+      "data_quality": "AA",
+      "sources": [
+        "Astro.com: https://www.astro.com/astro-databank/Selena"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Ari",
+        "moon": "Cap",
+        "ascendant": "Tau"
+      },
+      "reference_positions_deg": {
+        "sun": 25.91146031434311,
+        "moon": 271.5525647725513,
+        "ascendant": 54.45155951266825
+      },
+      "kerykeion_utc_time_hours": 13.5
+    },
+    {
+      "name": "Teresa Teng",
+      "category": "media",
+      "date_local": "1953-01-29T05:00:00",
+      "timezone": "Asia/Taipei",
+      "latitude": 25.0478,
+      "longitude": 121.5319,
+      "data_quality": "A",
+      "sources": [
+        "Facebook: https://www.facebook.com/61562750093865/posts/teresa-teng-was-born-on-january-29-1953-at-5-am-her-sun-was-in-aquarius-her-moon/122159929790425003/"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Aqu",
+        "moon": "Can",
+        "ascendant": "Cap"
+      },
+      "reference_positions_deg": {
+        "sun": 308.6689990912706,
+        "moon": 116.43725514389641,
+        "ascendant": 281.9252402347428
+      },
+      "kerykeion_utc_time_hours": 21.0
+    },
+    {
+      "name": "Wong Kar-wai",
+      "category": "media",
+      "date_local": "1958-07-17T12:00:00",
+      "timezone": "Asia/Shanghai",
+      "latitude": 31.2222,
+      "longitude": 121.4581,
+      "data_quality": "X",
+      "sources": [
+        "Astro-Seek: https://www.astro-seek.com/birth-chart/kar-wai-wong-horoscope"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Can",
+        "moon": "Can",
+        "ascendant": "Lib"
+      },
+      "reference_positions_deg": {
+        "sun": 114.0793438279921,
+        "moon": 119.12700124388162,
+        "ascendant": 202.30270592708152
+      },
+      "kerykeion_utc_time_hours": 4.0
+    },
+    {
+      "name": "Faye Wong",
+      "category": "media",
+      "date_local": "1969-08-08T11:30:00",
+      "timezone": "Asia/Shanghai",
+      "latitude": 39.9075,
+      "longitude": 116.3972,
+      "data_quality": "A",
+      "sources": [
+        "Astro-Seek: https://www.astro-seek.com/birth-chart/faye-wong-horoscope"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Leo",
+        "moon": "Gem",
+        "ascendant": "Lib"
+      },
+      "reference_positions_deg": {
+        "sun": 135.41009397085585,
+        "moon": 79.86949057967439,
+        "ascendant": 208.1684931893367
+      },
+      "kerykeion_utc_time_hours": 3.5
+    },
+    {
+      "name": "Chow Yun-fat",
+      "category": "media",
+      "date_local": "1955-05-18T12:00:00",
+      "timezone": "Asia/Hong_Kong",
+      "latitude": 22.2856,
+      "longitude": 114.1577,
+      "data_quality": "X",
+      "sources": [
+        "Astro-Seek: https://www.astro-seek.com/birth-chart/yun-fat-chow-horoscope"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Tau",
+        "moon": "Ari",
+        "ascendant": "Leo"
+      },
+      "reference_positions_deg": {
+        "sun": 56.413278779262555,
+        "moon": 4.485688334135413,
+        "ascendant": 129.36192551726668
+      },
+      "kerykeion_utc_time_hours": 3.0
+    },
+    {
+      "name": "Miriam Makeba",
+      "category": "media",
+      "date_local": "1932-03-04T12:00:00",
+      "timezone": "Africa/Johannesburg",
+      "latitude": -26.2023,
+      "longitude": 28.0436,
+      "data_quality": "X",
+      "sources": [
+        "Astro-Charts: https://astro-charts.com/persons/chart/miriam-makeba/"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Pis",
+        "moon": "Aqu",
+        "ascendant": "Gem"
+      },
+      "reference_positions_deg": {
+        "sun": 343.63014123852963,
+        "moon": 310.61528343302024,
+        "ascendant": 61.52397285406248
+      },
+      "kerykeion_utc_time_hours": 10.0
+    },
+    {
+      "name": "Shah Rukh Khan",
+      "category": "media",
+      "date_local": "1965-11-02T06:25:00",
+      "timezone": "Asia/Kolkata",
+      "latitude": 28.6139,
+      "longitude": 77.209,
+      "data_quality": "AA",
+      "sources": [
+        "Astro.com: https://www.astro.com/astro-databank/Khan,_Shah_Rukh"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Sco",
+        "moon": "Aqu",
+        "ascendant": "Sco"
+      },
+      "reference_positions_deg": {
+        "sun": 219.39580204353257,
+        "moon": 316.8585175318287,
+        "ascendant": 216.7103572800099
+      },
+      "kerykeion_utc_time_hours": 0.9166666666666666
+    },
+    {
+      "name": "Aishwarya Rai",
+      "category": "media",
+      "date_local": "1973-11-01T04:05:00",
+      "timezone": "Asia/Kolkata",
+      "latitude": 12.8833,
+      "longitude": 74.85,
+      "data_quality": "AA",
+      "sources": [
+        "AstroSage: https://astrosage.com/celebrity-horoscope/aishwarya-rai-bachchan-birth-chart.asp"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Sco",
+        "moon": "Cap",
+        "ascendant": "Lib"
+      },
+      "reference_positions_deg": {
+        "sun": 218.36635991197682,
+        "moon": 283.08771036282275,
+        "ascendant": 183.65037526475712
+      },
+      "kerykeion_utc_time_hours": 22.583333333333332
+    },
+    {
+      "name": "Ryuichi Sakamoto",
+      "category": "media",
+      "date_local": "1952-01-17T12:00:00",
+      "timezone": "Asia/Tokyo",
+      "latitude": 35.6895,
+      "longitude": 139.6917,
+      "data_quality": "X",
+      "sources": [
+        "Astro-Charts: https://astro-charts.com/persons/chart/ryuichi-sakamoto/"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Cap",
+        "moon": "Vir",
+        "ascendant": "Tau"
+      },
+      "reference_positions_deg": {
+        "sun": 295.94342666504787,
+        "moon": 169.59430029163505,
+        "ascendant": 44.75060500638222
+      },
+      "kerykeion_utc_time_hours": 3.0
+    },
+    {
+      "name": "Alfred Hitchcock",
+      "category": "media",
+      "date_local": "1899-08-13T03:15:00",
+      "timezone": "Europe/London",
+      "latitude": 51.5074,
+      "longitude": -0.1278,
+      "data_quality": "X",
+      "sources": [
+        "https://www.astro.com/astro-databank/Hitchcock,_Alfred"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Leo",
+        "moon": "Sco",
+        "ascendant": "Leo"
+      },
+      "reference_positions_deg": {
+        "sun": 140.12999408107274,
+        "moon": 213.98433319791636,
+        "ascendant": 123.97624283371721
+      },
+      "kerykeion_utc_time_hours": 3.2666666666666666
+    },
+    {
+      "name": "Akira Kurosawa",
+      "category": "media",
+      "date_local": "1910-03-23T12:00:00",
+      "timezone": "Asia/Tokyo",
+      "latitude": 35.6895,
+      "longitude": 139.6917,
+      "data_quality": "C",
+      "sources": [
+        "https://www.astro.com/astro-databank/Kurosawa,_Akira"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Ari",
+        "moon": "Vir",
+        "ascendant": "Can"
+      },
+      "reference_positions_deg": {
+        "sun": 1.6097919368484985,
+        "moon": 151.06386626181794,
+        "ascendant": 109.67601750594619
+      },
+      "kerykeion_utc_time_hours": 3.0
+    },
+    {
+      "name": "Steven Spielberg",
+      "category": "media",
+      "date_local": "1946-12-18T18:16:00",
+      "timezone": "America/New_York",
+      "latitude": 39.1031,
+      "longitude": -84.512,
+      "data_quality": "AA",
+      "sources": [
+        "https://www.astro.com/astro-databank/Spielberg,_Steven"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Sag",
+        "moon": "Sco",
+        "ascendant": "Can"
+      },
+      "reference_positions_deg": {
+        "sun": 266.450687018459,
+        "moon": 216.8464991607527,
+        "ascendant": 100.70544704203658
+      },
+      "kerykeion_utc_time_hours": 23.266666666666666
+    },
+    {
+      "name": "Charlie Chaplin",
+      "category": "media",
+      "date_local": "1889-04-16T20:00:00",
+      "timezone": "Europe/London",
+      "latitude": 51.5074,
+      "longitude": -0.1278,
+      "data_quality": "X",
+      "sources": [
+        "https://www.astro.com/astro-databank/Chaplin,_Charles"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Ari",
+        "moon": "Sco",
+        "ascendant": "Sco"
+      },
+      "reference_positions_deg": {
+        "sun": 27.000968155836016,
+        "moon": 219.40544928219182,
+        "ascendant": 218.77459358581197
+      },
+      "kerykeion_utc_time_hours": 20.016666666666666
+    },
+    {
+      "name": "Robin Williams",
+      "category": "media",
+      "date_local": "1951-07-21T13:34:00",
+      "timezone": "America/Chicago",
+      "latitude": 41.8781,
+      "longitude": -87.6298,
+      "data_quality": "AA",
+      "sources": [
+        "https://www.astro.com/astro-databank/Williams,_Robin"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Can",
+        "moon": "Pis",
+        "ascendant": "Sco"
+      },
+      "reference_positions_deg": {
+        "sun": 118.17948444696943,
+        "moon": 338.94884933945497,
+        "ascendant": 210.9231523220439
+      },
+      "kerykeion_utc_time_hours": 18.566666666666666
+    },
+    {
+      "name": "Lucille Ball",
+      "category": "media",
+      "date_local": "1911-08-06T17:00:00",
+      "timezone": "America/New_York",
+      "latitude": 42.097,
+      "longitude": -79.2353,
+      "data_quality": "AA",
+      "sources": [
+        "https://www.astro.com/astro-databank/Ball,_Lucille"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Leo",
+        "moon": "Cap",
+        "ascendant": "Cap"
+      },
+      "reference_positions_deg": {
+        "sun": 133.2936802160742,
+        "moon": 277.36204925339104,
+        "ascendant": 271.8528586922548
+      },
+      "kerykeion_utc_time_hours": 22.0
+    },
+    {
+      "name": "Audrey Hepburn",
+      "category": "media",
+      "date_local": "1929-05-04T03:00:00",
+      "timezone": "Europe/Brussels",
+      "latitude": 50.8333,
+      "longitude": 4.35,
+      "data_quality": "AA",
+      "sources": [
+        "https://www.astro.com/astro-databank/Hepburn,_Audrey"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Tau",
+        "moon": "Pis",
+        "ascendant": "Aqu"
+      },
+      "reference_positions_deg": {
+        "sun": 43.11617032688719,
+        "moon": 336.45205114600884,
+        "ascendant": 328.58297639581275
+      },
+      "kerykeion_utc_time_hours": 2.0
+    },
+    {
+      "name": "David Bowie",
+      "category": "media",
+      "date_local": "1947-01-08T09:00:00",
+      "timezone": "Europe/London",
+      "latitude": 51.5074,
+      "longitude": -0.1278,
+      "data_quality": "A",
+      "sources": [
+        "https://www.astro.com/astro-databank/Bowie,_David"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Cap",
+        "moon": "Leo",
+        "ascendant": "Aqu"
+      },
+      "reference_positions_deg": {
+        "sun": 287.2455397133652,
+        "moon": 123.8312835609698,
+        "ascendant": 303.32583879317457
+      },
+      "kerykeion_utc_time_hours": 9.0
+    },
+    {
+      "name": "Aleister Crowley",
+      "category": "occultists",
+      "date_local": "1875-10-12T23:00:00",
+      "timezone": "Europe/London",
+      "latitude": 52.2852,
+      "longitude": -1.5201,
+      "data_quality": "B",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Crowley,_Aleister",
+        "Confessions of Aleister Crowley"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Lib",
+        "moon": "Pis",
+        "ascendant": "Leo"
+      },
+      "reference_positions_deg": {
+        "sun": 199.20733305884613,
+        "moon": 352.4064986667168,
+        "ascendant": 120.72018964009891
+      },
+      "kerykeion_utc_time_hours": 23.016666666666666
+    },
+    {
+      "name": "Nostradamus",
+      "category": "occultists",
+      "date_local": "1503-12-14T12:00:00",
+      "timezone": "Europe/Paris",
+      "latitude": 43.7894,
+      "longitude": 4.8319,
+      "data_quality": "C",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Nostradamus",
+        "Chavigny, La Premiere face du Janus francois (1594)"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Sag",
+        "moon": "Can",
+        "ascendant": "Pis"
+      },
+      "reference_positions_deg": {
+        "sun": 261.4316854274477,
+        "moon": 95.57016549170898,
+        "ascendant": 349.65482374822386
+      },
+      "kerykeion_utc_time_hours": 11.85
+    },
+    {
+      "name": "Helena Blavatsky",
+      "category": "occultists",
+      "date_local": "1831-08-12T02:17:00",
+      "timezone": "Europe/Kyiv",
+      "latitude": 48.45,
+      "longitude": 34.9833,
+      "data_quality": "C",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Blavatsky,_Helena"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Leo",
+        "moon": "Lib",
+        "ascendant": "Can"
+      },
+      "reference_positions_deg": {
+        "sun": 138.50239999556095,
+        "moon": 189.67626088669377,
+        "ascendant": 112.99453951613683
+      },
+      "kerykeion_utc_time_hours": 0.25
+    },
+    {
+      "name": "Edgar Cayce",
+      "category": "occultists",
+      "date_local": "1877-03-18T15:20:00",
+      "timezone": "America/Chicago",
+      "latitude": 36.85,
+      "longitude": -87.48,
+      "data_quality": "C",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Cayce,_Edgar"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Pis",
+        "moon": "Tau",
+        "ascendant": "Leo"
+      },
+      "reference_positions_deg": {
+        "sun": 358.40251700037254,
+        "moon": 42.391891718015636,
+        "ascendant": 144.70414137667504
+      },
+      "kerykeion_utc_time_hours": 21.183333333333334
+    },
+    {
+      "name": "Arthur Edward Waite",
+      "category": "occultists",
+      "date_local": "1857-10-02T13:00:00",
+      "timezone": "America/New_York",
+      "latitude": 40.65,
+      "longitude": -73.95,
+      "data_quality": "B",
+      "sources": [
+        "Astrotheme: https://www.astrotheme.com/astrology/Arthur_Edward_Waite",
+        "{'Wikipedia': 'https://en.wikipedia.org/wiki/A._E._Waite'}"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Lib",
+        "moon": "Pis",
+        "ascendant": "Cap"
+      },
+      "reference_positions_deg": {
+        "sun": 189.47432766353415,
+        "moon": 357.45580091364275,
+        "ascendant": 274.2613279095637
+      },
+      "kerykeion_utc_time_hours": 17.933333333333334
+    },
+    {
+      "name": "Sri Ramakrishna",
+      "category": "occultists",
+      "date_local": "1836-02-18T05:00:00",
+      "timezone": "Asia/Kolkata",
+      "latitude": 22.8985,
+      "longitude": 87.6574,
+      "data_quality": "AA",
+      "sources": [
+        "Astro-Seek: https://www.astro-seek.com/birth-chart/ramakrishna-horoscope"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Aqu",
+        "moon": "Pis",
+        "ascendant": "Aqu"
+      },
+      "reference_positions_deg": {
+        "sun": 328.3821000455175,
+        "moon": 342.8061652591712,
+        "ascendant": 300.2766245740852
+      },
+      "kerykeion_utc_time_hours": 23.116666666666667
+    },
+    {
+      "name": "Ramana Maharshi",
+      "category": "occultists",
+      "date_local": "1879-12-30T01:00:00",
+      "timezone": "Asia/Kolkata",
+      "latitude": 9.9167,
+      "longitude": 78.1167,
+      "data_quality": "B",
+      "sources": [
+        "Astro-Seek: https://www.astro-seek.com/birth-chart/ramana-maharishi-horoscope"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Cap",
+        "moon": "Can",
+        "ascendant": "Lib"
+      },
+      "reference_positions_deg": {
+        "sun": 277.7563562011344,
+        "moon": 110.24291512281012,
+        "ascendant": 192.86970991375628
+      },
+      "kerykeion_utc_time_hours": 19.116666666666667
+    },
+    {
+      "name": "Swami Vivekananda",
+      "category": "occultists",
+      "date_local": "1863-01-12T06:33:00",
+      "timezone": "Asia/Kolkata",
+      "latitude": 22.5726,
+      "longitude": 88.3639,
+      "data_quality": "AA",
+      "sources": [
+        "Astro-Seek: https://www.astro-seek.com/birth-chart/swami-vivekananda-horoscope"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Cap",
+        "moon": "Lib",
+        "ascendant": "Cap"
+      },
+      "reference_positions_deg": {
+        "sun": 291.37267747791464,
+        "moon": 189.40017839823636,
+        "ascendant": 288.09026752371005
+      },
+      "kerykeion_utc_time_hours": 0.6666666666666666
+    },
+    {
+      "name": "Paramahansa Yogananda",
+      "category": "occultists",
+      "date_local": "1893-01-05T20:38:00",
+      "timezone": "Asia/Kolkata",
+      "latitude": 26.7667,
+      "longitude": 83.3667,
+      "data_quality": "AA",
+      "sources": [
+        "Astro.com: https://www.astro.com/astro-databank/Yogananda,_Paramahansa"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Cap",
+        "moon": "Leo",
+        "ascendant": "Leo"
+      },
+      "reference_positions_deg": {
+        "sun": 285.55944899484865,
+        "moon": 145.41430010614428,
+        "ascendant": 144.59890051998212
+      },
+      "kerykeion_utc_time_hours": 14.75
+    },
+    {
+      "name": "Jiddu Krishnamurti",
+      "category": "occultists",
+      "date_local": "1895-05-12T00:30:00",
+      "timezone": "Asia/Kolkata",
+      "latitude": 13.5558,
+      "longitude": 78.5015,
+      "data_quality": "AA",
+      "sources": [
+        "Astro.com: https://www.astro.com/astro-databank/Krishnamurti,_Jiddu"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Tau",
+        "moon": "Sag",
+        "ascendant": "Aqu"
+      },
+      "reference_positions_deg": {
+        "sun": 50.77630136507978,
+        "moon": 265.0154597199072,
+        "ascendant": 310.17759625249266
+      },
+      "kerykeion_utc_time_hours": 18.616666666666667
+    },
+    {
+      "name": "Sri Aurobindo",
+      "category": "occultists",
+      "date_local": "1872-08-15T05:00:00",
+      "timezone": "Asia/Kolkata",
+      "latitude": 22.5726,
+      "longitude": 88.3639,
+      "data_quality": "AA",
+      "sources": [
+        "Astro-Seek: https://www.astro-seek.com/birth-chart/sri-aurobindo-horoscope"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Leo",
+        "moon": "Sag",
+        "ascendant": "Leo"
+      },
+      "reference_positions_deg": {
+        "sun": 142.38055407136363,
+        "moon": 267.5914210344548,
+        "ascendant": 133.51433087841966
+      },
+      "kerykeion_utc_time_hours": 23.116666666666667
+    },
+    {
+      "name": "Thich Nhat Hanh",
+      "category": "occultists",
+      "date_local": "1926-10-11T12:00:00",
+      "timezone": "Asia/Ho_Chi_Minh",
+      "latitude": 15.9167,
+      "longitude": 107.8333,
+      "data_quality": "X",
+      "sources": [
+        "Astrotheme: https://www.astrotheme.com/astrology/Nhat_Hanh"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Lib",
+        "moon": "Sag",
+        "ascendant": "Cap"
+      },
+      "reference_positions_deg": {
+        "sun": 197.12532236184288,
+        "moon": 245.8661027034732,
+        "ascendant": 283.812005910097
+      },
+      "kerykeion_utc_time_hours": 5.0
+    },
+    {
+      "name": "Sadhguru",
+      "category": "occultists",
+      "date_local": "1957-09-03T23:54:00",
+      "timezone": "Asia/Kolkata",
+      "latitude": 12.3167,
+      "longitude": 76.65,
+      "data_quality": "AA",
+      "sources": [
+        "Astro.com: https://www.astro.com/astro-databank/Vasudev,_Jaggi"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Vir",
+        "moon": "Cap",
+        "ascendant": "Gem"
+      },
+      "reference_positions_deg": {
+        "sun": 160.96714147314796,
+        "moon": 281.0140278951482,
+        "ascendant": 71.89450127718447
+      },
+      "kerykeion_utc_time_hours": 18.4
+    },
+    {
+      "name": "Osho Rajneesh",
+      "category": "occultists",
+      "date_local": "1931-12-11T17:13:00",
+      "timezone": "Asia/Kolkata",
+      "latitude": 23.3287,
+      "longitude": 77.8011,
+      "data_quality": "AA",
+      "sources": [
+        "Astro.com: https://www.astro.com/astro-databank/Rajneesh,_Bhagwan_Shree"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Sag",
+        "moon": "Cap",
+        "ascendant": "Gem"
+      },
+      "reference_positions_deg": {
+        "sun": 258.4753575638197,
+        "moon": 285.23897714364875,
+        "ascendant": 74.41466428493773
+      },
+      "kerykeion_utc_time_hours": 11.716666666666667
+    },
+    {
+      "name": "Chinmayananda Saraswati",
+      "category": "occultists",
+      "date_local": "1916-05-08T19:10:00",
+      "timezone": "Asia/Kolkata",
+      "latitude": 10.0384,
+      "longitude": 76.5074,
+      "data_quality": "A",
+      "sources": [
+        "AstroSage: https://celebrity.astrosage.com/chinmayananda-birth-chart.asp"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Tau",
+        "moon": "Can",
+        "ascendant": "Sco"
+      },
+      "reference_positions_deg": {
+        "sun": 47.61394750966579,
+        "moon": 117.93737419919434,
+        "ascendant": 236.3101941112431
+      },
+      "kerykeion_utc_time_hours": 13.666666666666666
+    },
+    {
+      "name": "Simone de Beauvoir",
+      "category": "philosophers",
+      "date_local": "1908-01-09T04:30:00",
+      "timezone": "Europe/Paris",
+      "latitude": 48.8566,
+      "longitude": 2.3522,
+      "data_quality": "AA",
+      "sources": [
+        "https://www.astro.com/astro-databank/Beauvoir,_Simone_de"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Cap",
+        "moon": "Pis",
+        "ascendant": "Sag"
+      },
+      "reference_positions_deg": {
+        "sun": 287.52035637330835,
+        "moon": 359.9743526864959,
+        "ascendant": 241.68374886768325
+      },
+      "kerykeion_utc_time_hours": 4.35
+    },
+    {
+      "name": "Friedrich Nietzsche",
+      "category": "philosophers",
+      "date_local": "1844-10-15T10:00:00",
+      "timezone": "Europe/Berlin",
+      "latitude": 51.242,
+      "longitude": 12.1143,
+      "data_quality": "AA",
+      "sources": [
+        "https://www.astro.com/astro-databank/Nietzsche,_Friedrich"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Lib",
+        "moon": "Sag",
+        "ascendant": "Sco"
+      },
+      "reference_positions_deg": {
+        "sun": 202.12047247498302,
+        "moon": 248.9989113899771,
+        "ascendant": 238.4245578171914
+      },
+      "kerykeion_utc_time_hours": 9.116666666666667
+    },
+    {
+      "name": "Jean-Paul Sartre",
+      "category": "philosophers",
+      "date_local": "1905-06-21T18:45:00",
+      "timezone": "Europe/Paris",
+      "latitude": 48.8566,
+      "longitude": 2.3522,
+      "data_quality": "AA",
+      "sources": [
+        "https://www.astro.com/astro-databank/Sartre,_Jean-Paul"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Gem",
+        "moon": "Aqu",
+        "ascendant": "Sag"
+      },
+      "reference_positions_deg": {
+        "sun": 89.67192226451036,
+        "moon": 325.68220525370725,
+        "ascendant": 253.7674010252822
+      },
+      "kerykeion_utc_time_hours": 18.6
+    },
+    {
+      "name": "Hannah Arendt",
+      "category": "philosophers",
+      "date_local": "1906-10-14T21:15:00",
+      "timezone": "Europe/Berlin",
+      "latitude": 52.3667,
+      "longitude": 9.7333,
+      "data_quality": "AA",
+      "sources": [
+        "https://www.astro.com/astro-databank/Arendt,_Hannah"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Lib",
+        "moon": "Vir",
+        "ascendant": "Can"
+      },
+      "reference_positions_deg": {
+        "sun": 200.5680918300715,
+        "moon": 159.58593085737502,
+        "ascendant": 98.8486417514169
+      },
+      "kerykeion_utc_time_hours": 20.25
+    },
+    {
+      "name": "Leonardo da Vinci",
+      "category": "polymaths",
+      "date_local": "1452-04-15T21:40:00",
+      "timezone": "Europe/Rome",
+      "latitude": 43.7811,
+      "longitude": 10.9237,
+      "data_quality": "C",
+      "sources": [
+        "Stellium Test Suite"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Ari",
+        "moon": "Sco",
+        "ascendant": "Sco"
+      },
+      "reference_positions_deg": {
+        "sun": 25.864346145931293,
+        "moon": 236.3503154668678,
+        "ascendant": 239.23847020098663
+      },
+      "kerykeion_utc_time_hours": 20.833333333333332
+    },
+    {
+      "name": "Albert Einstein",
+      "category": "scientists",
+      "date_local": "1879-03-14T11:30:00",
+      "timezone": "Europe/Berlin",
+      "latitude": 48.3984,
+      "longitude": 9.9916,
+      "data_quality": "C",
+      "sources": [
+        "Stellium Test Suite"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Pis",
+        "moon": "Sag",
+        "ascendant": "Can"
+      },
+      "reference_positions_deg": {
+        "sun": 353.4987487961973,
+        "moon": 254.4002433260042,
+        "ascendant": 98.92354018989602
+      },
+      "kerykeion_utc_time_hours": 10.616666666666667
+    },
+    {
+      "name": "Marie Curie",
+      "category": "scientists",
+      "date_local": "1867-11-07T12:00:00",
+      "timezone": "Europe/Warsaw",
+      "latitude": 52.2297,
+      "longitude": 21.0122,
+      "data_quality": "C",
+      "sources": [
+        "Stellium Test Suite"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Sco",
+        "moon": "Pis",
+        "ascendant": "Cap"
+      },
+      "reference_positions_deg": {
+        "sun": 224.5758608364697,
+        "moon": 346.4798070937328,
+        "ascendant": 282.07670803474497
+      },
+      "kerykeion_utc_time_hours": 10.6
+    },
+    {
+      "name": "Nikola Tesla",
+      "category": "scientists",
+      "date_local": "1856-07-10T00:00:00",
+      "timezone": "Europe/Zagreb",
+      "latitude": 44.5618,
+      "longitude": 15.3214,
+      "data_quality": "C",
+      "sources": [
+        "Stellium Test Suite"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Can",
+        "moon": "Lib",
+        "ascendant": "Ari"
+      },
+      "reference_positions_deg": {
+        "sun": 107.80051241746095,
+        "moon": 193.84195581982803,
+        "ascendant": 23.914273756823988
+      },
+      "kerykeion_utc_time_hours": 22.633333333333333
+    },
+    {
+      "name": "Isaac Newton",
+      "category": "scientists",
+      "date_local": "1643-01-04T01:38:00",
+      "timezone": "Europe/London",
+      "latitude": 52.8055,
+      "longitude": -0.6378,
+      "data_quality": "B",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Newton,_Isaac",
+        "Michael White, Isaac Newton: The Last Sorcerer (1997)"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Cap",
+        "moon": "Can",
+        "ascendant": "Lib"
+      },
+      "reference_positions_deg": {
+        "sun": 283.67904273330316,
+        "moon": 92.44760897835174,
+        "ascendant": 205.96221927880543
+      },
+      "kerykeion_utc_time_hours": 1.65
+    },
+    {
+      "name": "Galileo Galilei",
+      "category": "scientists",
+      "date_local": "1564-02-15T16:00:00",
+      "timezone": "Europe/Rome",
+      "latitude": 43.4715,
+      "longitude": 10.6798,
+      "data_quality": "B",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Galileo,_Galilei",
+        "N.M. Swerdlow, Journal for the History of Astronomy"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Aqu",
+        "moon": "Sco",
+        "ascendant": "Leo"
+      },
+      "reference_positions_deg": {
+        "sun": 326.03646702415136,
+        "moon": 237.28698081262644,
+        "ascendant": 128.45448375382836
+      },
+      "kerykeion_utc_time_hours": 15.166666666666666
+    },
+    {
+      "name": "Nicolaus Copernicus",
+      "category": "scientists",
+      "date_local": "1473-02-19T17:00:00",
+      "timezone": "Europe/Warsaw",
+      "latitude": 53.0333,
+      "longitude": 18.5833,
+      "data_quality": "AA",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Copernicus,_Nicolaus"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Pis",
+        "moon": "Leo",
+        "ascendant": "Leo"
+      },
+      "reference_positions_deg": {
+        "sun": 331.1698380048302,
+        "moon": 121.95549845740636,
+        "ascendant": 147.0703336558278
+      },
+      "kerykeion_utc_time_hours": 15.6
+    },
+    {
+      "name": "Johannes Kepler",
+      "category": "scientists",
+      "date_local": "1571-12-27T14:30:00",
+      "timezone": "Europe/Berlin",
+      "latitude": 48.75,
+      "longitude": 8.8667,
+      "data_quality": "B",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Kepler,_Johannes"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Cap",
+        "moon": "Cap",
+        "ascendant": "Gem"
+      },
+      "reference_positions_deg": {
+        "sun": 275.2511016997803,
+        "moon": 285.20362898692844,
+        "ascendant": 66.93737768749189
+      },
+      "kerykeion_utc_time_hours": 13.616666666666667
+    },
+    {
+      "name": "Thomas Edison",
+      "category": "scientists",
+      "date_local": "1847-02-11T03:00:00",
+      "timezone": "America/New_York",
+      "latitude": 41.2978,
+      "longitude": -82.6208,
+      "data_quality": "C",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Edison,_Thomas",
+        "Alfred Powell Morgan, The Pageant of Electricity (1939)"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Aqu",
+        "moon": "Sag",
+        "ascendant": "Sag"
+      },
+      "reference_positions_deg": {
+        "sun": 322.02288308560554,
+        "moon": 265.4327726135897,
+        "ascendant": 248.40042702062016
+      },
+      "kerykeion_utc_time_hours": 7.933333333333334
+    },
+    {
+      "name": "Carl Sagan",
+      "category": "scientists",
+      "date_local": "1934-11-09T17:05:00",
+      "timezone": "America/New_York",
+      "latitude": 40.6501,
+      "longitude": -73.9496,
+      "data_quality": "AA",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Sagan,_Carl"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Sco",
+        "moon": "Sag",
+        "ascendant": "Tau"
+      },
+      "reference_positions_deg": {
+        "sun": 226.8274469978684,
+        "moon": 261.85973392748537,
+        "ascendant": 55.32900850398767
+      },
+      "kerykeion_utc_time_hours": 22.083333333333332
+    },
+    {
+      "name": "Sigmund Freud",
+      "category": "scientists",
+      "date_local": "1856-05-06T18:30:00",
+      "timezone": "Europe/Prague",
+      "latitude": 49.65,
+      "longitude": 18.1667,
+      "data_quality": "AA",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Freud,_Sigmund",
+        "Ernest Jones, The Life and Works of Sigmund Freud (1953)"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Tau",
+        "moon": "Gem",
+        "ascendant": "Sco"
+      },
+      "reference_positions_deg": {
+        "sun": 46.32776857824146,
+        "moon": 74.66488046209764,
+        "ascendant": 220.12848216904496
+      },
+      "kerykeion_utc_time_hours": 17.533333333333335
+    },
+    {
+      "name": "Charles Darwin",
+      "category": "scientists",
+      "date_local": "1809-02-12T03:00:00",
+      "timezone": "Europe/London",
+      "latitude": 52.72,
+      "longitude": -2.75,
+      "data_quality": "DD",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Darwin,_Charles"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Aqu",
+        "moon": "Cap",
+        "ascendant": "Sag"
+      },
+      "reference_positions_deg": {
+        "sun": 323.05344861877745,
+        "moon": 291.37179497355754,
+        "ascendant": 245.47164473909828
+      },
+      "kerykeion_utc_time_hours": 3.0166666666666666
+    },
+    {
+      "name": "Stephen Hawking",
+      "category": "scientists",
+      "date_local": "1942-01-08T12:00:00",
+      "timezone": "Europe/London",
+      "latitude": 51.752,
+      "longitude": -1.2578,
+      "data_quality": "X",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Hawking,_Stephen"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Cap",
+        "moon": "Vir",
+        "ascendant": "Ari"
+      },
+      "reference_positions_deg": {
+        "sun": 287.54582848099164,
+        "moon": 175.1173697203262,
+        "ascendant": 2.6806178804885366
+      },
+      "kerykeion_utc_time_hours": 11.0
+    },
+    {
+      "name": "Ada Lovelace",
+      "category": "scientists",
+      "date_local": "1815-12-10T13:00:00",
+      "timezone": "Europe/London",
+      "latitude": 51.5,
+      "longitude": -0.1667,
+      "data_quality": "B",
+      "sources": [
+        "https://www.astro.com/astro-databank/Lovelace,_Ada"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Sag",
+        "moon": "Ari",
+        "ascendant": "Ari"
+      },
+      "reference_positions_deg": {
+        "sun": 257.6715006396957,
+        "moon": 5.661967845773141,
+        "ascendant": 8.289724823682473
+      },
+      "kerykeion_utc_time_hours": 13.016666666666667
+    },
+    {
+      "name": "Alan Turing",
+      "category": "scientists",
+      "date_local": "1912-06-23T02:15:00",
+      "timezone": "Europe/London",
+      "latitude": 51.5,
+      "longitude": -0.1667,
+      "data_quality": "A",
+      "sources": [
+        "https://www.astro.com/astro-databank/Turing,_Alan"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Can",
+        "moon": "Lib",
+        "ascendant": "Gem"
+      },
+      "reference_positions_deg": {
+        "sun": 91.23078468093323,
+        "moon": 196.57643508262086,
+        "ascendant": 65.66166303831062
+      },
+      "kerykeion_utc_time_hours": 2.25
+    },
+    {
+      "name": "Rosalind Franklin",
+      "category": "scientists",
+      "date_local": "1920-07-25T12:00:00",
+      "timezone": "Europe/London",
+      "latitude": 51.5094,
+      "longitude": -0.2061,
+      "data_quality": "X",
+      "sources": [
+        "https://www.wikidata.org/wiki/Q7474"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Leo",
+        "moon": "Sag",
+        "ascendant": "Lib"
+      },
+      "reference_positions_deg": {
+        "sun": 122.16564990985006,
+        "moon": 241.7264203345931,
+        "ascendant": 192.43436094499768
+      },
+      "kerykeion_utc_time_hours": 11.0
+    },
+    {
+      "name": "Grace Hopper",
+      "category": "scientists",
+      "date_local": "1906-12-09T12:00:00",
+      "timezone": "America/New_York",
+      "latitude": 40.7128,
+      "longitude": -74.006,
+      "data_quality": "X",
+      "sources": [
+        "https://www.astro.com/astro-databank/Hooper,_Grace"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Sag",
+        "moon": "Vir",
+        "ascendant": "Pis"
+      },
+      "reference_positions_deg": {
+        "sun": 256.7291864011099,
+        "moon": 174.42781730420248,
+        "ascendant": 340.31960457903836
+      },
+      "kerykeion_utc_time_hours": 17.0
+    },
+    {
+      "name": "Richard Feynman",
+      "category": "scientists",
+      "date_local": "1918-05-11T14:49:00",
+      "timezone": "America/New_York",
+      "latitude": 40.7128,
+      "longitude": -74.006,
+      "data_quality": "AA",
+      "sources": [
+        "https://www.astro.com/astro-databank/Feynman,_Richard"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Tau",
+        "moon": "Gem",
+        "ascendant": "Vir"
+      },
+      "reference_positions_deg": {
+        "sun": 50.24585166533315,
+        "moon": 66.99842509434549,
+        "ascendant": 169.67556283744509
+      },
+      "kerykeion_utc_time_hours": 18.816666666666666
+    },
+    {
+      "name": "Rachel Carson",
+      "category": "scientists",
+      "date_local": "1907-05-27T02:00:00",
+      "timezone": "America/New_York",
+      "latitude": 40.5409,
+      "longitude": -79.7839,
+      "data_quality": "A",
+      "sources": [
+        "https://www.astro.com/astro-databank/Carson,_Rachel"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Gem",
+        "moon": "Sag",
+        "ascendant": "Pis"
+      },
+      "reference_positions_deg": {
+        "sun": 64.83910188453338,
+        "moon": 240.5705442316107,
+        "ascendant": 358.0979222791114
+      },
+      "kerykeion_utc_time_hours": 7.0
+    },
+    {
+      "name": "Alexander Fleming",
+      "category": "scientists",
+      "date_local": "1881-08-06T02:00:00",
+      "timezone": "Europe/London",
+      "latitude": 55.6097,
+      "longitude": -4.2818,
+      "data_quality": "AA",
+      "sources": [
+        "https://www.astro.com/astro-databank/Fleming,_Alexander"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Leo",
+        "moon": "Sag",
+        "ascendant": "Can"
+      },
+      "reference_positions_deg": {
+        "sun": 133.70104485428317,
+        "moon": 260.5369670367354,
+        "ascendant": 106.44203576433162
+      },
+      "kerykeion_utc_time_hours": 2.0166666666666666
+    },
+    {
+      "name": "Tim Berners-Lee",
+      "category": "scientists",
+      "date_local": "1955-06-08T12:00:00",
+      "timezone": "Europe/London",
+      "latitude": 51.5074,
+      "longitude": -0.1278,
+      "data_quality": "X",
+      "sources": [
+        "https://www.astro.com/astro-databank/Berners-Lee,_Tim"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Gem",
+        "moon": "Cap",
+        "ascendant": "Vir"
+      },
+      "reference_positions_deg": {
+        "sun": 76.88395842201794,
+        "moon": 288.19172953139235,
+        "ascendant": 159.53706444273598
+      },
+      "kerykeion_utc_time_hours": 11.0
+    },
+    {
+      "name": "Maya Angelou",
+      "category": "writers",
+      "date_local": "1928-04-04T14:10:00",
+      "timezone": "America/Chicago",
+      "latitude": 38.627,
+      "longitude": -90.1994,
+      "data_quality": "C",
+      "sources": [
+        "Stellium Test Suite"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Ari",
+        "moon": "Lib",
+        "ascendant": "Leo"
+      },
+      "reference_positions_deg": {
+        "sun": 14.805607760867462,
+        "moon": 191.35161449287776,
+        "ascendant": 143.9659920147036
+      },
+      "kerykeion_utc_time_hours": 20.166666666666668
+    },
+    {
+      "name": "Carl Jung",
+      "category": "writers",
+      "date_local": "1875-07-26T19:24:00",
+      "timezone": "Europe/Zurich",
+      "latitude": 47.6,
+      "longitude": 9.3333,
+      "data_quality": "C",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Jung,_Carl",
+        "Gerhard Wehr, Carl Gustav Jung: Leben, Werk, Wirkung (1985)"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Leo",
+        "moon": "Tau",
+        "ascendant": "Cap"
+      },
+      "reference_positions_deg": {
+        "sun": 123.30752580771188,
+        "moon": 45.46558555801232,
+        "ascendant": 299.9826279593953
+      },
+      "kerykeion_utc_time_hours": 18.833333333333332
+    },
+    {
+      "name": "Fyodor Dostoevsky",
+      "category": "writers",
+      "date_local": "1821-11-11T09:47:00",
+      "timezone": "Europe/Moscow",
+      "latitude": 55.6256,
+      "longitude": 37.6064,
+      "data_quality": "C",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Dostoevsky,_Fyodor"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Sco",
+        "moon": "Gem",
+        "ascendant": "Sag"
+      },
+      "reference_positions_deg": {
+        "sun": 228.61872870259785,
+        "moon": 70.93794933516047,
+        "ascendant": 251.80336982389642
+      },
+      "kerykeion_utc_time_hours": 7.283333333333333
+    },
+    {
+      "name": "William Shakespeare",
+      "category": "writers",
+      "date_local": "1564-04-23T08:30:00",
+      "timezone": "Europe/London",
+      "latitude": 52.2,
+      "longitude": -1.6833,
+      "data_quality": "XX",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Shakespeare,_William"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Tau",
+        "moon": "Gem",
+        "ascendant": "Can"
+      },
+      "reference_positions_deg": {
+        "sun": 33.030800518502076,
+        "moon": 62.717100622049706,
+        "ascendant": 99.90468865563749
+      },
+      "kerykeion_utc_time_hours": 8.516666666666667
+    },
+    {
+      "name": "Jane Austen",
+      "category": "writers",
+      "date_local": "1775-12-16T23:45:00",
+      "timezone": "Europe/London",
+      "latitude": 51.2289,
+      "longitude": -1.2191,
+      "data_quality": "C",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Austen,_Jane"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Sag",
+        "moon": "Lib",
+        "ascendant": "Vir"
+      },
+      "reference_positions_deg": {
+        "sun": 264.9516393352511,
+        "moon": 194.89461552266926,
+        "ascendant": 173.4201344998919
+      },
+      "kerykeion_utc_time_hours": 23.766666666666666
+    },
+    {
+      "name": "Arthur Miller",
+      "category": "writers",
+      "date_local": "1915-10-17T05:12:00",
+      "timezone": "America/New_York",
+      "latitude": 40.7167,
+      "longitude": -74.0,
+      "data_quality": "C",
+      "sources": [
+        "AstroDatabank: https://www.astro.com/astro-databank/Miller,_Arthur"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Lib",
+        "moon": "Aqu",
+        "ascendant": "Lib"
+      },
+      "reference_positions_deg": {
+        "sun": 202.9591892835433,
+        "moon": 316.4148387597594,
+        "ascendant": 190.97216723998403
+      },
+      "kerykeion_utc_time_hours": 10.2
+    },
+    {
+      "name": "Terry Pratchett",
+      "category": "writers",
+      "date_local": "1948-04-28T12:00:00",
+      "timezone": "Europe/London",
+      "latitude": 51.6,
+      "longitude": -0.65,
+      "data_quality": "X",
+      "sources": [
+        "https://www.astrotheme.com/astrology/Terry_Pratchett",
+        "https://en.wikipedia.org/wiki/Terry_Pratchett"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Tau",
+        "moon": "Cap",
+        "ascendant": "Leo"
+      },
+      "reference_positions_deg": {
+        "sun": 38.05421640405711,
+        "moon": 277.5865341143846,
+        "ascendant": 131.43648502939556
+      },
+      "kerykeion_utc_time_hours": 11.0
+    },
+    {
+      "name": "Amrita Pritam",
+      "category": "writers",
+      "date_local": "1919-08-31T13:49:00",
+      "timezone": "Asia/Karachi",
+      "latitude": 32.15,
+      "longitude": 74.1833,
+      "data_quality": "A",
+      "sources": [
+        "AstroSage: https://celebrity.astrosage.com/amrita-pritam-1-birth-chart.asp"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Vir",
+        "moon": "Sco",
+        "ascendant": "Sag"
+      },
+      "reference_positions_deg": {
+        "sun": 156.87719987945425,
+        "moon": 222.4575807675349,
+        "ascendant": 253.71794900011838
+      },
+      "kerykeion_utc_time_hours": 8.316666666666666
+    },
+    {
+      "name": "Virginia Woolf",
+      "category": "writers",
+      "date_local": "1882-01-25T12:15:00",
+      "timezone": "Europe/London",
+      "latitude": 51.5074,
+      "longitude": -0.1278,
+      "data_quality": "A",
+      "sources": [
+        "https://www.astro.com/astro-databank/Woolf,_Virginia"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Aqu",
+        "moon": "Ari",
+        "ascendant": "Gem"
+      },
+      "reference_positions_deg": {
+        "sun": 305.49205530466617,
+        "moon": 25.341295538498123,
+        "ascendant": 70.83415676147207
+      },
+      "kerykeion_utc_time_hours": 12.266666666666667
+    },
+    {
+      "name": "Ernest Hemingway",
+      "category": "writers",
+      "date_local": "1899-07-21T08:00:00",
+      "timezone": "America/Chicago",
+      "latitude": 41.8878,
+      "longitude": -87.7888,
+      "data_quality": "AA",
+      "sources": [
+        "https://www.astro.com/astro-databank/Hemingway,_Ernest"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Can",
+        "moon": "Cap",
+        "ascendant": "Vir"
+      },
+      "reference_positions_deg": {
+        "sun": 118.53383120435643,
+        "moon": 279.8326596251215,
+        "ascendant": 155.80542954450536
+      },
+      "kerykeion_utc_time_hours": 13.85
+    },
+    {
+      "name": "Gabriel Garc\u00eda M\u00e1rquez",
+      "category": "writers",
+      "date_local": "1927-03-06T09:00:00",
+      "timezone": "America/Bogota",
+      "latitude": 10.5906,
+      "longitude": -74.1877,
+      "data_quality": "B",
+      "sources": [
+        "https://www.astro.com/astro-databank/Garc%C3%ADa_M%C3%A1rquez,_Gabriel"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Pis",
+        "moon": "Ari",
+        "ascendant": "Tau"
+      },
+      "reference_positions_deg": {
+        "sun": 345.0067693260586,
+        "moon": 24.370424057933594,
+        "ascendant": 33.792106729996334
+      },
+      "kerykeion_utc_time_hours": 14.0
+    },
+    {
+      "name": "Toni Morrison",
+      "category": "writers",
+      "date_local": "1931-02-18T11:00:00",
+      "timezone": "America/New_York",
+      "latitude": 41.2634,
+      "longitude": -82.1735,
+      "data_quality": "X",
+      "sources": [
+        "https://www.astro.com/astro-databank/Morrison,_Toni"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Aqu",
+        "moon": "Pis",
+        "ascendant": "Tau"
+      },
+      "reference_positions_deg": {
+        "sun": 329.0471908040664,
+        "moon": 341.1516999941187,
+        "ascendant": 55.56448850709006
+      },
+      "kerykeion_utc_time_hours": 16.0
+    },
+    {
+      "name": "Sylvia Plath",
+      "category": "writers",
+      "date_local": "1932-10-27T14:10:00",
+      "timezone": "America/New_York",
+      "latitude": 42.3181,
+      "longitude": -71.1064,
+      "data_quality": "AA",
+      "sources": [
+        "https://www.astro.com/astro-databank/Plath,_Sylvia"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Sco",
+        "moon": "Lib",
+        "ascendant": "Aqu"
+      },
+      "reference_positions_deg": {
+        "sun": 214.16180029178142,
+        "moon": 188.5037339657536,
+        "ascendant": 329.31194809876627
+      },
+      "kerykeion_utc_time_hours": 19.166666666666668
+    },
+    {
+      "name": "Rumi",
+      "category": "writers",
+      "date_local": "1207-09-30T12:00:00",
+      "timezone": "Asia/Kabul",
+      "latitude": 36.7581,
+      "longitude": 66.898,
+      "data_quality": "X",
+      "sources": [
+        "https://www.astro.com/astro-databank/Rumi"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Lib",
+        "moon": "Lib",
+        "ascendant": "Sag"
+      },
+      "reference_positions_deg": {
+        "sun": 186.52130305320486,
+        "moon": 183.52841977174683,
+        "ascendant": 258.5749737516903
+      },
+      "kerykeion_utc_time_hours": 7.383333333333334
+    },
+    {
+      "name": "Franz Kafka",
+      "category": "writers",
+      "date_local": "1883-07-03T07:00:00",
+      "timezone": "Europe/Prague",
+      "latitude": 50.0755,
+      "longitude": 14.4378,
+      "data_quality": "AA",
+      "sources": [
+        "https://www.astro.com/astro-databank/Kafka,_Franz"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Can",
+        "moon": "Gem",
+        "ascendant": "Leo"
+      },
+      "reference_positions_deg": {
+        "sun": 100.92494993592355,
+        "moon": 83.02358191993515,
+        "ascendant": 134.22180557159615
+      },
+      "kerykeion_utc_time_hours": 6.033333333333333
+    },
+    {
+      "name": "Oscar Wilde",
+      "category": "writers",
+      "date_local": "1854-10-16T03:00:00",
+      "timezone": "Europe/Dublin",
+      "latitude": 53.3498,
+      "longitude": -6.2603,
+      "data_quality": "X",
+      "sources": [
+        "https://www.astro.com/astro-databank/Wilde,_Oscar"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Lib",
+        "moon": "Leo",
+        "ascendant": "Vir"
+      },
+      "reference_positions_deg": {
+        "sun": 202.44889626956626,
+        "moon": 135.04717661400562,
+        "ascendant": 165.77429312700127
+      },
+      "kerykeion_utc_time_hours": 3.4166666666666665
+    },
+    {
+      "name": "Agatha Christie",
+      "category": "writers",
+      "date_local": "1890-09-15T14:14:00",
+      "timezone": "Europe/London",
+      "latitude": 50.4625,
+      "longitude": -3.525,
+      "data_quality": "A",
+      "sources": [
+        "https://www.astro.com/astro-databank/Christie,_Agatha"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Vir",
+        "moon": "Lib",
+        "ascendant": "Sag"
+      },
+      "reference_positions_deg": {
+        "sun": 172.66106518732028,
+        "moon": 186.9271328990176,
+        "ascendant": 263.8052785479957
+      },
+      "kerykeion_utc_time_hours": 14.25
+    },
+    {
+      "name": "Jorge Luis Borges",
+      "category": "writers",
+      "date_local": "1899-08-24T03:30:00",
+      "timezone": "America/Argentina/Buenos_Aires",
+      "latitude": -34.6037,
+      "longitude": -58.3816,
+      "data_quality": "AA",
+      "sources": [
+        "https://www.astro.com/astro-databank/Borges,_Jorge_Luis"
+      ],
+      "reference_engine": "kerykeion",
+      "reference_signs": {
+        "sun": "Vir",
+        "moon": "Ari",
+        "ascendant": "Can"
+      },
+      "reference_positions_deg": {
+        "sun": 150.88097714478081,
+        "moon": 14.497136138156295,
+        "ascendant": 97.09188223883433
+      },
+      "kerykeion_utc_time_hours": 7.4
+    }
+  ]
+}

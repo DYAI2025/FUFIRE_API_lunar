@@ -1,0 +1,393 @@
+{
+  "evidence_ledger": [
+    {
+      "description": "Day-master stems, elements and the Sheng/Ke relation computed deterministically from both charts.",
+      "id": "ev:pair:day_master_comparison",
+      "kind": "COMPUTATION",
+      "source_ref": "bazi_engine.match.pair.analyze_pair#day_master_comparison"
+    },
+    {
+      "description": "Day-branch identities and ruleset hidden stems; the spouse-palace designation is NEEDS_DOMAIN_REVIEW.",
+      "id": "ev:pair:spouse_palace_day_branch",
+      "kind": "RULESET",
+      "source_ref": "bazi_engine.match.pair.analyze_pair#spouse_palace_day_branch"
+    },
+    {
+      "description": "Wu-Xing vectors summed from the normalization ledger — visible stems plus ruleset/legacy hidden-stem weighting.",
+      "id": "ev:pair:wuxing_vector_comparison",
+      "kind": "RULESET",
+      "source_ref": "bazi_engine.match.pair.analyze_pair#wuxing_vector_comparison"
+    },
+    {
+      "description": "DAY_ANCHOR_UNVERIFIED warning surfaced for ruleset.",
+      "id": "ev:warning:ruleset:DAY_ANCHOR_UNVERIFIED",
+      "kind": "WARNING",
+      "source_ref": "bazi_engine.match.normalize._build_warnings"
+    },
+    {
+      "description": "BIRTH_TIME_UNKNOWN warning surfaced for person_b.",
+      "id": "ev:warning:person_b:BIRTH_TIME_UNKNOWN",
+      "kind": "WARNING",
+      "source_ref": "bazi_engine.match.normalize._build_warnings"
+    }
+  ],
+  "individual": {
+    "person_a": {
+      "day_master": "Geng",
+      "day_master_element": "Metall",
+      "derived_fields": [
+        {
+          "blocked_by": "MISSING-003",
+          "confidence": 0.0,
+          "field": "day_master_strength",
+          "source_status": "NEEDS_DOMAIN_REVIEW"
+        },
+        {
+          "blocked_by": "MISSING-003",
+          "confidence": 0.0,
+          "field": "yong_shen",
+          "source_status": "PENDING_TABLES"
+        }
+      ],
+      "month_command": {
+        "branch": "Si",
+        "branch_index": 5,
+        "element": "Feuer",
+        "principal_qi_stem": "Bing",
+        "source_status": "CALCULATED"
+      },
+      "source_status": "CALCULATED",
+      "spouse_palace": {
+        "day_branch": "Yin",
+        "day_branch_index": 2,
+        "hidden_stems": [
+          "Jia",
+          "Bing",
+          "Wu"
+        ],
+        "palace_pillar": "day",
+        "position_source_note": "day branch = spouse palace (日支=夫妻宫), standard BaZi position identification",
+        "position_source_status": "CALCULATED",
+        "source_status": "NEEDS_DOMAIN_REVIEW"
+      },
+      "spouse_star": {
+        "blocked_by": "GENDER_NOT_PROVIDED",
+        "confidence": 0.0,
+        "gender_used": null,
+        "occurrences": [],
+        "source_status": "PENDING_TABLES"
+      },
+      "subject": "person_a",
+      "warnings": [
+        {
+          "code": "DAY_ANCHOR_UNVERIFIED",
+          "evidence_ids": [],
+          "message": "Day-cycle anchor is not verified (day_cycle_anchor.anchor_verification='unverified').",
+          "subject": "ruleset"
+        }
+      ],
+      "wuxing_vector": [
+        2.0,
+        2.5,
+        3.5999999999999996,
+        2.5,
+        0.6
+      ]
+    },
+    "person_b": {
+      "day_master": "Jia",
+      "day_master_element": "Holz",
+      "derived_fields": [
+        {
+          "blocked_by": "MISSING-003",
+          "confidence": 0.0,
+          "field": "day_master_strength",
+          "source_status": "NEEDS_DOMAIN_REVIEW"
+        },
+        {
+          "blocked_by": "MISSING-003",
+          "confidence": 0.0,
+          "field": "yong_shen",
+          "source_status": "PENDING_TABLES"
+        }
+      ],
+      "month_command": {
+        "branch": "Hai",
+        "branch_index": 11,
+        "element": "Wasser",
+        "principal_qi_stem": "Ren",
+        "source_status": "CALCULATED"
+      },
+      "source_status": "CALCULATED",
+      "spouse_palace": {
+        "day_branch": "Wu",
+        "day_branch_index": 6,
+        "hidden_stems": [
+          "Ding",
+          "Ji"
+        ],
+        "palace_pillar": "day",
+        "position_source_note": "day branch = spouse palace (日支=夫妻宫), standard BaZi position identification",
+        "position_source_status": "CALCULATED",
+        "source_status": "NEEDS_DOMAIN_REVIEW"
+      },
+      "spouse_star": {
+        "blocked_by": "GENDER_NOT_PROVIDED",
+        "confidence": 0.0,
+        "gender_used": null,
+        "occurrences": [],
+        "source_status": "PENDING_TABLES"
+      },
+      "subject": "person_b",
+      "warnings": [
+        {
+          "code": "DAY_ANCHOR_UNVERIFIED",
+          "evidence_ids": [],
+          "message": "Day-cycle anchor is not verified (day_cycle_anchor.anchor_verification='unverified').",
+          "subject": "ruleset"
+        },
+        {
+          "code": "BIRTH_TIME_UNKNOWN",
+          "evidence_ids": [],
+          "message": "Birth time was flagged as not known; the hour pillar and hour-derived values are provisional.",
+          "subject": "person_b"
+        }
+      ],
+      "wuxing_vector": [
+        4.3,
+        1.5,
+        2.5,
+        0.0,
+        2.0
+      ]
+    }
+  },
+  "pair": {
+    "day_master_comparison": {
+      "evidence_ids": [
+        "ev:pair:day_master_comparison"
+      ],
+      "facts": [
+        {
+          "key": "person_a_day_master",
+          "source_status": "CALCULATED",
+          "value": "Geng"
+        },
+        {
+          "key": "person_b_day_master",
+          "source_status": "CALCULATED",
+          "value": "Jia"
+        },
+        {
+          "key": "person_a_element",
+          "source_status": "CALCULATED",
+          "value": "Metall"
+        },
+        {
+          "key": "person_b_element",
+          "source_status": "CALCULATED",
+          "value": "Holz"
+        },
+        {
+          "key": "same_stem",
+          "source_status": "CALCULATED",
+          "value": false
+        },
+        {
+          "key": "same_element",
+          "source_status": "CALCULATED",
+          "value": false
+        },
+        {
+          "key": "day_master_wuxing_relation",
+          "source_status": "CALCULATED",
+          "value": "a_controls_b"
+        }
+      ],
+      "name": "day_master_comparison",
+      "source_status": "CALCULATED"
+    },
+    "spouse_palace_day_branch": {
+      "evidence_ids": [
+        "ev:pair:spouse_palace_day_branch"
+      ],
+      "facts": [
+        {
+          "key": "palace_pillar",
+          "source_status": "NEEDS_DOMAIN_REVIEW",
+          "value": "day"
+        },
+        {
+          "key": "person_a_day_branch",
+          "source_status": "CALCULATED",
+          "value": "Yin"
+        },
+        {
+          "key": "person_b_day_branch",
+          "source_status": "CALCULATED",
+          "value": "Wu"
+        },
+        {
+          "key": "person_a_hidden_stems",
+          "source_status": "CALCULATED",
+          "value": [
+            "Jia",
+            "Bing",
+            "Wu"
+          ]
+        },
+        {
+          "key": "person_b_hidden_stems",
+          "source_status": "CALCULATED",
+          "value": [
+            "Ding",
+            "Ji"
+          ]
+        },
+        {
+          "key": "same_day_branch",
+          "source_status": "CALCULATED",
+          "value": false
+        }
+      ],
+      "name": "spouse_palace_day_branch",
+      "source_status": "NEEDS_DOMAIN_REVIEW"
+    },
+    "wuxing_vector_comparison": {
+      "evidence_ids": [
+        "ev:pair:wuxing_vector_comparison"
+      ],
+      "facts": [
+        {
+          "key": "element_order",
+          "source_status": "CALCULATED",
+          "value": [
+            "Holz",
+            "Feuer",
+            "Erde",
+            "Metall",
+            "Wasser"
+          ]
+        },
+        {
+          "key": "person_a_vector",
+          "source_status": "CALCULATED",
+          "value": [
+            2.0,
+            2.5,
+            3.5999999999999996,
+            2.5,
+            0.6
+          ]
+        },
+        {
+          "key": "person_b_vector",
+          "source_status": "CALCULATED",
+          "value": [
+            4.3,
+            1.5,
+            2.5,
+            0.0,
+            2.0
+          ]
+        }
+      ],
+      "name": "wuxing_vector_comparison",
+      "source_status": "CALCULATED"
+    }
+  },
+  "raw_analysis_text": [
+    {
+      "evidence_ids": [
+        "ev:pair:day_master_comparison"
+      ],
+      "id": "blk:day_master_comparison:01",
+      "layer": "day_master_comparison",
+      "source_status": "CALCULATED",
+      "statement_type": "CALCULATED_FACT",
+      "subject": "pair",
+      "text": "Day master of person_a is Geng (Metall); day master of person_b is Jia (Holz). Same stem: no. Same element: no."
+    },
+    {
+      "evidence_ids": [
+        "ev:pair:day_master_comparison"
+      ],
+      "id": "blk:day_master_comparison:02",
+      "layer": "day_master_comparison",
+      "source_status": "CALCULATED",
+      "statement_type": "RULE_APPLICATION",
+      "subject": "pair",
+      "text": "Wu-Xing day-master relation per the canonical Sheng/Ke cycle: a_controls_b."
+    },
+    {
+      "evidence_ids": [
+        "ev:pair:spouse_palace_day_branch"
+      ],
+      "id": "blk:spouse_palace_day_branch:01",
+      "layer": "spouse_palace_day_branch",
+      "source_status": "CALCULATED",
+      "statement_type": "CALCULATED_FACT",
+      "subject": "pair",
+      "text": "Spouse-palace host pillar: day. Day branch of person_a: Yin (hidden stems: Jia, Bing, Wu); day branch of person_b: Wu (hidden stems: Ding, Ji). Same day branch: no."
+    },
+    {
+      "evidence_ids": [
+        "ev:pair:spouse_palace_day_branch"
+      ],
+      "id": "blk:spouse_palace_day_branch:02",
+      "layer": "spouse_palace_day_branch",
+      "source_status": "NEEDS_DOMAIN_REVIEW",
+      "statement_type": "SOURCE_STATUS",
+      "subject": "pair",
+      "text": "The day-branch to spouse-palace designation has no domain-approved ruleset table; this layer is marked NEEDS_DOMAIN_REVIEW."
+    },
+    {
+      "evidence_ids": [
+        "ev:pair:wuxing_vector_comparison"
+      ],
+      "id": "blk:wuxing_vector_comparison:01",
+      "layer": "wuxing_vector_comparison",
+      "source_status": "CALCULATED",
+      "statement_type": "CALCULATED_FACT",
+      "subject": "pair",
+      "text": "Wu-Xing vectors in element order Holz, Feuer, Erde, Metall, Wasser — person_a: 2.00, 2.50, 3.60, 2.50, 0.60; person_b: 4.30, 1.50, 2.50, 0.00, 2.00."
+    },
+    {
+      "evidence_ids": [
+        "ev:warning:ruleset:DAY_ANCHOR_UNVERIFIED"
+      ],
+      "id": "blk:warnings:ruleset:DAY_ANCHOR_UNVERIFIED",
+      "layer": "warnings",
+      "source_status": "CALCULATED",
+      "statement_type": "WARNING",
+      "subject": "ruleset",
+      "text": "DAY_ANCHOR_UNVERIFIED: Day-cycle anchor is not verified (day_cycle_anchor.anchor_verification='unverified')."
+    },
+    {
+      "evidence_ids": [
+        "ev:warning:person_b:BIRTH_TIME_UNKNOWN"
+      ],
+      "id": "blk:warnings:person_b:BIRTH_TIME_UNKNOWN",
+      "layer": "warnings",
+      "source_status": "CALCULATED",
+      "statement_type": "WARNING",
+      "subject": "person_b",
+      "text": "BIRTH_TIME_UNKNOWN: Birth time was flagged as not known; the hour pillar and hour-derived values are provisional."
+    }
+  ],
+  "schema_version": "hehun-mvp-1",
+  "warnings": [
+    {
+      "code": "DAY_ANCHOR_UNVERIFIED",
+      "evidence_ids": [],
+      "message": "Day-cycle anchor is not verified (day_cycle_anchor.anchor_verification='unverified').",
+      "subject": "ruleset"
+    },
+    {
+      "code": "BIRTH_TIME_UNKNOWN",
+      "evidence_ids": [],
+      "message": "Birth time was flagged as not known; the hour pillar and hour-derived values are provisional.",
+      "subject": "person_b"
+    }
+  ]
+}

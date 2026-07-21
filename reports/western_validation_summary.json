@@ -1,0 +1,145 @@
+{
+  "summary": {
+    "total": 176,
+    "sun_accuracy": 1.0,
+    "moon_accuracy": 1.0,
+    "asc_accuracy": 0.9715909090909091,
+    "chart_exact_accuracy": 0.9715909090909091,
+    "mismatch_count": 5,
+    "mismatches": [
+      {
+        "name": "Amelia Earhart",
+        "category": "explorers",
+        "data_quality": "AA",
+        "source_hint": "https://www.astro.com/astro-databank/Earhart,_Amelia",
+        "sun_ref": "Leo",
+        "moon_ref": "Gem",
+        "asc_ref": "Ari",
+        "sun_fufire": "Leo",
+        "moon_fufire": "Gem",
+        "asc_fufire": "Tau",
+        "asc_deg_fufire": 33.20383445047175,
+        "asc_delta_to_ref_deg": 3.44611395809261,
+        "timezone": "America/Chicago",
+        "utc_offset_minutes_zoneinfo": 360,
+        "utc_offset_minutes_kerykeion": 351
+      },
+      {
+        "name": "Winston Churchill",
+        "category": "leaders",
+        "data_quality": "C",
+        "source_hint": "Stellium Test Suite",
+        "sun_ref": "Sag",
+        "moon_ref": "Leo",
+        "asc_ref": "Lib",
+        "sun_fufire": "Sag",
+        "moon_fufire": "Leo",
+        "asc_fufire": "Vir",
+        "asc_deg_fufire": 179.9264314047645,
+        "asc_delta_to_ref_deg": -0.17604697317921136,
+        "timezone": "Europe/London",
+        "utc_offset_minutes_zoneinfo": 0,
+        "utc_offset_minutes_kerykeion": 1
+      },
+      {
+        "name": "Paramahansa Yogananda",
+        "category": "occultists",
+        "data_quality": "AA",
+        "source_hint": "Astro.com: https://www.astro.com/astro-databank/Yogananda,_Paramahansa",
+        "sun_ref": "Cap",
+        "moon_ref": "Leo",
+        "asc_ref": "Leo",
+        "sun_fufire": "Cap",
+        "moon_fufire": "Leo",
+        "asc_fufire": "Vir",
+        "asc_deg_fufire": 151.57846117308395,
+        "asc_delta_to_ref_deg": 6.979560653101828,
+        "timezone": "Asia/Kolkata",
+        "utc_offset_minutes_zoneinfo": -321,
+        "utc_offset_minutes_kerykeion": -353
+      },
+      {
+        "name": "Nikola Tesla",
+        "category": "scientists",
+        "data_quality": "C",
+        "source_hint": "Stellium Test Suite",
+        "sun_ref": "Can",
+        "moon_ref": "Lib",
+        "asc_ref": "Ari",
+        "sun_fufire": "Can",
+        "moon_fufire": "Lib",
+        "asc_fufire": "Tau",
+        "asc_deg_fufire": 31.770800773359763,
+        "asc_delta_to_ref_deg": 7.856527016535779,
+        "timezone": "Europe/Zagreb",
+        "utc_offset_minutes_zoneinfo": -63,
+        "utc_offset_minutes_kerykeion": -82
+      },
+      {
+        "name": "Carl Jung",
+        "category": "writers",
+        "data_quality": "C",
+        "source_hint": "AstroDatabank: https://www.astro.com/astro-databank/Jung,_Carl",
+        "sun_ref": "Leo",
+        "moon_ref": "Tau",
+        "asc_ref": "Cap",
+        "sun_fufire": "Leo",
+        "moon_fufire": "Tau",
+        "asc_fufire": "Aqu",
+        "asc_deg_fufire": 301.4041181274834,
+        "asc_delta_to_ref_deg": 1.4214901680880985,
+        "timezone": "Europe/Zurich",
+        "utc_offset_minutes_zoneinfo": -29,
+        "utc_offset_minutes_kerykeion": -34
+      }
+    ],
+    "quality_breakdown": {
+      "A": {
+        "total": 25,
+        "full_match": 25,
+        "asc_mismatch": 0
+      },
+      "AA": {
+        "total": 70,
+        "full_match": 68,
+        "asc_mismatch": 2
+      },
+      "B": {
+        "total": 17,
+        "full_match": 17,
+        "asc_mismatch": 0
+      },
+      "C": {
+        "total": 28,
+        "full_match": 25,
+        "asc_mismatch": 3
+      },
+      "DD": {
+        "total": 6,
+        "full_match": 6,
+        "asc_mismatch": 0
+      },
+      "X": {
+        "total": 28,
+        "full_match": 28,
+        "asc_mismatch": 0
+      },
+      "XX": {
+        "total": 2,
+        "full_match": 2,
+        "asc_mismatch": 0
+      }
+    }
+  },
+  "repro": {
+    "rounds": 12,
+    "stable": true,
+    "signature": [
+      "Amelia Earhart",
+      "Carl Jung",
+      "Nikola Tesla",
+      "Paramahansa Yogananda",
+      "Winston Churchill"
+    ]
+  }
+}

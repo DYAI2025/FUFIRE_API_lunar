@@ -1,0 +1,90 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Loki Mode state
+.loki/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local config
+.env
+.env.local
+*.local
+
+# Ephemeris data (large files)
+*.se1
+*.bsp
+
+# Claude/Code workspace state
+.claude/*
+# …but keep shared per-project skill commands tracked.
+!.claude/commands/
+.codex/
+.worktrees/
+generated/
+spec/openapi/openapi.codegen.json
+
+# Persistent strays from agent/swarm tooling (one-time cleanup)
+/0
+ruvector.db
+.swarm/
+
+# Other AI tools
+.gemini/
+.qwen/
+
+# MCP
+.mcp.json
+
+# Documentation drafts (not part of core BAFE)
+API_COMPLIANCE_GUIDELINES.md
+CLAWTEAM_SETUP.md
+clawteam/
+
+# Static analysis outputs
+static_analysis_*/
+.worktrees/
+.claude/homunculus/observations.jsonl
+
+# claude-flow daemon runtime state (regenerated per session, never repo content)
+.claude-flow/

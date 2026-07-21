@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FuFirE API — Astrology Calculation Engine for Developers</title>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --border: #1e293b;
+    --accent: #6366f1;
+    --accent-light: #818cf8;
+    --text: #e2e8f0;
+    --text-muted: #94a3b8;
+    --success: #22c55e;
+    --gold: #f59e0b;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+  a { color: var(--accent-light); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* Nav */
+  nav {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1rem 2rem;
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; background: rgba(10,14,26,0.95);
+    backdrop-filter: blur(12px); z-index: 100;
+  }
+  .logo { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em; }
+  .logo span { color: var(--accent-light); }
+  nav ul { display: flex; gap: 1.5rem; list-style: none; }
+  nav ul a { color: var(--text-muted); font-size: 0.9rem; }
+  nav ul a:hover { color: var(--text); text-decoration: none; }
+  .nav-cta {
+    background: var(--accent); color: #fff; padding: 0.5rem 1.25rem;
+    border-radius: 8px; font-size: 0.9rem; font-weight: 600;
+    border: none; cursor: pointer;
+  }
+  .nav-cta:hover { background: var(--accent-light); text-decoration: none; }
+
+  /* Hero */
+  .hero {
+    max-width: 1100px; margin: 0 auto; padding: 5rem 2rem 4rem;
+    text-align: center;
+  }
+  .badge {
+    display: inline-block; padding: 0.3rem 0.8rem; border-radius: 20px;
+    border: 1px solid var(--border); font-size: 0.8rem; color: var(--text-muted);
+    margin-bottom: 1.5rem;
+  }
+  .badge strong { color: var(--success); }
+  h1 {
+    font-size: clamp(2.2rem, 5vw, 3.5rem); font-weight: 800;
+    letter-spacing: -0.03em; line-height: 1.15; margin-bottom: 1.25rem;
+  }
+  h1 .gradient {
+    background: linear-gradient(135deg, var(--accent-light), #a78bfa, #f472b6);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero p {
+    font-size: 1.2rem; color: var(--text-muted); max-width: 640px;
+    margin: 0 auto 2.5rem;
+  }
+  .hero-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+  .btn-primary {
+    background: var(--accent); color: #fff; padding: 0.85rem 2rem;
+    border-radius: 10px; font-size: 1rem; font-weight: 600;
+    border: none; cursor: pointer; display: inline-block;
+  }
+  .btn-primary:hover { background: var(--accent-light); text-decoration: none; }
+  .btn-secondary {
+    background: transparent; color: var(--text); padding: 0.85rem 2rem;
+    border-radius: 10px; font-size: 1rem; font-weight: 600;
+    border: 1px solid var(--border); cursor: pointer; display: inline-block;
+  }
+  .btn-secondary:hover { border-color: var(--text-muted); text-decoration: none; }
+
+  /* Code preview */
+  .code-preview {
+    max-width: 700px; margin: 3rem auto 0; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+    text-align: left;
+  }
+  .code-header {
+    display: flex; gap: 0.4rem; padding: 0.8rem 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .code-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .code-dot.r { background: #ef4444; }
+  .code-dot.y { background: #f59e0b; }
+  .code-dot.g { background: #22c55e; }
+  .code-preview pre {
+    padding: 1.25rem; font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.85rem; line-height: 1.7; overflow-x: auto;
+  }
+  .code-preview .comment { color: #6b7280; }
+  .code-preview .string { color: #a78bfa; }
+  .code-preview .key { color: #818cf8; }
+  .code-preview .value { color: #34d399; }
+
+  /* Features */
+  .features {
+    max-width: 1100px; margin: 0 auto; padding: 5rem 2rem;
+  }
+  .features h2 {
+    text-align: center; font-size: 2rem; font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+  .features > p {
+    text-align: center; color: var(--text-muted); margin-bottom: 3rem;
+  }
+  .feature-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+  }
+  .feature-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.75rem;
+  }
+  .feature-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.25rem; margin-bottom: 1rem;
+    background: rgba(99,102,241,0.15);
+  }
+  .feature-card h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+  .feature-card p { color: var(--text-muted); font-size: 0.9rem; }
+
+  /* Endpoints */
+  .endpoints {
+    max-width: 1100px; margin: 0 auto; padding: 3rem 2rem 5rem;
+  }
+  .endpoints h2 {
+    text-align: center; font-size: 2rem; font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+  .endpoints > p {
+    text-align: center; color: var(--text-muted); margin-bottom: 3rem;
+  }
+  .endpoint-table {
+    width: 100%; border-collapse: collapse; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+  }
+  .endpoint-table th {
+    text-align: left; padding: 0.85rem 1.25rem; font-size: 0.8rem;
+    text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+  }
+  .endpoint-table td {
+    padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--border);
+    font-size: 0.9rem;
+  }
+  .endpoint-table tr:last-child td { border-bottom: none; }
+  .method {
+    display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px;
+    font-size: 0.75rem; font-weight: 700; font-family: monospace;
+  }
+  .method.post { background: rgba(99,102,241,0.2); color: var(--accent-light); }
+  .method.get { background: rgba(34,197,94,0.2); color: var(--success); }
+  .path { font-family: monospace; color: var(--text); }
+
+  /* Pricing */
+  .pricing {
+    max-width: 1100px; margin: 0 auto; padding: 5rem 2rem;
+  }
+  .pricing h2 {
+    text-align: center; font-size: 2rem; font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+  .pricing > p {
+    text-align: center; color: var(--text-muted); margin-bottom: 3rem;
+  }
+  .pricing-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+  }
+  .price-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 2rem; text-align: center;
+    position: relative;
+  }
+  .price-card.featured {
+    border-color: var(--accent);
+    box-shadow: 0 0 30px rgba(99,102,241,0.15);
+  }
+  .price-card.featured::before {
+    content: "Most Popular";
+    position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+    background: var(--accent); color: #fff; padding: 0.2rem 0.8rem;
+    border-radius: 10px; font-size: 0.75rem; font-weight: 600;
+  }
+  .price-tier {
+    font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--text-muted); margin-bottom: 0.75rem;
+  }
+  .price-amount {
+    font-size: 2.5rem; font-weight: 800; margin-bottom: 0.25rem;
+  }
+  .price-amount span { font-size: 1rem; color: var(--text-muted); font-weight: 400; }
+  .price-desc {
+    color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;
+  }
+  .price-features {
+    list-style: none; text-align: left; margin-bottom: 2rem;
+  }
+  .price-features li {
+    padding: 0.4rem 0; font-size: 0.9rem; color: var(--text-muted);
+  }
+  .price-features li::before {
+    content: "\2713"; color: var(--success); margin-right: 0.6rem; font-weight: 700;
+  }
+  .price-btn {
+    display: block; width: 100%; padding: 0.75rem;
+    border-radius: 8px; font-size: 0.95rem; font-weight: 600;
+    border: 1px solid var(--border); background: transparent;
+    color: var(--text); cursor: pointer;
+  }
+  .price-card.featured .price-btn {
+    background: var(--accent); border-color: var(--accent); color: #fff;
+  }
+
+  /* Trust */
+  .trust {
+    max-width: 800px; margin: 0 auto; padding: 3rem 2rem 5rem;
+    text-align: center;
+  }
+  .trust-stats {
+    display: flex; justify-content: center; gap: 3rem; flex-wrap: wrap;
+    margin-bottom: 2rem;
+  }
+  .trust-stat .num {
+    font-size: 2rem; font-weight: 800; color: var(--accent-light);
+  }
+  .trust-stat .label { font-size: 0.85rem; color: var(--text-muted); }
+
+  /* CTA */
+  .cta-section {
+    text-align: center; padding: 5rem 2rem;
+    background: linear-gradient(180deg, transparent, rgba(99,102,241,0.05));
+  }
+  .cta-section h2 { font-size: 2rem; font-weight: 700; margin-bottom: 1rem; }
+  .cta-section p {
+    color: var(--text-muted); margin-bottom: 2rem; max-width: 500px;
+    margin-left: auto; margin-right: auto;
+  }
+
+  /* Footer */
+  footer {
+    border-top: 1px solid var(--border); padding: 2rem;
+    text-align: center; color: var(--text-muted); font-size: 0.85rem;
+  }
+
+  /* Fusion Math */
+  .fusion-math {
+    max-width: 1100px; margin: 0 auto; padding: 5rem 2rem;
+  }
+  .fusion-math h2 {
+    text-align: center; font-size: 2rem; font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+  .fusion-math > p {
+    text-align: center; color: var(--text-muted); margin-bottom: 3rem;
+  }
+  .fusion-pipeline {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0; flex-wrap: wrap; margin-bottom: 2.5rem;
+  }
+  .pipeline-node {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.25rem 1.5rem; text-align: center;
+    min-width: 140px;
+  }
+  .pipeline-node.system-label {
+    font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--text-muted); margin-bottom: 0.4rem;
+  }
+  .pipeline-node .node-title {
+    font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--text-muted); margin-bottom: 0.5rem;
+  }
+  .pipeline-node .node-value {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.95rem; color: var(--text); line-height: 1.5;
+  }
+  .pipeline-node.center-node {
+    border-color: var(--accent);
+    box-shadow: 0 0 24px rgba(99,102,241,0.12);
+    min-width: 180px;
+  }
+  .pipeline-node.center-node .node-value {
+    color: var(--accent-light); font-size: 1.1rem; font-weight: 700;
+  }
+  .pipeline-arrow {
+    font-size: 1.5rem; color: var(--text-muted); padding: 0 0.75rem;
+    flex-shrink: 0;
+  }
+  .fusion-details {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.5rem; margin-bottom: 2.5rem;
+  }
+  .fusion-detail-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.5rem;
+  }
+  .fusion-detail-card h4 {
+    font-size: 0.95rem; margin-bottom: 0.6rem; font-weight: 600;
+  }
+  .fusion-detail-card p {
+    color: var(--text-muted); font-size: 0.88rem; line-height: 1.6;
+  }
+  .fusion-example {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.5rem 2rem; margin-bottom: 2rem;
+    font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.88rem;
+    line-height: 1.8; overflow-x: auto;
+  }
+  .fusion-example .label { color: var(--text-muted); }
+  .fusion-example .val { color: var(--accent-light); font-weight: 600; }
+  .fusion-example .val-gold { color: var(--gold); font-weight: 600; }
+  .fusion-example .val-green { color: var(--success); font-weight: 600; }
+  .fusion-math .footnote {
+    text-align: center; color: var(--text-muted); font-size: 0.88rem;
+  }
+
+  @media (max-width: 600px) {
+    nav ul { display: none; }
+    .trust-stats { gap: 1.5rem; }
+    .fusion-pipeline { gap: 0.5rem; }
+    .pipeline-arrow { padding: 0 0.25rem; font-size: 1.1rem; }
+    .pipeline-node { min-width: 100px; padding: 1rem; }
+    .pipeline-node.center-node { min-width: 120px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <div class="logo">Fu<span>FirE</span></div>
+  <ul>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#fusion-math">Fusion</a></li>
+    <li><a href="#endpoints">Endpoints</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+    <li><a href="#docs">Docs</a></li>
+  </ul>
+  <a href="#pricing" class="nav-cta">Get API Key</a>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="badge"><strong>v1.0</strong> &mdash; Now in Release Candidate</div>
+  <h1>
+    Astrology calculations.<br>
+    <span class="gradient">One API call away.</span>
+  </h1>
+  <p>
+    BaZi, Western charts, Wu-Xing fusion &mdash; deterministic, sub-second, Swiss Ephemeris precision. Ship astrology features in hours, not months.
+  </p>
+  <div class="hero-buttons">
+    <a href="#pricing" class="btn-primary">Start Free &rarr;</a>
+    <a href="#docs" class="btn-secondary">Read the Docs</a>
+  </div>
+
+  <!-- Code Preview -->
+  <div class="code-preview">
+    <div class="code-header">
+      <div class="code-dot r"></div>
+      <div class="code-dot y"></div>
+      <div class="code-dot g"></div>
+    </div>
+    <pre><span class="comment">// Calculate Four Pillars of Destiny in one call</span>
+<span class="key">const</span> res = <span class="key">await</span> fetch(<span class="string">"https://api.fufire.dev/v1/calculate/bazi"</span>, {
+  method: <span class="string">"POST"</span>,
+  headers: {
+    <span class="string">"Content-Type"</span>: <span class="string">"application/json"</span>,
+    <span class="string">"X-API-Key"</span>: <span class="string">"ff_pro_your_key"</span>
+  },
+  body: JSON.stringify({
+    date: <span class="string">"1990-06-15T14:30:00"</span>,
+    tz:   <span class="string">"Europe/Berlin"</span>,
+    lon:  <span class="value">13.405</span>,
+    lat:  <span class="value">52.52</span>
+  })
+});
+
+<span class="key">const</span> { pillars } = <span class="key">await</span> res.json();
+<span class="comment">// pillars.year = { stamm: "Geng", zweig: "Wu", element: "Metal" }</span></pre>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="features" id="features">
+  <h2>Built for production apps</h2>
+  <p>Everything you need to add astrology to your product.</p>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="feature-icon">&#9790;</div>
+      <h3>BaZi (Four Pillars)</h3>
+      <p>Year, Month, Day, Hour pillars with precise solar-term boundaries. LiChun-aware year transitions, Zi-hour boundary handling.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">&#9734;</div>
+      <h3>Western Astrology</h3>
+      <p>Planetary positions, house cusps, aspects, angles. Tropical and sidereal support with automatic house system fallback at extreme latitudes.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">&#9672;</div>
+      <h3>Wu-Xing Fusion</h3>
+      <p>Five Elements analysis combining Eastern and Western systems. Coherence Index, elemental vectors, True Solar Time corrections.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">&#9201;</div>
+      <h3>Real-Time Transits</h3>
+      <p>Live planetary positions, transit timelines, narrative generation. Cached for performance, fresh every hour.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">&#9745;</div>
+      <h3>Deterministic</h3>
+      <p>Same input = same output, always. Bit-stable across builds. 200 snapshot regression tests enforce this guarantee.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">&#9889;</div>
+      <h3>Sub-Second Response</h3>
+      <p>Average response time under 50ms. Swiss Ephemeris precision without the Swiss Ephemeris complexity.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Fusion Math -->
+<section class="fusion-math" id="fusion-math">
+  <h2>The Fusion Principle</h2>
+  <p>Two ancient systems. One shared vector space. Mathematically rigorous coherence measurement.</p>
+
+  <!-- Pipeline Diagram -->
+  <div class="fusion-pipeline">
+    <div class="pipeline-node">
+      <div class="node-title">Western Chart</div>
+      <div class="node-value">Planets, Houses<br>Aspects, Angles</div>
+    </div>
+    <div class="pipeline-arrow">&#10230;</div>
+    <div class="pipeline-node">
+      <div class="node-title">R&#8309; Vector</div>
+      <div class="node-value">[W, F, E, M, Wa]</div>
+    </div>
+    <div class="pipeline-arrow">&#10230;</div>
+    <div class="pipeline-node center-node">
+      <div class="node-title">Coherence Index</div>
+      <div class="node-value">cos(&#952;)</div>
+    </div>
+    <div class="pipeline-arrow">&#10229;</div>
+    <div class="pipeline-node">
+      <div class="node-title">R&#8309; Vector</div>
+      <div class="node-value">[W, F, E, M, Wa]</div>
+    </div>
+    <div class="pipeline-arrow">&#10229;</div>
+    <div class="pipeline-node">
+      <div class="node-title">BaZi Chart</div>
+      <div class="node-value">Year, Month<br>Day, Hour</div>
+    </div>
+  </div>
+
+  <!-- Detail Cards -->
+  <div class="fusion-details">
+    <div class="fusion-detail-card">
+      <h4>Shared Five-Element Space</h4>
+      <p>Western geometric astrology (planetary longitudes, house cusps) and Chinese BaZi (Heavenly Stems, Earthly Branches) are each mapped into the same 5-dimensional Wu-Xing vector space: Wood, Fire, Earth, Metal, Water.</p>
+    </div>
+    <div class="fusion-detail-card">
+      <h4>Cosine Similarity Measurement</h4>
+      <p>Angular congruence between the two R&#8309; vectors is measured via cosine similarity. A raw coherence score of 1.0 means perfect alignment; 0.0 means orthogonal elemental profiles.</p>
+    </div>
+    <div class="fusion-detail-card">
+      <h4>Monte Carlo Calibration</h4>
+      <p>Raw scores are calibrated against Monte Carlo baselines drawn from uniform random birth data. This eliminates false positives caused by structural bias in the element mappings.</p>
+    </div>
+    <div class="fusion-detail-card">
+      <h4>Full Audit Trail</h4>
+      <p>Every response includes a contribution ledger: per-element weights, raw vs. calibrated scores, equation-of-time corrections, and the exact ephemeris version used.</p>
+    </div>
+  </div>
+
+  <!-- Worked Example -->
+  <div class="fusion-example">
+    <span class="label">Example &mdash; Berlin, Feb 10 2024, 14:30 CET</span><br>
+    <span class="label">H_raw&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=</span> <span class="val">0.84</span>&nbsp;&nbsp;
+    <span class="label">H_baseline&nbsp;&nbsp;=</span> <span class="val-gold">0.79</span>&nbsp;&nbsp;
+    <span class="label">H_calibrated =</span> <span class="val-green">0.23</span><br>
+    <span class="label">Interpretation: moderate alignment after baseline correction</span>
+  </div>
+
+  <p class="footnote">
+    Full methodology, proofs, and calibration data available in the
+    <a href="#">Fusion Whitepaper</a>.
+  </p>
+</section>
+
+<!-- Endpoints -->
+<section class="endpoints" id="endpoints">
+  <h2>API Surface</h2>
+  <p>Six core endpoints. OpenAPI 3.1 spec included.</p>
+  <table class="endpoint-table">
+    <thead>
+      <tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="method post">POST</span></td>
+        <td class="path">/v1/calculate/bazi</td>
+        <td>Four Pillars calculation</td>
+      </tr>
+      <tr>
+        <td><span class="method post">POST</span></td>
+        <td class="path">/v1/calculate/western</td>
+        <td>Western planetary chart</td>
+      </tr>
+      <tr>
+        <td><span class="method post">POST</span></td>
+        <td class="path">/v1/calculate/fusion</td>
+        <td>Wu-Xing + Western fusion analysis</td>
+      </tr>
+      <tr>
+        <td><span class="method post">POST</span></td>
+        <td class="path">/v1/calculate/wuxing</td>
+        <td>Five Elements vector from planets</td>
+      </tr>
+      <tr>
+        <td><span class="method get">GET</span></td>
+        <td class="path">/v1/transit/now</td>
+        <td>Live planetary positions</td>
+      </tr>
+      <tr>
+        <td><span class="method post">POST</span></td>
+        <td class="path">/v1/validate</td>
+        <td>Configuration validator (JSON Schema)</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- Pricing -->
+<section class="pricing" id="pricing">
+  <h2>Simple, usage-based pricing</h2>
+  <p>Start free. Scale when you're ready.</p>
+  <div class="pricing-grid">
+    <div class="price-card">
+      <div class="price-tier">Free</div>
+      <div class="price-amount">$0</div>
+      <div class="price-desc">For evaluation &amp; hobby projects</div>
+      <ul class="price-features">
+        <li>100 requests / day</li>
+        <li>5 requests / minute</li>
+        <li>All endpoints</li>
+        <li>Community support</li>
+      </ul>
+      <button class="price-btn">Get Free Key</button>
+    </div>
+    <div class="price-card">
+      <div class="price-tier">Starter</div>
+      <div class="price-amount">$19 <span>/ mo</span></div>
+      <div class="price-desc">For MVPs &amp; indie developers</div>
+      <ul class="price-features">
+        <li>1,000 requests / day</li>
+        <li>20 requests / minute</li>
+        <li>All endpoints</li>
+        <li>Email support</li>
+      </ul>
+      <button class="price-btn">Start Building</button>
+    </div>
+    <div class="price-card featured">
+      <div class="price-tier">Pro</div>
+      <div class="price-amount">$79 <span>/ mo</span></div>
+      <div class="price-desc">For production applications</div>
+      <ul class="price-features">
+        <li>10,000 requests / day</li>
+        <li>100 requests / minute</li>
+        <li>All endpoints</li>
+        <li>Priority support</li>
+        <li>SLA 99.9% uptime</li>
+      </ul>
+      <button class="price-btn">Go Pro</button>
+    </div>
+    <div class="price-card">
+      <div class="price-tier">Enterprise</div>
+      <div class="price-amount">Custom</div>
+      <div class="price-desc">For high-volume applications</div>
+      <ul class="price-features">
+        <li>Unlimited requests</li>
+        <li>Dedicated support</li>
+        <li>Custom SLA</li>
+        <li>On-premise option</li>
+        <li>Webhook integrations</li>
+      </ul>
+      <button class="price-btn">Contact Us</button>
+    </div>
+  </div>
+</section>
+
+<!-- Trust -->
+<section class="trust">
+  <div class="trust-stats">
+    <div class="trust-stat">
+      <div class="num">1,500+</div>
+      <div class="label">Regression tests</div>
+    </div>
+    <div class="trust-stat">
+      <div class="num">200</div>
+      <div class="label">Snapshot vectors</div>
+    </div>
+    <div class="trust-stat">
+      <div class="num">&lt;50ms</div>
+      <div class="label">Avg response time</div>
+    </div>
+    <div class="trust-stat">
+      <div class="num">88%</div>
+      <div class="label">Test coverage</div>
+    </div>
+  </div>
+  <p style="color: var(--text-muted); font-size: 0.9rem;">
+    Swiss Ephemeris precision. OpenAPI 3.1 contract. CI-enforced quality gates.
+  </p>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <h2>Ready to ship astrology features?</h2>
+  <p>Get your API key in 30 seconds. 100 free requests per day, no credit card required.</p>
+  <a href="#pricing" class="btn-primary">Get Started Free &rarr;</a>
+</section>
+
+<!-- Footer -->
+<footer>
+  <p>FuFirE &mdash; Fusion Firmament Engine &copy; 2026 &middot;
+    <a href="#">Documentation</a> &middot;
+    <a href="#">OpenAPI Spec</a> &middot;
+    <a href="#">GitHub</a> &middot;
+    <a href="#">Status</a>
+  </p>
+</footer>
+
+</body>
+</html>

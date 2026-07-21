@@ -1,0 +1,171 @@
+{
+  "chinese": {
+    "day_master": "Wu",
+    "hour_master": "Bing",
+    "month_master": "Ji",
+    "year": {
+      "animal": "Rat",
+      "branch": "Zi",
+      "stem": "Geng"
+    }
+  },
+  "dates": {
+    "birth_local": "1960-03-21T08:30:00+01:00",
+    "birth_utc": "1960-03-21T07:30:00+00:00",
+    "lichun_local": "1960-02-04T20:23:08.438483+01:00"
+  },
+  "derivation_trace": {
+    "day": {
+      "day_offset_used": 49,
+      "julian_day_number": 2437015,
+      "sexagenary_index": 44
+    },
+    "hour": {
+      "branch_index": 4,
+      "local_hour": 8,
+      "true_solar_time_used": false
+    },
+    "month": {
+      "jieqi_crossing_utc": "1960-03-05T13:36:05.882425+00:00",
+      "month_branch_index": 3,
+      "solar_longitude_deg": 345.0
+    },
+    "year": {
+      "is_before_lichun": false,
+      "lichun_crossing_utc": "1960-02-04T19:23:08.438483+00:00",
+      "solar_longitude_lichun": 315.0
+    }
+  },
+  "input": {
+    "ambiguousTime": "earlier",
+    "birth_time_known": true,
+    "boundary": "midnight",
+    "date": "1960-03-21T08:30:00",
+    "lat": 48.8566,
+    "lon": 2.3522,
+    "nonexistentTime": "error",
+    "standard": "CIVIL",
+    "tz": "Europe/Paris"
+  },
+  "pillars": {
+    "day": {
+      "element": "Erde",
+      "stamm": "Wu",
+      "tier": "Affe",
+      "zweig": "Shen"
+    },
+    "hour": {
+      "element": "Feuer",
+      "stamm": "Bing",
+      "tier": "Drache",
+      "zweig": "Chen"
+    },
+    "month": {
+      "element": "Erde",
+      "stamm": "Ji",
+      "tier": "Hase",
+      "zweig": "Mao"
+    },
+    "year": {
+      "element": "Metall",
+      "stamm": "Geng",
+      "tier": "Ratte",
+      "zweig": "Zi"
+    }
+  },
+  "precision": {
+    "birth_time_known": true,
+    "provisional_fields": []
+  },
+  "provenance": {
+    "engine_version": "1.0.0-rc1-20260220",
+    "ephemeris_id": "moshier_analytic",
+    "house_system": "placidus",
+    "parameter_set": {
+      "aspect_base_orbs": {
+        "Chiron": 3.0,
+        "Jupiter": 8.0,
+        "Lilith": 2.0,
+        "Mars": 7.0,
+        "Mercury": 7.0,
+        "Moon": 10.0,
+        "Neptune": 5.0,
+        "NorthNode": 3.0,
+        "Pluto": 5.0,
+        "Saturn": 8.0,
+        "Sun": 10.0,
+        "TrueNorthNode": 3.0,
+        "Uranus": 5.0,
+        "Venus": 7.0
+      },
+      "aspect_factors": {
+        "conjunction": 1.0,
+        "opposition": 1.0,
+        "sextile": 0.75,
+        "square": 0.875,
+        "trine": 1.0
+      },
+      "aspect_orb_model": "differentiated_v1",
+      "harmony_method": "dot_product",
+      "hidden_stem_main_qi": 1.0,
+      "hidden_stem_middle_qi": 0.5,
+      "hidden_stem_residual_qi": 0.3,
+      "mercury_dual_rule": "earth_day_metal_night",
+      "retrograde_weight": 1.3,
+      "soulprint_weights": {
+        "ascendant": 0.6,
+        "moon": 0.8,
+        "personal_planet": 0.4,
+        "sun": 1.0,
+        "wuxing_sector": 0.5
+      },
+      "stem_weight": 1.0,
+      "transit_planet_weights": {
+        "jupiter": 1.2,
+        "mars": 0.8,
+        "mercury": 0.6,
+        "moon": 0.5,
+        "neptune": 1.8,
+        "pluto": 2.0,
+        "saturn": 1.5,
+        "sun": 1.0,
+        "uranus": 1.5,
+        "venus": 0.7
+      },
+      "version": "1.1.0",
+      "wuxing_sector_mapping": {
+        "Erde": [
+          1,
+          7
+        ],
+        "Feuer": [
+          4,
+          5
+        ],
+        "Holz": [
+          3,
+          4
+        ],
+        "Metall": [
+          6,
+          9
+        ],
+        "Wasser": [
+          8,
+          11
+        ]
+      }
+    },
+    "parameter_set_id": "default_v1",
+    "ruleset_id": "traditional_bazi_2026",
+    "tzdb_version_id": "unknown",
+    "zodiac_mode": "tropical"
+  },
+  "solar_terms_count": 24,
+  "transition": {
+    "is_before_lichun": false,
+    "lichun_next": "1961-02-04T02:22:24.819729+01:00",
+    "lichun_year_start": "1960-02-04T20:23:08.438483+01:00",
+    "solar_year": 1960
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "time_policy_id": "civil-latezi-nextday.v1",
+  "time_standard": "CIVIL",
+  "late_zi_policy_id": "next-chart-day.v1",
+  "hour_branch": "double-hour Zi=23:00–00:59",
+  "source_status": "SOURCE_NEEDED",
+  "note": "Descriptor for the time-resolution policy of the core-seed ruleset. Late-Zi (23:00–23:59) rolls the chart to the next chart day; the double-hour Zi branch spans 23:00–00:59."
+}

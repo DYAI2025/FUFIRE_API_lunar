@@ -1,0 +1,374 @@
+{
+  "angles": {
+    "Ascendant": 143.4713424699,
+    "MC": 40.3662021782,
+    "Vertex": 287.4412804721
+  },
+  "aspects": [
+    {
+      "angle": 120.38,
+      "exact_angle": 120.0,
+      "orb": 0.38,
+      "planet1": "Mercury",
+      "planet2": "Mars",
+      "type": "trine"
+    },
+    {
+      "angle": 90.39,
+      "exact_angle": 90.0,
+      "orb": 0.39,
+      "planet1": "Venus",
+      "planet2": "Pluto",
+      "type": "square"
+    },
+    {
+      "angle": 31.21,
+      "exact_angle": 30.0,
+      "orb": 1.21,
+      "planet1": "Saturn",
+      "planet2": "Neptune",
+      "type": "semi-sextile"
+    },
+    {
+      "angle": 148.71,
+      "exact_angle": 150.0,
+      "orb": 1.29,
+      "planet1": "Venus",
+      "planet2": "Neptune",
+      "type": "quincunx"
+    },
+    {
+      "angle": 58.33,
+      "exact_angle": 60.0,
+      "orb": 1.67,
+      "planet1": "Neptune",
+      "planet2": "Pluto",
+      "type": "sextile"
+    },
+    {
+      "angle": 117.5,
+      "exact_angle": 120.0,
+      "orb": 2.5,
+      "planet1": "Venus",
+      "planet2": "Saturn",
+      "type": "trine"
+    },
+    {
+      "angle": 117.24,
+      "exact_angle": 120.0,
+      "orb": 2.76,
+      "planet1": "Jupiter",
+      "planet2": "Uranus",
+      "type": "trine"
+    },
+    {
+      "angle": 27.12,
+      "exact_angle": 30.0,
+      "orb": 2.88,
+      "planet1": "Saturn",
+      "planet2": "Pluto",
+      "type": "semi-sextile"
+    },
+    {
+      "angle": 86.85,
+      "exact_angle": 90.0,
+      "orb": 3.15,
+      "planet1": "Mars",
+      "planet2": "Uranus",
+      "type": "square"
+    },
+    {
+      "angle": 3.21,
+      "exact_angle": 0.0,
+      "orb": 3.21,
+      "planet1": "Sun",
+      "planet2": "Moon",
+      "type": "conjunction"
+    },
+    {
+      "angle": 55.8,
+      "exact_angle": 60.0,
+      "orb": 4.2,
+      "planet1": "Moon",
+      "planet2": "Pluto",
+      "type": "sextile"
+    },
+    {
+      "angle": 114.13,
+      "exact_angle": 120.0,
+      "orb": 5.87,
+      "planet1": "Moon",
+      "planet2": "Neptune",
+      "type": "trine"
+    },
+    {
+      "angle": 173.84,
+      "exact_angle": 180.0,
+      "orb": 6.16,
+      "planet1": "Jupiter",
+      "planet2": "Saturn",
+      "type": "opposition"
+    },
+    {
+      "angle": 83.71,
+      "exact_angle": 90.0,
+      "orb": 6.29,
+      "planet1": "Mercury",
+      "planet2": "Jupiter",
+      "type": "square"
+    },
+    {
+      "angle": 82.91,
+      "exact_angle": 90.0,
+      "orb": 7.09,
+      "planet1": "Moon",
+      "planet2": "Saturn",
+      "type": "square"
+    }
+  ],
+  "bodies": {
+    "Chiron": {
+      "degree_in_sign": 18.2932306766,
+      "distance": 9.3763601196,
+      "is_retrograde": true,
+      "latitude": 5.8978029863,
+      "longitude": 258.2932306766,
+      "speed": -0.0687566633,
+      "zodiac_sign": 8
+    },
+    "Jupiter": {
+      "degree_in_sign": 7.2355252044,
+      "distance": 4.6414343718,
+      "is_retrograde": false,
+      "latitude": -1.0190823751,
+      "longitude": 337.2355252044,
+      "speed": 0.0371507316,
+      "zodiac_sign": 11
+    },
+    "Lilith": {
+      "degree_in_sign": 17.1513679144,
+      "distance": 0.0027106251,
+      "is_retrograde": false,
+      "latitude": 3.5660684443,
+      "longitude": 47.1513679144,
+      "speed": 0.111416139,
+      "zodiac_sign": 1
+    },
+    "Mars": {
+      "degree_in_sign": 1.3254755428,
+      "distance": 1.0696294446,
+      "is_retrograde": false,
+      "latitude": 0.3761443924,
+      "longitude": 181.3254755428,
+      "speed": 0.3869259442,
+      "zodiac_sign": 6
+    },
+    "Mercury": {
+      "degree_in_sign": 0.9409283181,
+      "distance": 0.9225553619,
+      "is_retrograde": false,
+      "latitude": -2.946159532,
+      "longitude": 60.9409283181,
+      "speed": 1.2448908616,
+      "zodiac_sign": 2
+    },
+    "Moon": {
+      "degree_in_sign": 20.4821182472,
+      "distance": 0.002688175,
+      "is_retrograde": false,
+      "latitude": 4.8667841305,
+      "longitude": 80.4821182472,
+      "speed": 12.1268086715,
+      "zodiac_sign": 2
+    },
+    "Neptune": {
+      "degree_in_sign": 14.6082320479,
+      "distance": 29.9193216694,
+      "is_retrograde": true,
+      "latitude": 1.6309628196,
+      "longitude": 194.6082320479,
+      "speed": -0.0057988995,
+      "zodiac_sign": 6
+    },
+    "NorthNode": {
+      "degree_in_sign": 3.3556069524,
+      "distance": 0.0025695553,
+      "is_retrograde": true,
+      "latitude": 0.0,
+      "longitude": 3.3556069524,
+      "speed": -0.0529151702,
+      "zodiac_sign": 0
+    },
+    "Pluto": {
+      "degree_in_sign": 16.2817312993,
+      "distance": 36.8113273404,
+      "is_retrograde": false,
+      "latitude": 8.0884214446,
+      "longitude": 136.2817312993,
+      "speed": 0.0204179437,
+      "zodiac_sign": 4
+    },
+    "Saturn": {
+      "degree_in_sign": 13.3969411418,
+      "distance": 9.5295095615,
+      "is_retrograde": false,
+      "latitude": 2.042808231,
+      "longitude": 163.3969411418,
+      "speed": 0.0515674899,
+      "zodiac_sign": 5
+    },
+    "Sun": {
+      "degree_in_sign": 23.6903792919,
+      "distance": 1.0158758554,
+      "is_retrograde": false,
+      "latitude": 0.0002208103,
+      "longitude": 83.6903792919,
+      "speed": 0.9554041093,
+      "zodiac_sign": 2
+    },
+    "TrueNorthNode": {
+      "degree_in_sign": 3.9431452268,
+      "distance": 0.0026714635,
+      "is_retrograde": true,
+      "latitude": 0.0,
+      "longitude": 3.9431452268,
+      "speed": -0.2201414282,
+      "zodiac_sign": 0
+    },
+    "Uranus": {
+      "degree_in_sign": 4.4713314961,
+      "distance": 19.913218403,
+      "is_retrograde": false,
+      "latitude": 0.2662541553,
+      "longitude": 94.4713314961,
+      "speed": 0.0593269411,
+      "zodiac_sign": 3
+    },
+    "Venus": {
+      "degree_in_sign": 15.8956312571,
+      "distance": 1.1770063421,
+      "is_retrograde": false,
+      "latitude": -2.0960284682,
+      "longitude": 45.8956312571,
+      "speed": 1.1621807804,
+      "zodiac_sign": 1
+    }
+  },
+  "house_quality": {
+    "flag": "exact",
+    "reason": null,
+    "requested": "placidus",
+    "system": "placidus"
+  },
+  "house_system": "P",
+  "houses": {
+    "1": 143.4713424699,
+    "10": 40.3662021782,
+    "11": 79.6379286155,
+    "12": 115.3195192161,
+    "2": 162.4155445255,
+    "3": 187.3270997579,
+    "4": 220.3662021782,
+    "5": 259.6379286155,
+    "6": 295.3195192161,
+    "7": 323.4713424699,
+    "8": 342.4155445255,
+    "9": 7.3270997579
+  },
+  "jd_ut": 2433447.875,
+  "precision": {
+    "birth_time_known": true,
+    "provisional_fields": []
+  },
+  "provenance": {
+    "engine_version": "1.0.0-rc1-20260220",
+    "ephemeris_id": "swieph_sepl18",
+    "house_system": "placidus",
+    "parameter_set": {
+      "aspect_base_orbs": {
+        "Chiron": 3.0,
+        "Jupiter": 8.0,
+        "Lilith": 2.0,
+        "Mars": 7.0,
+        "Mercury": 7.0,
+        "Moon": 10.0,
+        "Neptune": 5.0,
+        "NorthNode": 3.0,
+        "Pluto": 5.0,
+        "Saturn": 8.0,
+        "Sun": 10.0,
+        "TrueNorthNode": 3.0,
+        "Uranus": 5.0,
+        "Venus": 7.0
+      },
+      "aspect_factors": {
+        "conjunction": 1.0,
+        "opposition": 1.0,
+        "sextile": 0.75,
+        "square": 0.875,
+        "trine": 1.0
+      },
+      "aspect_orb_model": "differentiated_v1",
+      "harmony_method": "dot_product",
+      "hidden_stem_main_qi": 1.0,
+      "hidden_stem_middle_qi": 0.5,
+      "hidden_stem_residual_qi": 0.3,
+      "mercury_dual_rule": "earth_day_metal_night",
+      "retrograde_weight": 1.3,
+      "soulprint_weights": {
+        "ascendant": 0.6,
+        "moon": 0.8,
+        "personal_planet": 0.4,
+        "sun": 1.0,
+        "wuxing_sector": 0.5
+      },
+      "stem_weight": 1.0,
+      "transit_planet_weights": {
+        "jupiter": 1.2,
+        "mars": 0.8,
+        "mercury": 0.6,
+        "moon": 0.5,
+        "neptune": 1.8,
+        "pluto": 2.0,
+        "saturn": 1.5,
+        "sun": 1.0,
+        "uranus": 1.5,
+        "venus": 0.7
+      },
+      "version": "1.1.0",
+      "wuxing_sector_mapping": {
+        "Erde": [
+          1,
+          7
+        ],
+        "Feuer": [
+          4,
+          5
+        ],
+        "Holz": [
+          3,
+          4
+        ],
+        "Metall": [
+          6,
+          9
+        ],
+        "Wasser": [
+          8,
+          11
+        ]
+      }
+    },
+    "parameter_set_id": "default_v1",
+    "ruleset_id": "traditional_bazi_2026",
+    "tzdb_version_id": "2026.2",
+    "zodiac_mode": "tropical"
+  },
+  "quality_flags": {
+    "chart_type_quality": null,
+    "ephemeris_mode": "SWIEPH",
+    "house_system_fallback": false,
+    "house_system_requested": "placidus",
+    "house_system_used": "placidus"
+  }
+}

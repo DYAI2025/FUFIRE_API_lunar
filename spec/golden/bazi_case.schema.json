@@ -1,0 +1,139 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/DYAI2025/FuFirE/spec/golden/bazi_case.schema.json",
+  "title": "FuFirE BaZi Golden Case",
+  "description": "A single golden reference case for BaZi pillar calculations. Every case must declare its source_type so test_golden.py can distinguish externally-verified oracles from engine-derived baselines.",
+  "type": "object",
+  "required": [
+    "id",
+    "birth_local",
+    "timezone",
+    "longitude_deg",
+    "latitude_deg",
+    "expected_pillars",
+    "source_type",
+    "calculation_profile"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Stable identifier for the case; kebab_or_snake_case.",
+      "minLength": 1,
+      "pattern": "^[a-z0-9_]+$"
+    },
+    "birth_local": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Local civil time of birth in ISO 8601 (no timezone suffix; the zone is given separately)."
+    },
+    "timezone": {
+      "type": "string",
+      "description": "IANA timezone identifier (e.g. 'Europe/Berlin').",
+      "minLength": 1
+    },
+    "longitude_deg": {
+      "type": "number",
+      "minimum": -180,
+      "maximum": 180
+    },
+    "latitude_deg": {
+      "type": "number",
+      "minimum": -90,
+      "maximum": 90
+    },
+    "expected_pillars": {
+      "type": "object",
+      "required": ["year", "month", "day", "hour"],
+      "additionalProperties": false,
+      "properties": {
+        "year":  { "$ref": "#/$defs/pillar" },
+        "month": { "$ref": "#/$defs/pillar" },
+        "day":   { "$ref": "#/$defs/pillar" },
+        "hour":  { "$ref": "#/$defs/pillar" }
+      }
+    },
+    "source_type": {
+      "type": "string",
+      "enum": ["ENGINE_BASELINE", "EXTERNAL_ORACLE", "DOMAIN_REVIEW_REQUIRED"],
+      "description": "ENGINE_BASELINE: expected values were produced by the engine itself; useful only for regression detection. EXTERNAL_ORACLE: verified against a domain-authoritative external source (citation required). DOMAIN_REVIEW_REQUIRED: case is included but expected values are not yet verified; tests must treat it as a known gap."
+    },
+    "source": {
+      "type": "string",
+      "description": "Free-text source note. For EXTERNAL_ORACLE entries this MUST cite a verifiable reference (author, book, almanac, ephemeris, court ruling, etc.).",
+      "minLength": 1
+    },
+    "calculation_profile": {
+      "type": "object",
+      "required": ["time_standard", "day_boundary_scheme", "ruleset_id"],
+      "additionalProperties": false,
+      "properties": {
+        "time_standard": {
+          "type": "string",
+          "enum": ["CIVIL", "LMT", "TLST"],
+          "description": "Time standard used to produce the expected pillars. TLST is opt-in / Phase 1+."
+        },
+        "day_boundary_scheme": {
+          "type": "string",
+          "enum": ["midnight", "zi_hour"],
+          "description": "Whether the day pillar rolls over at civil midnight or at 23:00 (start of Zi hour)."
+        },
+        "ruleset_id": {
+          "type": "string",
+          "description": "Ruleset under which the expected pillars were verified, e.g. 'standard_bazi_2026'."
+        },
+        "ruleset_version": {
+          "type": "string"
+        },
+        "ephemeris_id": {
+          "type": "string",
+          "enum": ["swieph_sepl18", "moshier_analytic", "other"],
+          "description": "Ephemeris that produced the expected values, if applicable."
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "description": "Metadata about how (and when) the case was verified.",
+      "additionalProperties": false,
+      "properties": {
+        "verified_at": { "type": "string", "format": "date" },
+        "verified_by": { "type": "string" },
+        "evidence_url": { "type": "string" },
+        "notes": { "type": "string" }
+      }
+    },
+    "tolerance_seconds": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Optional time tolerance for boundary-adjacent cases (LiChun, Jieqi, Zi). When set, the case asserts that pillars are correct anywhere within this many seconds of birth_local."
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "lichun",
+          "jieqi",
+          "zi_hour",
+          "dst_spring_forward",
+          "dst_fall_back",
+          "high_latitude",
+          "southern_hemisphere",
+          "tropical",
+          "tlst_boundary",
+          "historical",
+          "regression"
+        ]
+      },
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "pillar": {
+      "type": "string",
+      "description": "Pillar concatenation 'Stem' + 'Branch' (e.g. 'JiaChen').",
+      "pattern": "^(Jia|Yi|Bing|Ding|Wu|Ji|Geng|Xin|Ren|Gui)(Zi|Chou|Yin|Mao|Chen|Si|Wu|Wei|Shen|You|Xu|Hai)$"
+    }
+  }
+}

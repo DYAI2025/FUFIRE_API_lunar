@@ -1,0 +1,155 @@
+{
+  "TV1": {
+    "cases": [
+      {
+        "expected_branch": "Zi",
+        "expected_branch_index": 0,
+        "lambda_deg": 284.999
+      },
+      {
+        "expected_branch": "Chou",
+        "expected_branch_index": 1,
+        "lambda_deg": 285.0
+      },
+      {
+        "expected_branch": "Zi",
+        "expected_branch_index": 0,
+        "lambda_deg": 255.0
+      },
+      {
+        "expected_branch": "Hai",
+        "expected_branch_index": 11,
+        "lambda_deg": 254.999
+      }
+    ],
+    "engine_config_overrides": {
+      "branch_coordinate_convention": "SHIFT_BOUNDARIES",
+      "branch_width_deg": 30.0,
+      "interval_convention": "HALF_OPEN",
+      "zi_apex_deg": 270.0
+    },
+    "name": "Branch boundary HALF_OPEN"
+  },
+  "TV2": {
+    "cases": [
+      {
+        "lambda_deg": 0.0
+      },
+      {
+        "lambda_deg": 14.999
+      },
+      {
+        "lambda_deg": 15.0
+      },
+      {
+        "lambda_deg": 123.456
+      },
+      {
+        "lambda_deg": 284.999
+      },
+      {
+        "lambda_deg": 285.0
+      },
+      {
+        "lambda_deg": 359.999
+      }
+    ],
+    "name": "Convention equivalence K1 == K2"
+  },
+  "TV4": {
+    "cases": [
+      {
+        "expected_branch": "Zi",
+        "expected_branch_index": 0,
+        "tlst_hours": 0.999
+      },
+      {
+        "expected_branch": "Chou",
+        "expected_branch_index": 1,
+        "tlst_hours": 1.0
+      },
+      {
+        "expected_branch": "Hai",
+        "expected_branch_index": 11,
+        "tlst_hours": 22.999
+      },
+      {
+        "expected_branch": "Zi",
+        "expected_branch_index": 0,
+        "tlst_hours": 23.0
+      }
+    ],
+    "name": "TLST hour boundary"
+  },
+  "TV5": {
+    "cases": [
+      {
+        "lambda_deg": 285.0,
+        "symmetry_branches": [
+          0,
+          1
+        ]
+      }
+    ],
+    "kernel": {
+      "kappa": 4.0,
+      "type": "von_mises"
+    },
+    "name": "Soft kernel symmetry + normalization"
+  },
+  "TV6": {
+    "cases": [
+      {
+        "branch": "Zi",
+        "expected_hidden_stems": [
+          "Gui"
+        ]
+      },
+      {
+        "branch": "Chou",
+        "expected_hidden_stems": [
+          "Ji",
+          "Gui",
+          "Xin"
+        ]
+      },
+      {
+        "branch": "Hai",
+        "expected_hidden_stems": [
+          "Ren",
+          "Jia"
+        ]
+      }
+    ],
+    "name": "Hidden stems mapping correctness"
+  },
+  "TV7": {
+    "cases": [
+      {
+        "expected_error_code": "REFDATA_NETWORK_FORBIDDEN",
+        "scenario": "offline_allow_network_true"
+      },
+      {
+        "expected_error_code": "REFDATA_MANIFEST_MISSING",
+        "scenario": "offline_missing_manifest"
+      },
+      {
+        "expected_error_code": "LEAP_SECONDS_FILE_EXPIRED",
+        "scenario": "leaps_expired_strict"
+      },
+      {
+        "expected_error_code": "TZDB_SIGNATURE_INVALID",
+        "scenario": "tzdb_signature_invalid"
+      },
+      {
+        "expected_error_code": "EPHEMERIS_MISSING",
+        "scenario": "ephemeris_missing"
+      },
+      {
+        "expected_error_code": "EPHEMERIS_HASH_MISMATCH",
+        "scenario": "ephemeris_hash_mismatch"
+      }
+    ],
+    "name": "Refdata policy checks (network guard, signature/hash, expiry)"
+  }
+}

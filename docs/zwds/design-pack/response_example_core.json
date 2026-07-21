@@ -1,0 +1,833 @@
+{
+  "request_id": "req_example_001",
+  "schema_version": "zwds.raw.v1",
+  "engine_version": "0.1.0-design",
+  "generated_at": "2026-07-12T00:00:00Z",
+  "chart_fingerprint": "0000000000000000000000000000000000000000000000000000000000000000",
+  "ruleset": {
+    "ruleset_id": "zwds.fufire.core-seed.v1",
+    "ruleset_version": "0.1.0",
+    "ruleset_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "school_label": null,
+    "calendar_policy_id": "example-resolved-calendar.v1",
+    "time_policy_id": "civil-latezi-nextday.v1",
+    "leap_month_policy_id": "split-after-day-15.guide-v1",
+    "year_cycle_policy_id": "lunar-year.guide-v1",
+    "star_catalog_id": "core-seed.18.v1",
+    "transformation_table_id": "guide-four-transformations.v1",
+    "age_reckoning_id": "east_asian_nominal.guide-v1",
+    "source_status": "SOURCE_NEEDED",
+    "star_catalog_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+    "transformation_table_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+    "calendar_policy_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+    "time_policy_sha256": "5555555555555555555555555555555555555555555555555555555555555555"
+  },
+  "normalized_input": {
+    "birth": {
+      "datetime_local": "1984-02-01T23:30:00",
+      "timezone": "Asia/Shanghai",
+      "location": {
+        "lat": 31.2304,
+        "lon": 121.4737
+      },
+      "sex_at_birth": "male",
+      "ambiguousTime": "earlier",
+      "nonexistentTime": "error"
+    },
+    "calculation": {
+      "ruleset_id": "zwds.fufire.core-seed.v1",
+      "direction_method": "year_stem_yinyang_and_sex"
+    },
+    "output": {
+      "locale": "de-DE",
+      "script_variant": "ids_only",
+      "include_trace": true,
+      "include_decadal_limits": true,
+      "include_layout": false,
+      "include_catalog": false,
+      "star_scope": "core"
+    }
+  },
+  "resolution": {
+    "chronometry": {
+      "civil_local": "1984-02-01T23:30:00+08:00",
+      "utc": "1984-02-01T15:30:00Z",
+      "effective_local": "1984-02-01T23:30:00+08:00",
+      "effective_standard": "CIVIL",
+      "timezone": "Asia/Shanghai",
+      "location": {
+        "lat": 31.2304,
+        "lon": 121.4737
+      },
+      "local_time_status": "ok",
+      "fold": 0,
+      "warning": null,
+      "hour_branch_id": "ZI",
+      "late_zi_applied": true,
+      "late_zi_policy_id": "next-chart-day.v1"
+    },
+    "calendar": {
+      "calendar_engine_id": "EXAMPLE_ONLY",
+      "pre_late_zi_lunar_date": {
+        "year_label": 1983,
+        "month": 12,
+        "day": 30,
+        "is_leap_month": false,
+        "month_length": 30
+      },
+      "chart_lunar_date": {
+        "year_label": 1984,
+        "month": 1,
+        "day": 1,
+        "is_leap_month": false,
+        "month_length": 30
+      },
+      "effective_month_for_chart": 1,
+      "leap_month_policy_id": "split-after-day-15.guide-v1",
+      "year_cycle": {
+        "stem_id": "JIA",
+        "branch_id": "ZI",
+        "basis_policy_id": "lunar-year.guide-v1"
+      },
+      "warnings": [
+        "Example vector is synthetic and not a calendar-conversion oracle."
+      ]
+    }
+  },
+  "chart": {
+    "coordinate_system": {
+      "branch_index_origin": "ZI_0",
+      "branch_order": [
+        "ZI",
+        "CHOU",
+        "YIN",
+        "MAO",
+        "CHEN",
+        "SI",
+        "WU",
+        "WEI",
+        "SHEN",
+        "YOU",
+        "XU",
+        "HAI"
+      ],
+      "modulus": 12
+    },
+    "birth_cycle": {
+      "year_stem_id": "JIA",
+      "year_branch_id": "ZI",
+      "year_animal_id": "RAT",
+      "hour_branch_id": "ZI"
+    },
+    "ming_palace_branch_id": "YIN",
+    "shen_palace_branch_id": "YIN",
+    "five_elements_bureau": {
+      "id": "FIRE_6",
+      "phase_id": "FIRE",
+      "number": 6,
+      "formula_id": "five-elements-bureau.mnemonic-v1",
+      "source_status": "SOURCE_REVIEWED"
+    },
+    "palaces": [
+      {
+        "palace_role_id": "MING",
+        "sequence_index_0": 0,
+        "branch_id": "YIN",
+        "stem_id": "BING",
+        "is_ming_palace": true,
+        "is_shen_palace": true,
+        "placement_ids": [],
+        "grid_position": null
+      },
+      {
+        "palace_role_id": "XIONG_DI",
+        "sequence_index_0": 1,
+        "branch_id": "CHOU",
+        "stem_id": "DING",
+        "is_ming_palace": false,
+        "is_shen_palace": false,
+        "placement_ids": [
+          "natal:LIAN_ZHEN",
+          "natal:QI_SHA"
+        ],
+        "grid_position": null
+      },
+      {
+        "palace_role_id": "FU_QI",
+        "sequence_index_0": 2,
+        "branch_id": "ZI",
+        "stem_id": "BING",
+        "is_ming_palace": false,
+        "is_shen_palace": false,
+        "placement_ids": [
+          "natal:TIAN_LIANG"
+        ],
+        "grid_position": null
+      },
+      {
+        "palace_role_id": "ZI_NU",
+        "sequence_index_0": 3,
+        "branch_id": "HAI",
+        "stem_id": "YI",
+        "is_ming_palace": false,
+        "is_shen_palace": false,
+        "placement_ids": [
+          "natal:TIAN_XIANG"
+        ],
+        "grid_position": null
+      },
+      {
+        "palace_role_id": "CAI_BO",
+        "sequence_index_0": 4,
+        "branch_id": "XU",
+        "stem_id": "JIA",
+        "is_ming_palace": false,
+        "is_shen_palace": false,
+        "placement_ids": [
+          "natal:JU_MEN",
+          "natal:YOU_BI",
+          "natal:WEN_CHANG"
+        ],
+        "grid_position": null
+      },
+      {
+        "palace_role_id": "JI_E",
+        "sequence_index_0": 5,
+        "branch_id": "YOU",
+        "stem_id": "GUI",
+        "is_ming_palace": false,
+        "is_shen_palace": false,
+        "placement_ids": [
+          "natal:ZI_WEI",
+          "natal:TAN_LANG"
+        ],
+        "grid_position": null
+      },
+      {
+        "palace_role_id": "QIAN_YI",
+        "sequence_index_0": 6,
+        "branch_id": "SHEN",
+        "stem_id": "REN",
+        "is_ming_palace": false,
+        "is_shen_palace": false,
+        "placement_ids": [
+          "natal:TIAN_JI",
+          "natal:TAI_YIN"
+        ],
+        "grid_position": null
+      },
+      {
+        "palace_role_id": "JIAO_YOU",
+        "sequence_index_0": 7,
+        "branch_id": "WEI",
+        "stem_id": "XIN",
+        "is_ming_palace": false,
+        "is_shen_palace": false,
+        "placement_ids": [
+          "natal:TIAN_FU"
+        ],
+        "grid_position": null
+      },
+      {
+        "palace_role_id": "GUAN_LU",
+        "sequence_index_0": 8,
+        "branch_id": "WU",
+        "stem_id": "GENG",
+        "is_ming_palace": false,
+        "is_shen_palace": false,
+        "placement_ids": [
+          "natal:TAI_YANG"
+        ],
+        "grid_position": null
+      },
+      {
+        "palace_role_id": "TIAN_ZHAI",
+        "sequence_index_0": 9,
+        "branch_id": "SI",
+        "stem_id": "JI",
+        "is_ming_palace": false,
+        "is_shen_palace": false,
+        "placement_ids": [
+          "natal:WU_QU",
+          "natal:PO_JUN"
+        ],
+        "grid_position": null
+      },
+      {
+        "palace_role_id": "FU_DE",
+        "sequence_index_0": 10,
+        "branch_id": "CHEN",
+        "stem_id": "WU",
+        "is_ming_palace": false,
+        "is_shen_palace": false,
+        "placement_ids": [
+          "natal:TIAN_TONG",
+          "natal:ZUO_FU",
+          "natal:WEN_QU"
+        ],
+        "grid_position": null
+      },
+      {
+        "palace_role_id": "FU_MU",
+        "sequence_index_0": 11,
+        "branch_id": "MAO",
+        "stem_id": "DING",
+        "is_ming_palace": false,
+        "is_shen_palace": false,
+        "placement_ids": [],
+        "grid_position": null
+      }
+    ],
+    "star_placements": [
+      {
+        "placement_id": "natal:ZI_WEI",
+        "star_id": "ZI_WEI",
+        "family_id": "MAJOR_14",
+        "scope": "natal",
+        "branch_id": "YOU",
+        "palace_role_id": "JI_E",
+        "brightness_code": null,
+        "transformation_types": [],
+        "formula_id": "major-star-offsets.v1",
+        "source_status": "SOURCE_REVIEWED"
+      },
+      {
+        "placement_id": "natal:TIAN_JI",
+        "star_id": "TIAN_JI",
+        "family_id": "MAJOR_14",
+        "scope": "natal",
+        "branch_id": "SHEN",
+        "palace_role_id": "QIAN_YI",
+        "brightness_code": null,
+        "transformation_types": [],
+        "formula_id": "major-star-offsets.v1",
+        "source_status": "SOURCE_REVIEWED"
+      },
+      {
+        "placement_id": "natal:TAI_YANG",
+        "star_id": "TAI_YANG",
+        "family_id": "MAJOR_14",
+        "scope": "natal",
+        "branch_id": "WU",
+        "palace_role_id": "GUAN_LU",
+        "brightness_code": null,
+        "transformation_types": [
+          "HUA_JI"
+        ],
+        "formula_id": "major-star-offsets.v1",
+        "source_status": "SOURCE_REVIEWED"
+      },
+      {
+        "placement_id": "natal:WU_QU",
+        "star_id": "WU_QU",
+        "family_id": "MAJOR_14",
+        "scope": "natal",
+        "branch_id": "SI",
+        "palace_role_id": "TIAN_ZHAI",
+        "brightness_code": null,
+        "transformation_types": [
+          "HUA_KE"
+        ],
+        "formula_id": "major-star-offsets.v1",
+        "source_status": "SOURCE_REVIEWED"
+      },
+      {
+        "placement_id": "natal:TIAN_TONG",
+        "star_id": "TIAN_TONG",
+        "family_id": "MAJOR_14",
+        "scope": "natal",
+        "branch_id": "CHEN",
+        "palace_role_id": "FU_DE",
+        "brightness_code": null,
+        "transformation_types": [],
+        "formula_id": "major-star-offsets.v1",
+        "source_status": "SOURCE_REVIEWED"
+      },
+      {
+        "placement_id": "natal:LIAN_ZHEN",
+        "star_id": "LIAN_ZHEN",
+        "family_id": "MAJOR_14",
+        "scope": "natal",
+        "branch_id": "CHOU",
+        "palace_role_id": "XIONG_DI",
+        "brightness_code": null,
+        "transformation_types": [
+          "HUA_LU"
+        ],
+        "formula_id": "major-star-offsets.v1",
+        "source_status": "SOURCE_REVIEWED"
+      },
+      {
+        "placement_id": "natal:TIAN_FU",
+        "star_id": "TIAN_FU",
+        "family_id": "MAJOR_14",
+        "scope": "natal",
+        "branch_id": "WEI",
+        "palace_role_id": "JIAO_YOU",
+        "brightness_code": null,
+        "transformation_types": [],
+        "formula_id": "major-star-offsets.v1",
+        "source_status": "SOURCE_REVIEWED"
+      },
+      {
+        "placement_id": "natal:TAI_YIN",
+        "star_id": "TAI_YIN",
+        "family_id": "MAJOR_14",
+        "scope": "natal",
+        "branch_id": "SHEN",
+        "palace_role_id": "QIAN_YI",
+        "brightness_code": null,
+        "transformation_types": [],
+        "formula_id": "major-star-offsets.v1",
+        "source_status": "SOURCE_REVIEWED"
+      },
+      {
+        "placement_id": "natal:TAN_LANG",
+        "star_id": "TAN_LANG",
+        "family_id": "MAJOR_14",
+        "scope": "natal",
+        "branch_id": "YOU",
+        "palace_role_id": "JI_E",
+        "brightness_code": null,
+        "transformation_types": [],
+        "formula_id": "major-star-offsets.v1",
+        "source_status": "SOURCE_REVIEWED"
+      },
+      {
+        "placement_id": "natal:JU_MEN",
+        "star_id": "JU_MEN",
+        "family_id": "MAJOR_14",
+        "scope": "natal",
+        "branch_id": "XU",
+        "palace_role_id": "CAI_BO",
+        "brightness_code": null,
+        "transformation_types": [],
+        "formula_id": "major-star-offsets.v1",
+        "source_status": "SOURCE_REVIEWED"
+      },
+      {
+        "placement_id": "natal:TIAN_XIANG",
+        "star_id": "TIAN_XIANG",
+        "family_id": "MAJOR_14",
+        "scope": "natal",
+        "branch_id": "HAI",
+        "palace_role_id": "ZI_NU",
+        "brightness_code": null,
+        "transformation_types": [],
+        "formula_id": "major-star-offsets.v1",
+        "source_status": "SOURCE_REVIEWED"
+      },
+      {
+        "placement_id": "natal:TIAN_LIANG",
+        "star_id": "TIAN_LIANG",
+        "family_id": "MAJOR_14",
+        "scope": "natal",
+        "branch_id": "ZI",
+        "palace_role_id": "FU_QI",
+        "brightness_code": null,
+        "transformation_types": [],
+        "formula_id": "major-star-offsets.v1",
+        "source_status": "SOURCE_REVIEWED"
+      },
+      {
+        "placement_id": "natal:QI_SHA",
+        "star_id": "QI_SHA",
+        "family_id": "MAJOR_14",
+        "scope": "natal",
+        "branch_id": "CHOU",
+        "palace_role_id": "XIONG_DI",
+        "brightness_code": null,
+        "transformation_types": [],
+        "formula_id": "major-star-offsets.v1",
+        "source_status": "SOURCE_REVIEWED"
+      },
+      {
+        "placement_id": "natal:PO_JUN",
+        "star_id": "PO_JUN",
+        "family_id": "MAJOR_14",
+        "scope": "natal",
+        "branch_id": "SI",
+        "palace_role_id": "TIAN_ZHAI",
+        "brightness_code": null,
+        "transformation_types": [
+          "HUA_QUAN"
+        ],
+        "formula_id": "major-star-offsets.v1",
+        "source_status": "SOURCE_REVIEWED"
+      },
+      {
+        "placement_id": "natal:ZUO_FU",
+        "star_id": "ZUO_FU",
+        "family_id": "GUIDE_AUX_4",
+        "scope": "natal",
+        "branch_id": "CHEN",
+        "palace_role_id": "FU_DE",
+        "brightness_code": null,
+        "transformation_types": [],
+        "formula_id": "guide-auxiliary-placement.v1",
+        "source_status": "SOURCE_REVIEWED"
+      },
+      {
+        "placement_id": "natal:YOU_BI",
+        "star_id": "YOU_BI",
+        "family_id": "GUIDE_AUX_4",
+        "scope": "natal",
+        "branch_id": "XU",
+        "palace_role_id": "CAI_BO",
+        "brightness_code": null,
+        "transformation_types": [],
+        "formula_id": "guide-auxiliary-placement.v1",
+        "source_status": "SOURCE_REVIEWED"
+      },
+      {
+        "placement_id": "natal:WEN_QU",
+        "star_id": "WEN_QU",
+        "family_id": "GUIDE_AUX_4",
+        "scope": "natal",
+        "branch_id": "CHEN",
+        "palace_role_id": "FU_DE",
+        "brightness_code": null,
+        "transformation_types": [],
+        "formula_id": "guide-auxiliary-placement.v1",
+        "source_status": "SOURCE_REVIEWED"
+      },
+      {
+        "placement_id": "natal:WEN_CHANG",
+        "star_id": "WEN_CHANG",
+        "family_id": "GUIDE_AUX_4",
+        "scope": "natal",
+        "branch_id": "XU",
+        "palace_role_id": "CAI_BO",
+        "brightness_code": null,
+        "transformation_types": [],
+        "formula_id": "guide-auxiliary-placement.v1",
+        "source_status": "SOURCE_REVIEWED"
+      }
+    ],
+    "transformations": [
+      {
+        "type": "HUA_LU",
+        "star_id": "LIAN_ZHEN",
+        "source_stem_id": "JIA",
+        "table_id": "guide-four-transformations.v1",
+        "scope": "natal"
+      },
+      {
+        "type": "HUA_QUAN",
+        "star_id": "PO_JUN",
+        "source_stem_id": "JIA",
+        "table_id": "guide-four-transformations.v1",
+        "scope": "natal"
+      },
+      {
+        "type": "HUA_KE",
+        "star_id": "WU_QU",
+        "source_stem_id": "JIA",
+        "table_id": "guide-four-transformations.v1",
+        "scope": "natal"
+      },
+      {
+        "type": "HUA_JI",
+        "star_id": "TAI_YANG",
+        "source_stem_id": "JIA",
+        "table_id": "guide-four-transformations.v1",
+        "scope": "natal"
+      }
+    ],
+    "relations": [
+      {
+        "focus_palace_role_id": "MING",
+        "focus_branch_id": "YIN",
+        "harmony_branch_ids": [
+          "WU",
+          "XU"
+        ],
+        "opposition_branch_id": "SHEN"
+      },
+      {
+        "focus_palace_role_id": "XIONG_DI",
+        "focus_branch_id": "CHOU",
+        "harmony_branch_ids": [
+          "SI",
+          "YOU"
+        ],
+        "opposition_branch_id": "WEI"
+      },
+      {
+        "focus_palace_role_id": "FU_QI",
+        "focus_branch_id": "ZI",
+        "harmony_branch_ids": [
+          "CHEN",
+          "SHEN"
+        ],
+        "opposition_branch_id": "WU"
+      },
+      {
+        "focus_palace_role_id": "ZI_NU",
+        "focus_branch_id": "HAI",
+        "harmony_branch_ids": [
+          "MAO",
+          "WEI"
+        ],
+        "opposition_branch_id": "SI"
+      },
+      {
+        "focus_palace_role_id": "CAI_BO",
+        "focus_branch_id": "XU",
+        "harmony_branch_ids": [
+          "YIN",
+          "WU"
+        ],
+        "opposition_branch_id": "CHEN"
+      },
+      {
+        "focus_palace_role_id": "JI_E",
+        "focus_branch_id": "YOU",
+        "harmony_branch_ids": [
+          "CHOU",
+          "SI"
+        ],
+        "opposition_branch_id": "MAO"
+      },
+      {
+        "focus_palace_role_id": "QIAN_YI",
+        "focus_branch_id": "SHEN",
+        "harmony_branch_ids": [
+          "ZI",
+          "CHEN"
+        ],
+        "opposition_branch_id": "YIN"
+      },
+      {
+        "focus_palace_role_id": "JIAO_YOU",
+        "focus_branch_id": "WEI",
+        "harmony_branch_ids": [
+          "HAI",
+          "MAO"
+        ],
+        "opposition_branch_id": "CHOU"
+      },
+      {
+        "focus_palace_role_id": "GUAN_LU",
+        "focus_branch_id": "WU",
+        "harmony_branch_ids": [
+          "XU",
+          "YIN"
+        ],
+        "opposition_branch_id": "ZI"
+      },
+      {
+        "focus_palace_role_id": "TIAN_ZHAI",
+        "focus_branch_id": "SI",
+        "harmony_branch_ids": [
+          "YOU",
+          "CHOU"
+        ],
+        "opposition_branch_id": "HAI"
+      },
+      {
+        "focus_palace_role_id": "FU_DE",
+        "focus_branch_id": "CHEN",
+        "harmony_branch_ids": [
+          "SHEN",
+          "ZI"
+        ],
+        "opposition_branch_id": "XU"
+      },
+      {
+        "focus_palace_role_id": "FU_MU",
+        "focus_branch_id": "MAO",
+        "harmony_branch_ids": [
+          "WEI",
+          "HAI"
+        ],
+        "opposition_branch_id": "YOU"
+      }
+    ],
+    "decadal_limits": [
+      {
+        "sequence_index_0": 0,
+        "start_age_inclusive": 6,
+        "end_age_inclusive": 15,
+        "age_reckoning_id": "east_asian_nominal.guide-v1",
+        "direction": "forward",
+        "branch_id": "YIN",
+        "palace_role_id": "MING"
+      },
+      {
+        "sequence_index_0": 1,
+        "start_age_inclusive": 16,
+        "end_age_inclusive": 25,
+        "age_reckoning_id": "east_asian_nominal.guide-v1",
+        "direction": "forward",
+        "branch_id": "MAO",
+        "palace_role_id": "FU_MU"
+      },
+      {
+        "sequence_index_0": 2,
+        "start_age_inclusive": 26,
+        "end_age_inclusive": 35,
+        "age_reckoning_id": "east_asian_nominal.guide-v1",
+        "direction": "forward",
+        "branch_id": "CHEN",
+        "palace_role_id": "FU_DE"
+      },
+      {
+        "sequence_index_0": 3,
+        "start_age_inclusive": 36,
+        "end_age_inclusive": 45,
+        "age_reckoning_id": "east_asian_nominal.guide-v1",
+        "direction": "forward",
+        "branch_id": "SI",
+        "palace_role_id": "TIAN_ZHAI"
+      },
+      {
+        "sequence_index_0": 4,
+        "start_age_inclusive": 46,
+        "end_age_inclusive": 55,
+        "age_reckoning_id": "east_asian_nominal.guide-v1",
+        "direction": "forward",
+        "branch_id": "WU",
+        "palace_role_id": "GUAN_LU"
+      },
+      {
+        "sequence_index_0": 5,
+        "start_age_inclusive": 56,
+        "end_age_inclusive": 65,
+        "age_reckoning_id": "east_asian_nominal.guide-v1",
+        "direction": "forward",
+        "branch_id": "WEI",
+        "palace_role_id": "JIAO_YOU"
+      },
+      {
+        "sequence_index_0": 6,
+        "start_age_inclusive": 66,
+        "end_age_inclusive": 75,
+        "age_reckoning_id": "east_asian_nominal.guide-v1",
+        "direction": "forward",
+        "branch_id": "SHEN",
+        "palace_role_id": "QIAN_YI"
+      },
+      {
+        "sequence_index_0": 7,
+        "start_age_inclusive": 76,
+        "end_age_inclusive": 85,
+        "age_reckoning_id": "east_asian_nominal.guide-v1",
+        "direction": "forward",
+        "branch_id": "YOU",
+        "palace_role_id": "JI_E"
+      },
+      {
+        "sequence_index_0": 8,
+        "start_age_inclusive": 86,
+        "end_age_inclusive": 95,
+        "age_reckoning_id": "east_asian_nominal.guide-v1",
+        "direction": "forward",
+        "branch_id": "XU",
+        "palace_role_id": "CAI_BO"
+      },
+      {
+        "sequence_index_0": 9,
+        "start_age_inclusive": 96,
+        "end_age_inclusive": 105,
+        "age_reckoning_id": "east_asian_nominal.guide-v1",
+        "direction": "forward",
+        "branch_id": "HAI",
+        "palace_role_id": "ZI_NU"
+      },
+      {
+        "sequence_index_0": 10,
+        "start_age_inclusive": 106,
+        "end_age_inclusive": 115,
+        "age_reckoning_id": "east_asian_nominal.guide-v1",
+        "direction": "forward",
+        "branch_id": "ZI",
+        "palace_role_id": "FU_QI"
+      },
+      {
+        "sequence_index_0": 11,
+        "start_age_inclusive": 116,
+        "end_age_inclusive": 125,
+        "age_reckoning_id": "east_asian_nominal.guide-v1",
+        "direction": "forward",
+        "branch_id": "CHOU",
+        "palace_role_id": "XIONG_DI"
+      }
+    ],
+    "completeness": {
+      "requested_scope": "core",
+      "ruleset_declared_families": [
+        "MAJOR_14",
+        "GUIDE_AUX_4"
+      ],
+      "emitted_families": [
+        "MAJOR_14",
+        "GUIDE_AUX_4"
+      ],
+      "missing_families": []
+    }
+  },
+  "catalog": null,
+  "quality": {
+    "calculation_status": "SUCCESS",
+    "source_status": "SOURCE_NEEDED",
+    "warnings": [
+      "Synthetic contract example; not a practitioner-validated natal chart."
+    ],
+    "unresolved_conventions": [
+      "School/edition not selected.",
+      "Calendar engine not selected."
+    ],
+    "crosschecks": [
+      {
+        "oracle_id": "guide-algebra-equivalence",
+        "status": "MATCH",
+        "note": "Finite-domain equivalence only; not historical validation."
+      }
+    ]
+  },
+  "provenance": [
+    {
+      "provenance_id": "src:user-guide",
+      "type": "source_document",
+      "title": "User-provided ZWDS calculation guide",
+      "version": "received-2026-07-11",
+      "sha256": null,
+      "status": "USER_PROVIDED",
+      "license": null
+    },
+    {
+      "provenance_id": "cmp:iztro-2dfe3ec",
+      "type": "implementation_comparator",
+      "title": "SylarLong/iztro source comparator",
+      "version": "2dfe3ecb41d725b2bea1084bbdfe4dd655e37b13",
+      "sha256": null,
+      "status": "SOURCE_REVIEWED",
+      "license": "MIT"
+    }
+  ],
+  "derivation_trace": [
+    {
+      "step_id": "ming",
+      "formula_id": "ming-palace.v1",
+      "inputs": {
+        "month": 1,
+        "hour_ordinal": 1
+      },
+      "output": "YIN",
+      "ruleset_ref": "zwds.fufire.core-seed.v1",
+      "status": "COMPUTED"
+    },
+    {
+      "step_id": "bureau",
+      "formula_id": "five-elements-bureau.mnemonic-v1",
+      "inputs": {
+        "stem_id": "BING",
+        "branch_id": "YIN"
+      },
+      "output": "FIRE_6",
+      "ruleset_ref": "zwds.fufire.core-seed.v1",
+      "status": "COMPUTED"
+    }
+  ]
+}

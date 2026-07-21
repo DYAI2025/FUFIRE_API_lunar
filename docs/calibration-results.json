@@ -1,0 +1,83 @@
+[
+  {
+    "mean": 0.4489,
+    "std": 0.2672,
+    "n_trials": 5000,
+    "n_west": 2,
+    "n_bazi": 5,
+    "west_bucket": "sparse",
+    "bazi_bucket": "sparse"
+  },
+  {
+    "mean": 0.5235,
+    "std": 0.2083,
+    "n_trials": 5000,
+    "n_west": 2,
+    "n_bazi": 12,
+    "west_bucket": "sparse",
+    "bazi_bucket": "medium"
+  },
+  {
+    "mean": 0.5464,
+    "std": 0.1761,
+    "n_trials": 5000,
+    "n_west": 2,
+    "n_bazi": 20,
+    "west_bucket": "sparse",
+    "bazi_bucket": "dense"
+  },
+  {
+    "mean": 0.6088,
+    "std": 0.2154,
+    "n_trials": 5000,
+    "n_west": 6,
+    "n_bazi": 5,
+    "west_bucket": "medium",
+    "bazi_bucket": "sparse"
+  },
+  {
+    "mean": 0.6904,
+    "std": 0.1759,
+    "n_trials": 5000,
+    "n_west": 6,
+    "n_bazi": 12,
+    "west_bucket": "medium",
+    "bazi_bucket": "medium"
+  },
+  {
+    "mean": 0.7274,
+    "std": 0.1497,
+    "n_trials": 5000,
+    "n_west": 6,
+    "n_bazi": 20,
+    "west_bucket": "medium",
+    "bazi_bucket": "dense"
+  },
+  {
+    "mean": 0.665,
+    "std": 0.1866,
+    "n_trials": 5000,
+    "n_west": 11,
+    "n_bazi": 5,
+    "west_bucket": "dense",
+    "bazi_bucket": "sparse"
+  },
+  {
+    "mean": 0.7614,
+    "std": 0.1445,
+    "n_trials": 5000,
+    "n_west": 11,
+    "n_bazi": 12,
+    "west_bucket": "dense",
+    "bazi_bucket": "medium"
+  },
+  {
+    "mean": 0.7958,
+    "std": 0.1224,
+    "n_trials": 5000,
+    "n_west": 11,
+    "n_bazi": 20,
+    "west_bucket": "dense",
+    "bazi_bucket": "dense"
+  }
+]

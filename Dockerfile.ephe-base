@@ -1,0 +1,46 @@
+# Ephemeris base image — built once, reused by all builds.
+# Contains Swiss Ephemeris .se1 data files at /usr/local/share/swisseph/.
+#
+# Rebuild only when new ephemeris data is released (rare — every few years).
+# Trigger manually: Actions → "Build Ephemeris Base Image" → Run workflow
+#
+# Published to: ghcr.io/dyai2025/fufire/ephe-base:latest
+
+FROM debian:bookworm-slim
+
+ARG SWISSEPH_REF=master
+
+RUN apt-get update && apt-get install -y curl ca-certificates && rm -rf /var/lib/apt/lists/*
+
+RUN set -eu; \
+    mkdir -p /usr/local/share/swisseph; \
+    refs="${SWISSEPH_REF} master"; \
+    for f in sepl_18.se1 semo_18.se1 seas_18.se1 seplm06.se1; do \
+        downloaded=0; \
+        for ref in $refs; do \
+            base="https://raw.githubusercontent.com/aloistr/swisseph/${ref}/ephe"; \
+            echo "Downloading $f from ref ${ref}..."; \
+            if curl -fL --retry 5 --retry-delay 3 -o /usr/local/share/swisseph/$f "$base/$f"; then \
+                downloaded=1; \
+                echo "  -> $(wc -c < /usr/local/share/swisseph/$f) bytes"; \
+                break; \
+            fi; \
+        done; \
+        if [ "$downloaded" -ne 1 ]; then \
+            echo "ERROR: Failed to download $f using refs: $refs"; \
+            exit 1; \
+        fi; \
+        if od -A n -t x1 -N 1 /usr/local/share/swisseph/$f | grep -qi "^ *3c"; then \
+            echo "ERROR: $f looks like HTML, not binary ephemeris data"; \
+            exit 1; \
+        fi; \
+    done && \
+    echo "6753841e68035dac666104f204decb2b66983904a1a719d101609b88f949120d  /usr/local/share/swisseph/sepl_18.se1" | sha256sum -c - && \
+    echo "054f2bb7b52fca894a2bf1f657f3b22b321a2296da16aa1fe87799333f7e38e8  /usr/local/share/swisseph/semo_18.se1" | sha256sum -c - && \
+    echo "4f4236d96ade96be0d4886fa7e39166cd807c57392b1d283d015f5324e6f1e77  /usr/local/share/swisseph/seas_18.se1" | sha256sum -c - && \
+    echo "6c3770d8d7e9d8263e2948f31b1f34105dee5b10d7f6a988dbcac658944a8686  /usr/local/share/swisseph/seplm06.se1" | sha256sum -c - && \
+    find /usr/local/share/swisseph -type d -exec chmod 755 {} \; && \
+    find /usr/local/share/swisseph -type f -exec chmod 644 {} \; && \
+    echo "All ephemeris files verified."
+
+ENV SE_EPHE_PATH=/usr/local/share/swisseph

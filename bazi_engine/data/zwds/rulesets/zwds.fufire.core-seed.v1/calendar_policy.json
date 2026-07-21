@@ -1,0 +1,9 @@
+{
+  "calendar_policy_id": "local-civil-day.v1",
+  "calendar_engine_id": "fufire-swisseph-shixian.v1",
+  "day_boundary": "local-civil-day",
+  "reference": "chart effective-local frame",
+  "leap_month_determination": "no-中氣 (時憲曆)",
+  "source_status": "SOURCE_NEEDED",
+  "note": "Descriptor for the calendar resolution policy of the core-seed ruleset. The 時憲曆 no-中氣 leap-month determination is documented but not historically source-reviewed."
+}

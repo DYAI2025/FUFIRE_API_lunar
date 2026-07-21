@@ -1,0 +1,23 @@
+{
+  "boundary_flags": {
+    "days_from_lichun": 131.4277722044,
+    "is_before_lichun": false,
+    "lichun_jd_ut": 2447926.593061129,
+    "near_lichun": false
+  },
+  "delta_t_seconds": 57.1655852651,
+  "equation_of_time_minutes": -0.027,
+  "julian_day": 2448058.0208333335,
+  "julian_day_number": 2448058,
+  "longitude_correction_minutes": 53.62,
+  "precision": {
+    "algorithm_version": "1.0.0-rc1-20260220",
+    "grade": "degraded",
+    "warnings": [
+      "Computed with the analytical Moshier ephemeris (MOSEPH). Solar longitude precision is degraded relative to the Swiss Ephemeris SE1 data files."
+    ]
+  },
+  "solar_longitude_degrees": 84.1494648038,
+  "solar_term": "Mang Zhong",
+  "true_solar_time": "15:23"
+}

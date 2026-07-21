@@ -1,0 +1,33 @@
+{
+  "ruleset_id": "zwds.fufire.core-seed.v1",
+  "ruleset_version": "0.1.0",
+  "school_label": null,
+  "source_status": "SOURCE_NEEDED",
+  "calendar_policy_id": "local-civil-day.v1",
+  "time_policy_id": "civil-latezi-nextday.v1",
+  "leap_month_policy_id": "split-after-day-15.guide-v1",
+  "year_cycle_policy_id": "lunar-year.guide-v1",
+  "star_catalog_id": "core-seed.18.v1",
+  "transformation_table_id": "guide-four-transformations.v1",
+  "age_reckoning_id": "east_asian_nominal.guide-v1",
+  "components": {
+    "star_catalog": "star_catalog.json",
+    "transformation_table": "transformations.json",
+    "calendar_policy": "calendar_policy.json",
+    "time_policy": "time_policy.json",
+    "palace_roles": "palace_roles.json",
+    "bureau_table": "bureau_table.json",
+    "placement_rules": "placement_rules.json",
+    "sources": "sources.json"
+  },
+  "component_sha256": {
+    "bureau_table.json": "725d69f4933d5105657932288a5dec9e58416bfa7467625ea460b165e0074a50",
+    "calendar_policy.json": "acd9e8126ea14f5e15428db9f48f73659965886f9b4eb1e1f2d5412f4e7763d7",
+    "palace_roles.json": "3baec0b6f4add170d0853cb73c95b43b4f980c5a6a6d8455ae3e530733505b94",
+    "placement_rules.json": "780bf52df4865ab857955adcabdbd93d631a9de8c7056661b7c216a35d0bc831",
+    "sources.json": "ef1fdb24333b1db46d33ba43927eab7e278a96f0ae6fc71d4ec0223740b5d30c",
+    "star_catalog.json": "1bfb6b820d82cbcb1dcb540dad84234151a6313d992a0175f8fb13fdadd6b7f1",
+    "time_policy.json": "c1ae70c4d3e82919e7338db7c55793f987531bce78004776e4dc58a3b735ad31",
+    "transformations.json": "717d962e2c3114db8745639cc52b88f536d3efdaee9fa13db5e706af2f3c22b4"
+  }
+}

@@ -1,0 +1,62 @@
+                    ┌───────────────────────────────┐
+                    │            Clients            │
+                    │  - REST callers / UI / Agent  │
+                    │  - ElevenLabs Tool            │
+                    └───────────────┬───────────────┘
+                                    │ HTTP
+                                    v
+                         ┌─────────────────────┐
+                         │ FastAPI app         │
+                         │ bazi_engine/app.py  │
+                         │ - exception handlers│
+                         │ - include_router(*) │
+                         └───────┬─────────────┘
+                                 │
+        ┌────────────────────────┼─────────────────────────┐
+        │                        │                         │
+        v                        v                         v
+┌─────────────────┐    ┌───────────────────┐     ┌───────────────────┐
+│ routers/info.py  │    │ routers/validate.py│     │ routers/chart.py   │
+│ GET /,/health,...│    │ POST /validate     │     │ POST /chart        │
+└───────┬─────────┘    └─────────┬─────────┘     └─────────┬─────────┘
+        │                         │                         │
+        │                         v                         │
+        │              ┌───────────────────────┐            │
+        │              │ BAFE Core (contract)  │            │
+        │              │ bazi_engine/bafe/*    │            │
+        │              │ service.validate_req  │            │
+        │              └─────────┬─────────────┘            │
+        │                        │                          │
+        │     Draft-07 schemas   │  ruleset json            │
+        │   ┌─────────────────┐  │  ┌───────────────────┐  │
+        │   │ spec/schemas/*  │  │  │ spec/rulesets/*    │  │
+        │   └─────────────────┘  │  └───────────────────┘  │
+        │                        │                          │
+        │                        v                          │
+        │     ┌──────────────────────────────────────────┐  │
+        │     │ Component evaluators                      │  │
+        │     │ - refdata.evaluate_refdata                │  │
+        │     │ - time_model.evaluate_time                │  │
+        │     │ - mapping checks (SHIFT_*, HALF_OPEN)     │  │
+        │     │ - canonical_json.config_fingerprint       │  │
+        │     └──────────────────────────────────────────┘  │
+        │                                                   │
+        │                                                   v
+        │                              ┌──────────────────────────────┐
+        │                              │ legacy compute modules       │
+        │                              │ - compute_western_chart      │
+        │                              │ - compute_bazi               │
+        │                              │ - fusion (wuxing/harmony)    │
+        │                              └──────────────────────────────┘
+        │
+        v
+┌─────────────────────────────┐
+│ routers/{bazi,western,fusion}│
+│ POST /calculate/*            │
+└─────────────────────────────┘
+
+Webhook path:
+  Clients(ElevenLabs) -> POST /internal/api/webhooks/chart (routers/webhooks.py, internal only)
+    - auth (HMAC/API key/Bearer)
+    - optional geocode_place()  [NETWORK]
+    - compute_bazi + compute_western_chart + fusion

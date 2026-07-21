@@ -1,0 +1,19 @@
+{
+  "palace_role_set_id": "core-seed.palace-roles.v1",
+  "source_status": "SOURCE_REVIEWED",
+  "note": "The 12 ZWDS palace-role ids in canonical source order; sequence index 0 is always MING (design-pack zwds_formula_spec.md §6).",
+  "palace_roles": [
+    "MING",
+    "XIONG_DI",
+    "FU_QI",
+    "ZI_NU",
+    "CAI_BO",
+    "JI_E",
+    "QIAN_YI",
+    "JIAO_YOU",
+    "GUAN_LU",
+    "TIAN_ZHAI",
+    "FU_DE",
+    "FU_MU"
+  ]
+}

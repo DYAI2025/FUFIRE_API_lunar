@@ -1,0 +1,45 @@
+{
+  "artifacts": [
+    {
+      "expires_utc": null,
+      "hash_sha256": "MISSING",
+      "logical_id": "ephemeris",
+      "notes": [
+        "Set hash_sha256 to sha256(file) when ephemeris_hash_required=true."
+      ],
+      "path": "ephemeris/DEMO.bin",
+      "signature": null
+    },
+    {
+      "expires_utc": null,
+      "hash_sha256": "MISSING",
+      "logical_id": "tzdb",
+      "notes": [
+        "Set signature_ok=true when tzdb_gpg_required=true."
+      ],
+      "path": "tzdb/DEMO.tar.gz",
+      "signature": "tzdb/DEMO.tar.gz.asc"
+    },
+    {
+      "expires_utc": "2099-12-31T00:00:00Z",
+      "hash_sha256": "MISSING",
+      "logical_id": "leaps",
+      "notes": [
+        "expires_utc is used for LEAP_SECONDS_FILE_EXPIRED checks."
+      ],
+      "path": "leaps/leap-seconds.list",
+      "signature": null
+    },
+    {
+      "expires_utc": null,
+      "hash_sha256": "MISSING",
+      "logical_id": "eop",
+      "notes": [
+        "Optional in some configurations; warn if missing/stale."
+      ],
+      "path": "eop/finals2000A.all",
+      "signature": null
+    }
+  ],
+  "pack_id": "refpack-YYYY-MM-DDTHHMMZ"
+}

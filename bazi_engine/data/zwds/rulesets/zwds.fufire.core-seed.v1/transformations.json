@@ -1,0 +1,19 @@
+{
+  "table_id": "guide-four-transformations.v1",
+  "source_status": "SOURCE_NEEDED",
+  "contested": "Four-Transformations tabulations differ between schools/editions in the Geng (庚) and Ren (壬) HUA_KE cells. Documented variants: 庚 HUA_KE ∈ {太陰 TAI_YIN, 天同 TIAN_TONG, 天府 TIAN_FU}; 壬 HUA_KE ∈ {左輔 ZUO_FU, 天府 TIAN_FU}. This table is the mainstream (iztro-corroborated) tabulation; it is NOT historically source-reviewed.",
+  "contested_cells": ["GENG.HUA_KE", "REN.HUA_KE"],
+  "sources": ["iztro comparator (S-05, MIT) — implementation-corroborated, NOT historically source-reviewed"],
+  "rows": {
+    "JIA": {"HUA_LU": "LIAN_ZHEN", "HUA_QUAN": "PO_JUN", "HUA_KE": "WU_QU", "HUA_JI": "TAI_YANG"},
+    "YI": {"HUA_LU": "TIAN_JI", "HUA_QUAN": "TIAN_LIANG", "HUA_KE": "ZI_WEI", "HUA_JI": "TAI_YIN"},
+    "BING": {"HUA_LU": "TIAN_TONG", "HUA_QUAN": "TIAN_JI", "HUA_KE": "WEN_CHANG", "HUA_JI": "LIAN_ZHEN"},
+    "DING": {"HUA_LU": "TAI_YIN", "HUA_QUAN": "TIAN_TONG", "HUA_KE": "TIAN_JI", "HUA_JI": "JU_MEN"},
+    "WU": {"HUA_LU": "TAN_LANG", "HUA_QUAN": "TAI_YIN", "HUA_KE": "YOU_BI", "HUA_JI": "TIAN_JI"},
+    "JI": {"HUA_LU": "WU_QU", "HUA_QUAN": "TAN_LANG", "HUA_KE": "TIAN_LIANG", "HUA_JI": "WEN_QU"},
+    "GENG": {"HUA_LU": "TAI_YANG", "HUA_QUAN": "WU_QU", "HUA_KE": "TAI_YIN", "HUA_JI": "TIAN_TONG"},
+    "XIN": {"HUA_LU": "JU_MEN", "HUA_QUAN": "TAI_YANG", "HUA_KE": "WEN_QU", "HUA_JI": "WEN_CHANG"},
+    "REN": {"HUA_LU": "TIAN_LIANG", "HUA_QUAN": "ZI_WEI", "HUA_KE": "ZUO_FU", "HUA_JI": "WU_QU"},
+    "GUI": {"HUA_LU": "PO_JUN", "HUA_QUAN": "JU_MEN", "HUA_KE": "TAI_YIN", "HUA_JI": "TAN_LANG"}
+  }
+}

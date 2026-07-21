@@ -1,0 +1,34 @@
+name: Build Ephemeris Base Image
+
+# Run manually or on a schedule (quarterly — ephemeris data rarely changes).
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 3 1 */3 *"  # 03:00 UTC on the 1st of every 3rd month
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4.4.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push ephemeris base image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: Dockerfile.ephe-base
+          push: true
+          tags: |
+            ghcr.io/dyai2025/fufire/ephe-base:latest
+            ghcr.io/dyai2025/fufire/ephe-base:${{ github.sha }}

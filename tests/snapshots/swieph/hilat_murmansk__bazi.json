@@ -1,0 +1,203 @@
+{
+  "chinese": {
+    "day_master": "Ding",
+    "hour_master": "Jia",
+    "month_master": "Xin",
+    "year": {
+      "animal": "Dragon",
+      "branch": "Chen",
+      "stem": "Jia"
+    }
+  },
+  "dates": {
+    "birth_local": "2024-08-01T08:00:00+03:00",
+    "birth_utc": "2024-08-01T05:00:00+00:00",
+    "lichun_local": "2024-02-04T11:27:07.702993+03:00"
+  },
+  "derivation_trace": {
+    "day": {
+      "day_anchor_evidence": {
+        "anchor_jdn": 2419451,
+        "anchor_sex_idx": 0,
+        "anchor_verification": "unverified",
+        "ruleset_id": "standard_bazi_2026",
+        "ruleset_version": "1.0.0"
+      },
+      "day_master_stem": "Ding",
+      "day_offset_used": 49,
+      "julian_day_number": 2460524,
+      "sexagenary_index": 33
+    },
+    "hour": {
+      "branch_index": 4,
+      "hour_branch_time_policy": null,
+      "lmt_used": false,
+      "local_hour": 8,
+      "time_standard_requested": "CIVIL",
+      "time_standard_used": "CIVIL",
+      "true_solar_time_used": false
+    },
+    "month": {
+      "jieqi_crossing_utc": "2024-07-06T14:20:03.532130+00:00",
+      "month_branch_index": 7,
+      "solar_longitude_deg": 105.0
+    },
+    "provenance_ids": {
+      "day_anchor_id": "standard_bazi_2026:jdn_2419451_unverified",
+      "ruleset_id": "standard_bazi_2026",
+      "ruleset_version": "1.0.0",
+      "time_policy_id": "civil_midnight",
+      "vector_model_id": "wuxing_v1.1.0"
+    },
+    "time_resolution": {
+      "civil_local": "2024-08-01T08:00:00+03:00",
+      "effective_standard": "CIVIL",
+      "eot_minutes": -6.456,
+      "lmt": "2024-08-01T07:12:20.112000+02:12:20.112000",
+      "tlst_hours": 10.097987,
+      "tz_offset_minutes": 180,
+      "utc": "2024-08-01T05:00:00+00:00"
+    },
+    "year": {
+      "is_before_lichun": false,
+      "lichun_crossing_utc": "2024-02-04T08:27:07.702993+00:00",
+      "solar_longitude_lichun": 315.0
+    }
+  },
+  "input": {
+    "ambiguousTime": "earlier",
+    "birth_time_known": true,
+    "boundary": "midnight",
+    "date": "2024-08-01T08:00:00",
+    "lat": 68.9585,
+    "lon": 33.0838,
+    "nonexistentTime": "error",
+    "standard": "CIVIL",
+    "tz": "Europe/Moscow"
+  },
+  "pillars": {
+    "day": {
+      "element": "Feuer",
+      "stamm": "Ding",
+      "tier": "Hahn",
+      "zweig": "You"
+    },
+    "hour": {
+      "element": "Holz",
+      "stamm": "Jia",
+      "tier": "Drache",
+      "zweig": "Chen"
+    },
+    "month": {
+      "element": "Metall",
+      "stamm": "Xin",
+      "tier": "Ziege",
+      "zweig": "Wei"
+    },
+    "year": {
+      "element": "Holz",
+      "stamm": "Jia",
+      "tier": "Drache",
+      "zweig": "Chen"
+    }
+  },
+  "precision": {
+    "birth_time_known": true,
+    "provisional_fields": []
+  },
+  "provenance": {
+    "engine_version": "1.0.0-rc1-20260220",
+    "ephemeris_id": "swieph_sepl18",
+    "house_system": "placidus",
+    "parameter_set": {
+      "aspect_base_orbs": {
+        "Chiron": 3.0,
+        "Jupiter": 8.0,
+        "Lilith": 2.0,
+        "Mars": 7.0,
+        "Mercury": 7.0,
+        "Moon": 10.0,
+        "Neptune": 5.0,
+        "NorthNode": 3.0,
+        "Pluto": 5.0,
+        "Saturn": 8.0,
+        "Sun": 10.0,
+        "TrueNorthNode": 3.0,
+        "Uranus": 5.0,
+        "Venus": 7.0
+      },
+      "aspect_factors": {
+        "conjunction": 1.0,
+        "opposition": 1.0,
+        "sextile": 0.75,
+        "square": 0.875,
+        "trine": 1.0
+      },
+      "aspect_orb_model": "differentiated_v1",
+      "harmony_method": "dot_product",
+      "hidden_stem_main_qi": 1.0,
+      "hidden_stem_middle_qi": 0.5,
+      "hidden_stem_residual_qi": 0.3,
+      "mercury_dual_rule": "earth_day_metal_night",
+      "retrograde_weight": 1.3,
+      "soulprint_weights": {
+        "ascendant": 0.6,
+        "moon": 0.8,
+        "personal_planet": 0.4,
+        "sun": 1.0,
+        "wuxing_sector": 0.5
+      },
+      "stem_weight": 1.0,
+      "transit_planet_weights": {
+        "jupiter": 1.2,
+        "mars": 0.8,
+        "mercury": 0.6,
+        "moon": 0.5,
+        "neptune": 1.8,
+        "pluto": 2.0,
+        "saturn": 1.5,
+        "sun": 1.0,
+        "uranus": 1.5,
+        "venus": 0.7
+      },
+      "version": "1.1.0",
+      "wuxing_sector_mapping": {
+        "Erde": [
+          1,
+          7
+        ],
+        "Feuer": [
+          4,
+          5
+        ],
+        "Holz": [
+          3,
+          4
+        ],
+        "Metall": [
+          6,
+          9
+        ],
+        "Wasser": [
+          8,
+          11
+        ]
+      }
+    },
+    "parameter_set_id": "default_v1",
+    "ruleset_id": "traditional_bazi_2026",
+    "tzdb_version_id": "2026.2",
+    "zodiac_mode": "tropical"
+  },
+  "quality_flags": {
+    "chart_type_quality": null,
+    "ephemeris_mode": "SWIEPH"
+  },
+  "solar_terms_count": 24,
+  "transition": {
+    "is_before_lichun": false,
+    "lichun_next": "2025-02-03T17:10:28.285763+03:00",
+    "lichun_year_start": "2024-02-04T11:27:07.702993+03:00",
+    "solar_year": 2024
+  }
+}

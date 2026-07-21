@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fufire.example/schemas/calculate/bazi/dayun.request.schema.json",
+  "title": "DaYunRequest",
+  "description": "Request contract for POST /calculate/bazi/dayun. Computes Da Yun (Decade Pillars / luck pillars) for a natal chart. The direction in which decades flow is resolved either from the year stem yin/yang and the subject's sex_at_birth, or explicitly from a caller-supplied flow_direction. Exactly one mechanism must be specified. TODO: replace `$id` host before production release.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "date",
+    "tz",
+    "lat",
+    "lon",
+    "direction_method"
+  ],
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Local civil date-time of birth in ISO 8601 form (e.g. 1987-07-04T21:30:00). Interpreted in the IANA timezone given by `tz`."
+    },
+    "tz": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[A-Za-z_]+(?:/[A-Za-z_]+){1,2}$",
+      "description": "IANA timezone identifier (e.g. Europe/Berlin, America/Argentina/Buenos_Aires). Pattern catches simple typos; full IANA validity is enforced by the calculation backend."
+    },
+    "lat": {
+      "type": "number",
+      "minimum": -90,
+      "maximum": 90,
+      "description": "Birth latitude in decimal degrees."
+    },
+    "lon": {
+      "type": "number",
+      "minimum": -180,
+      "maximum": 180,
+      "description": "Birth longitude in decimal degrees."
+    },
+    "as_of_date": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO date used to determine which decade is current. Defaults to today (server-side) if omitted."
+    },
+    "boundary": {
+      "type": "string",
+      "enum": ["midnight", "zi_hour"],
+      "default": "midnight",
+      "description": "Day-boundary convention used by the underlying BaZi engine when resolving the day pillar."
+    },
+    "standard": {
+      "type": "string",
+      "enum": ["CIVIL", "LMT", "TLST"],
+      "default": "CIVIL",
+      "description": "Time standard for interpreting the local datetime."
+    },
+    "direction_method": {
+      "type": "string",
+      "enum": ["year_stem_yinyang_and_sex", "explicit"],
+      "description": "How the flow direction of the decades is determined. `year_stem_yinyang_and_sex` derives it from year-stem polarity combined with `sex_at_birth`. `explicit` requires the caller to supply `flow_direction` directly."
+    },
+    "flow_direction": {
+      "type": "string",
+      "enum": ["forward", "backward"],
+      "description": "Required when direction_method = 'explicit'. The direction in which decades progress from the birth month pillar."
+    },
+    "sex_at_birth": {
+      "type": ["string", "null"],
+      "enum": ["male", "female", null],
+      "description": "Required (non-null) when direction_method = 'year_stem_yinyang_and_sex'. Otherwise may be null."
+    },
+    "start_age_method": {
+      "type": "string",
+      "enum": ["three_days_one_year"],
+      "default": "three_days_one_year",
+      "description": "Method for converting the distance to the anchoring solar term (jieqi) into a start age. Currently only the classical 3-days = 1-year mapping is supported."
+    },
+    "cycles": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 12,
+      "default": 8,
+      "description": "Number of decade cycles to return."
+    },
+    "strict": {
+      "type": "boolean",
+      "default": true,
+      "description": "If true, the endpoint returns a 422 error envelope when a required direction basis is missing rather than degrading silently."
+    }
+  },
+  "oneOf": [
+    {
+      "title": "explicit-direction",
+      "description": "Caller supplied flow_direction explicitly; sex_at_birth is not required.",
+      "properties": {
+        "direction_method": { "const": "explicit" },
+        "flow_direction": { "type": "string", "enum": ["forward", "backward"] }
+      },
+      "required": ["direction_method", "flow_direction"]
+    },
+    {
+      "title": "year-stem-yinyang-and-sex",
+      "description": "Direction derived from year-stem yin/yang and sex_at_birth; sex_at_birth must be 'male' or 'female'.",
+      "properties": {
+        "direction_method": { "const": "year_stem_yinyang_and_sex" },
+        "sex_at_birth": { "type": "string", "enum": ["male", "female"] }
+      },
+      "required": ["direction_method", "sex_at_birth"]
+    }
+  ]
+}

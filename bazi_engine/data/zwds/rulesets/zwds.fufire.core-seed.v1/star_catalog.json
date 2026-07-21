@@ -1,0 +1,28 @@
+{
+  "star_catalog_id": "core-seed.18.v1",
+  "declared_families": [
+    "MAJOR_14",
+    "GUIDE_AUX_4"
+  ],
+  "note": "AUTHORITATIVE per-family source_status for the 18 core-seed stars. The 14 majors (MAJOR_14) are SOURCE_REVIEWED; the 4 guide auxiliaries (GUIDE_AUX_4) are a seed subset and SOURCE_NEEDED. Star-module hardcoded source_status values are provisional and must defer to this file.",
+  "stars": [
+    { "star_id": "ZI_WEI", "family_id": "MAJOR_14", "source_status": "SOURCE_REVIEWED" },
+    { "star_id": "TIAN_JI", "family_id": "MAJOR_14", "source_status": "SOURCE_REVIEWED" },
+    { "star_id": "TAI_YANG", "family_id": "MAJOR_14", "source_status": "SOURCE_REVIEWED" },
+    { "star_id": "WU_QU", "family_id": "MAJOR_14", "source_status": "SOURCE_REVIEWED" },
+    { "star_id": "TIAN_TONG", "family_id": "MAJOR_14", "source_status": "SOURCE_REVIEWED" },
+    { "star_id": "LIAN_ZHEN", "family_id": "MAJOR_14", "source_status": "SOURCE_REVIEWED" },
+    { "star_id": "TIAN_FU", "family_id": "MAJOR_14", "source_status": "SOURCE_REVIEWED" },
+    { "star_id": "TAI_YIN", "family_id": "MAJOR_14", "source_status": "SOURCE_REVIEWED" },
+    { "star_id": "TAN_LANG", "family_id": "MAJOR_14", "source_status": "SOURCE_REVIEWED" },
+    { "star_id": "JU_MEN", "family_id": "MAJOR_14", "source_status": "SOURCE_REVIEWED" },
+    { "star_id": "TIAN_XIANG", "family_id": "MAJOR_14", "source_status": "SOURCE_REVIEWED" },
+    { "star_id": "TIAN_LIANG", "family_id": "MAJOR_14", "source_status": "SOURCE_REVIEWED" },
+    { "star_id": "QI_SHA", "family_id": "MAJOR_14", "source_status": "SOURCE_REVIEWED" },
+    { "star_id": "PO_JUN", "family_id": "MAJOR_14", "source_status": "SOURCE_REVIEWED" },
+    { "star_id": "ZUO_FU", "family_id": "GUIDE_AUX_4", "source_status": "SOURCE_NEEDED" },
+    { "star_id": "YOU_BI", "family_id": "GUIDE_AUX_4", "source_status": "SOURCE_NEEDED" },
+    { "star_id": "WEN_QU", "family_id": "GUIDE_AUX_4", "source_status": "SOURCE_NEEDED" },
+    { "star_id": "WEN_CHANG", "family_id": "GUIDE_AUX_4", "source_status": "SOURCE_NEEDED" }
+  ]
+}

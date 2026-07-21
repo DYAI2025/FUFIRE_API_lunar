@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# Local FuFirE wiring for the Plumbline PRIL CLI (required by the fail-closed
+# Stop-hook enforcement, which checks config/claude/bin/* relative to the repo
+# root). Uses an absolute python3 path -- NOT bare `python3` (a global
+# modern-python-plugin PATH shim intercepts that and exits 1) and NOT
+# `uv run python3` (observed to trigger an unwanted uv.lock re-resolution as a
+# side effect of syncing this project's venv, purely to run an unrelated
+# stdlib-only script). These libs are pure stdlib (see their own docstrings),
+# so any real python3 >= 3.10 works; try a few common absolute locations.
+for candidate in /usr/local/bin/python3 /opt/homebrew/bin/python3 /Library/Frameworks/Python.framework/Versions/3.12/bin/python3 /Library/Frameworks/Python.framework/Versions/3.11/bin/python3 /usr/bin/python3; do
+  if [ -x "$candidate" ]; then
+    PY="$candidate"
+    break
+  fi
+done
+if [ -z "${PY:-}" ]; then
+  echo "ERROR: no usable python3 found (checked common absolute paths)." >&2
+  exit 1
+fi
+CLAUDE_HOME="${CLAUDE_HOME:-$HOME/.claude}"
+exec "$PY" "$CLAUDE_HOME/lib/plumbline_run_ledger.py" "$@"
