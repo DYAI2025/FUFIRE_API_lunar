@@ -45,7 +45,7 @@ RUN mkdir -p /usr/local/share/swisseph && \
     echo "All ephemeris files verified against pinned commit ${EPHE_COMMIT}."
 
 # Stage 2: application
-FROM python:3.12-slim
+FROM python:3.14-slim
 
 WORKDIR /app
 
