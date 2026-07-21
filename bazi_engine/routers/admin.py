@@ -146,6 +146,7 @@ def _verify_admin(token: str | None) -> None:
         503: {"model": ErrorEnvelope},
     },
     summary="Issue a new API key (admin)",
+    deprecated=True,
 )
 @limiter.limit(tier_limit)
 async def issue_key(

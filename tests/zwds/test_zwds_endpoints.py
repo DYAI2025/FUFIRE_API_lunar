@@ -39,6 +39,7 @@ def _dev_mode_no_api_key(monkeypatch):
     tests/test_dst_pii_http.py).
     """
     monkeypatch.setenv("FUFIRE_REQUIRE_API_KEYS", "false")
+    monkeypatch.setenv("FUFIRE_ENABLE_ZWDS", "true")
     monkeypatch.delenv("FUFIRE_API_KEYS", raising=False)
     from bazi_engine.auth import _load_keys
 

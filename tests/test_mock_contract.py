@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+from tests.mock_server import MOCK_EXCLUSIONS
 from tests.mock_server import app as mock_app
 
 mock_client = TestClient(mock_app)
@@ -54,6 +55,16 @@ class TestMockContractAlignment:
         data = r.json()
         assert "wu_xing_vector" in data
         assert "dominant_element" in data
+
+    def test_bazi_wuxing_response_is_derived_from_frozen_bazi_fixture(self):
+        r = mock_client.post("/calculate/bazi/wuxing", json={})
+
+        assert r.status_code == 200
+        data = r.json()
+        assert data["basis"] == "bazi_four_pillars"
+        assert data["quality_flags"]["ephemeris_mode"] == "MOSEPH"
+        assert set(data["pillars"]) == {"year", "month", "day", "hour"}
+        assert sum(data["wu_xing_vector"].values()) > 0
 
 
 class TestMockHeaders:
@@ -122,6 +133,7 @@ class TestMockV1Mirrors:
         "/v1/calculate/western",
         "/v1/calculate/fusion",
         "/v1/calculate/wuxing",
+        "/v1/calculate/bazi/wuxing",
     ])
     def test_v1_calculation_endpoints(self, path: str):
         r = mock_client.post(path, json={})
@@ -165,3 +177,12 @@ class TestMockOpenApiAlignment:
         for path in info_paths:
             r = mock_client.get(path)
             assert r.status_code == 200, f"Mock missing: GET {path}"
+
+    def test_every_unmocked_v2_path_has_an_explicit_precision_reason(self, openapi_spec: dict):
+        v2_post_paths = {
+            path for path, operations in openapi_spec["paths"].items()
+            if path.startswith("/v2/") and "post" in operations
+        }
+
+        assert v2_post_paths == set(MOCK_EXCLUSIONS)
+        assert all("real locked ephemeris boundary" in reason for reason in MOCK_EXCLUSIONS.values())

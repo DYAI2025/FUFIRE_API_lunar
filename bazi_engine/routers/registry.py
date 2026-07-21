@@ -18,6 +18,7 @@ from dataclasses import dataclass
 from fastapi import APIRouter, Depends, FastAPI
 
 from ..auth import require_api_key
+from ..features import feature_dependency, feature_enabled
 from . import (
     admin,
     astronomy,
@@ -62,6 +63,7 @@ class Mount:
     v2_prefix: str | None = None
     protected: bool = True
     include_in_schema: bool = True
+    feature_flag: str | None = None
 
 
 MOUNTS: tuple[Mount, ...] = (
@@ -88,7 +90,12 @@ MOUNTS: tuple[Mount, ...] = (
     Mount(personalize.router),
     # Admin key issuance. NOT behind require_api_key — it has its own X-Admin-Token
     # gate (see routers/admin.py) and returns 503 when issuance is not configured.
-    Mount(admin.router, legacy_prefix=None, protected=False),
+    Mount(
+        admin.router,
+        legacy_prefix=None,
+        protected=False,
+        feature_flag="key_issuance",
+    ),
     # BaZi-Hehun pair analysis. DECISION-001 (docs/plans/2026-07-02-bazi-hehun.md,
     # docs/prd/bazi-hehun.prd.md): mounted at /v1 ONLY — NO legacy unversioned
     # /match/* mount. This is a deliberate deviation from the dual-mount idiom
@@ -99,7 +106,7 @@ MOUNTS: tuple[Mount, ...] = (
     # unversioned twin) — a deliberate deviation from the dual-mount idiom, like
     # the match and admin routers: this is a new B2B surface, so no legacy
     # unauthenticated path is ever created. Protected by the default API key.
-    Mount(zwds.router, legacy_prefix=None),
+    Mount(zwds.router, legacy_prefix=None, feature_flag="zwds"),
     # Canonical astronomy contract. V2 only: its UTC-root and corrected phase
     # semantics must not appear under frozen V1 or a bare legacy alias.
     Mount(
@@ -128,14 +135,20 @@ def mount_all(app: FastAPI) -> None:
     3. /v2 mounts (additive contracts with explicitly revised semantics).
     4. Internal mounts (hidden from the public OpenAPI).
     """
-    protected = [Depends(require_api_key)]
-
     def _include(mount: Mount, prefix: str) -> None:
+        dependencies = []
+        if mount.feature_flag is not None:
+            dependencies.append(Depends(feature_dependency(mount.feature_flag)))
+        if mount.protected:
+            dependencies.append(Depends(require_api_key))
+        visible = mount.include_in_schema and (
+            mount.feature_flag is None or feature_enabled(mount.feature_flag)
+        )
         app.include_router(
             mount.router,
             prefix=prefix,
-            dependencies=protected if mount.protected else None,
-            include_in_schema=mount.include_in_schema,
+            dependencies=dependencies or None,
+            include_in_schema=visible,
         )
 
     # 1 — legacy public mounts

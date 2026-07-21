@@ -10,7 +10,7 @@ from __future__ import annotations
 import math
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Protocol
 
 import swisseph as swe
@@ -22,12 +22,36 @@ from .ephemeris import (
     norm360,
     wrap180,
 )
-from .exc import CalculationError
+from .exc import CalculationError, InputError
+from .resource_loader import (
+    PackageResourceIntegrityError,
+    load_json_object_resource,
+)
 from .time_utils import ResolvedInstant
 
 AU_KM = 149_597_870.7
 METHOD_ID = "canonical-geocentric-lunar-state-v2"
 REFERENCE_FRAME = "geocentric_apparent_ecliptic_of_date"
+SUPPORTED_UTC_START = datetime(1900, 1, 1, tzinfo=timezone.utc)
+SUPPORTED_UTC_END_EXCLUSIVE = datetime(2100, 1, 1, tzinfo=timezone.utc)
+PRIMARY_PHASE_ANGLES = {
+    "new_moon": 0.0,
+    "first_quarter": 90.0,
+    "full_moon": 180.0,
+    "last_quarter": 270.0,
+}
+
+_EPHEMERIS_LOCK = load_json_object_resource(
+    "bazi_engine.resources", "ephemeris.lock.json"
+)
+EPHEMERIS_LOCK_ID = str(_EPHEMERIS_LOCK.get("lock_id", ""))
+if len(EPHEMERIS_LOCK_ID) != 64 or any(
+    char not in "0123456789abcdef" for char in EPHEMERIS_LOCK_ID
+):
+    raise PackageResourceIntegrityError(
+        "required package resource has an invalid ephemeris lock id: "
+        "bazi_engine.resources:ephemeris.lock.json"
+    )
 
 
 @dataclass(frozen=True)
@@ -86,6 +110,10 @@ class LunarMethod:
     ephemeris_mode: str
     reference_frame: str
     precision_grade: str
+    provider_version: str
+    ephemeris_lock_id: str | None
+    supported_utc_start: str
+    supported_utc_end_exclusive: str
     warnings: tuple[str, ...]
 
 
@@ -158,6 +186,7 @@ class SwissEphLunarProvider:
     def __init__(self, backend: SwissEphBackend | None = None) -> None:
         self._backend = backend or SwissEphBackend()
         self.mode = self._backend.mode
+        self.version = str(swe.version)
 
     def positions(self, jd_ut: float) -> tuple[CelestialPosition, CelestialPosition]:
         try:
@@ -219,14 +248,15 @@ def _elongation_and_speed(
     return elongation, relative_speed
 
 
-def _refine_new_moon(
+def _refine_phase_event(
     provider: LunarEphemerisProvider,
     initial_jd_ut: float,
+    target_angle_deg: float,
 ) -> float:
     jd_ut = initial_jd_ut
     for _ in range(15):
         elongation, relative_speed = _elongation_and_speed(provider, jd_ut)
-        correction_days = wrap180(elongation) / relative_speed
+        correction_days = wrap180(elongation - target_angle_deg) / relative_speed
         jd_ut -= correction_days
         # A Julian day around 2.4 million has a float resolution of roughly
         # 4.7e-10 days. Stop above that floor; demanding a smaller correction
@@ -235,12 +265,62 @@ def _refine_new_moon(
         if abs(correction_days) < 1e-8:
             break
     else:
-        raise CalculationError("True-new-moon search did not converge.")
+        raise CalculationError("Lunar phase-event search did not converge.")
 
     residual, _ = _elongation_and_speed(provider, jd_ut)
-    if abs(wrap180(residual)) > 1e-6 or not math.isfinite(jd_ut):
-        raise CalculationError("True-new-moon search failed its residual check.")
+    if (
+        abs(wrap180(residual - target_angle_deg)) > 1e-6
+        or not math.isfinite(jd_ut)
+    ):
+        raise CalculationError("Lunar phase-event search failed its residual check.")
     return jd_ut
+
+
+def _refine_new_moon(
+    provider: LunarEphemerisProvider,
+    initial_jd_ut: float,
+) -> float:
+    return _refine_phase_event(provider, initial_jd_ut, 0.0)
+
+
+def _validate_supported_utc(value: datetime) -> None:
+    if value.tzinfo is None or value.utcoffset() != timedelta(0):
+        raise ValueError("Expected aware UTC datetime")
+    if not SUPPORTED_UTC_START <= value < SUPPORTED_UTC_END_EXCLUSIVE:
+        raise InputError(
+            "Lunar State V2 supports UTC instants from 1900-01-01 "
+            "through 2099-12-31.",
+            detail={
+                "supported_utc_start": SUPPORTED_UTC_START.isoformat(),
+                "supported_utc_end_exclusive": (
+                    SUPPORTED_UTC_END_EXCLUSIVE.isoformat()
+                ),
+            },
+        )
+
+
+def find_lunar_phase_event_utc(
+    approximate_utc: datetime,
+    phase_id: str,
+    *,
+    provider: LunarEphemerisProvider | None = None,
+) -> datetime:
+    """Refine a nearby primary phase event for reference-corpus validation."""
+
+    _validate_supported_utc(approximate_utc)
+    try:
+        target = PRIMARY_PHASE_ANGLES[phase_id]
+    except KeyError as exc:
+        raise ValueError(f"unsupported primary lunar phase: {phase_id!r}") from exc
+    active_provider = provider or SwissEphLunarProvider()
+    event_jd = _refine_phase_event(
+        active_provider,
+        datetime_utc_to_jd_ut(approximate_utc),
+        target,
+    )
+    event_utc = jd_ut_to_datetime_utc(event_jd)
+    _validate_supported_utc(event_utc)
+    return event_utc
 
 
 def _lunation_metrics(
@@ -285,6 +365,7 @@ def compute_lunar_state(
 ) -> LunarState:
     """Compute canonical LunarState from one already-resolved UTC instant."""
 
+    _validate_supported_utc(resolved.utc)
     jd_ut = jd_converter(resolved.utc)
     if not math.isfinite(jd_ut):
         raise CalculationError("Calculated JD_UT is not finite.")
@@ -312,7 +393,7 @@ def compute_lunar_state(
     lunation = _lunation_metrics(active_provider, jd_ut, elongation, relative_speed)
 
     warnings: tuple[str, ...] = ()
-    precision_grade = "exact"
+    precision_grade = "high_precision"
     if active_provider.mode != "SWIEPH":
         precision_grade = "degraded"
         warnings = ("Swiss Ephemeris high-precision SE1 mode was not active.",)
@@ -321,6 +402,12 @@ def compute_lunar_state(
         ephemeris_mode=active_provider.mode,
         reference_frame=REFERENCE_FRAME,
         precision_grade=precision_grade,
+        provider_version=str(getattr(active_provider, "version", "custom")),
+        ephemeris_lock_id=(
+            EPHEMERIS_LOCK_ID if active_provider.mode == "SWIEPH" else None
+        ),
+        supported_utc_start=SUPPORTED_UTC_START.isoformat(),
+        supported_utc_end_exclusive=SUPPORTED_UTC_END_EXCLUSIVE.isoformat(),
         warnings=warnings,
     )
     return LunarState(

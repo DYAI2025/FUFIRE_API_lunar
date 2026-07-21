@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-07-21T22:44:47+00:00",
+  "environment": {
+    "docker_available": false,
+    "python": "3.12.13",
+    "swieph_lock_id": "c2185afdbf753ab845006705f97acfbba0da213c6c834b902745979a596c898b"
+  },
+  "release_decision": "BLOCKED",
+  "results": {
+    "bandit_medium_high": "passed",
+    "complexity": "passed",
+    "distribution_clean_install": {
+      "sdist": "passed",
+      "wheel": "passed"
+    },
+    "mypy": "passed (140 source files)",
+    "npm_redocly": "valid with 12 non-blocking contract warnings",
+    "openapi_drift": "passed",
+    "pip_audit": "no known vulnerabilities",
+    "pytest": {
+      "coverage_percent": 93.03,
+      "expected_failures": 1,
+      "passed": 3672,
+      "skipped": 102,
+      "warnings": 2
+    },
+    "readiness_artifact_validation": "passed",
+    "ruff": "passed",
+    "sbom_validation": "passed",
+    "toolchain_pin_validation": "passed"
+  },
+  "unverified_external_gates": [
+    "GitHub required ruleset and CI run",
+    "Docker build and runtime inspection",
+    "Railway staging smoke, security, and performance",
+    "Swiss Ephemeris license approval",
+    "release-please bot identity proof",
+    "signed evidence manifest",
+    "production promotion and rollback"
+  ]
+}

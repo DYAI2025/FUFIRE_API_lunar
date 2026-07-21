@@ -1,0 +1,11 @@
+{
+  "name": "fufire-api-lunar-contract-toolchain",
+  "private": true,
+  "engines": {
+    "node": "22.21.1"
+  },
+  "devDependencies": {
+    "@redocly/cli": "2.40.0",
+    "typescript": "7.0.2"
+  }
+}

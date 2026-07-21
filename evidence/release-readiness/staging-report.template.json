@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "decision": "BLOCKED",
+  "executed_at": null,
+  "approvals": {
+    "release_manager": null,
+    "security": null,
+    "domain": null,
+    "legal_license_evidence_id": null
+  },
+  "identity": {
+    "commit_sha": null,
+    "github_run_url": null,
+    "railway_project_id": null,
+    "railway_service_id": null,
+    "railway_environment_id": null,
+    "railway_deployment_id": null,
+    "build_id": null,
+    "image_digest": null,
+    "ephemeris_lock_id": null
+  },
+  "approved_thresholds": {
+    "p95_ms": null,
+    "p99_ms": null,
+    "error_rate_percent": null,
+    "cpu_percent": null,
+    "memory_mb": null
+  },
+  "observations": {
+    "build_identity_match": null,
+    "ready_healthy": null,
+    "auth_positive_negative": null,
+    "cors_allow_deny": null,
+    "request_id_and_redaction": null,
+    "lunar_reference_http": null,
+    "redis_failure_unready": null,
+    "ephemeris_failure_unready": null,
+    "load_metrics": null
+  },
+  "sanitized_artifacts": [],
+  "residual_risks": [],
+  "approver_notes": null
+}

@@ -10,6 +10,8 @@ from typing import Any
 
 from fastapi import FastAPI
 
+from bazi_engine.resource_loader import load_json_object_resource
+
 _DESCRIPTION = """\
 FuFirE (**Fusion Firmament Engine**) is a deterministic, astronomically precise calculation engine
 for **BaZi (Four Pillars of Destiny)** and **Western Astrology** with **Wu-Xing fusion**.
@@ -160,13 +162,12 @@ def _rewrite_refs(obj: Any) -> Any:
     return obj
 
 
-def _load_contract_schemas(schema: dict[str, Any], spec_dir: Any) -> dict[str, Any]:
+def _load_contract_schemas(schema: dict[str, Any]) -> dict[str, Any]:
     all_schemas = schema.setdefault("components", {}).setdefault("schemas", {})
     for name in ("ValidateRequest", "ValidateResponse"):
-        path = spec_dir / f"{name}.schema.json"
-        if not path.exists():
-            continue
-        raw = __import__("json").loads(path.read_text(encoding="utf-8"))
+        raw = load_json_object_resource(
+            "bazi_engine.resources", "schemas", f"{name}.schema.json"
+        )
         raw.pop("$schema", None)
         raw.pop("$id", None)
         for def_name, def_schema in raw.pop("definitions", {}).items():
@@ -210,31 +211,11 @@ def _add_response_examples(all_schemas: dict[str, Any]) -> None:
             all_schemas[schema_name]["example"] = example
 
 
-def _fallback_error_envelope_schema() -> dict[str, Any]:
-    return {
-        "type": "object",
-        "properties": {
-            "error": {"type": "string"},
-            "message": {"type": "string"},
-            "detail": {"type": "object"},
-            "status": {"type": "integer"},
-            "path": {"type": "string"},
-            "timestamp": {"type": "string"},
-            "request_id": {"type": "string"},
-        },
-        "required": ["error", "message", "request_id"],
-    }
-
-
-def _patch_error_envelope_schema(schema: dict[str, Any], spec_dir: Any) -> None:
-    import json
-
+def _patch_error_envelope_schema(schema: dict[str, Any]) -> None:
     all_schemas = schema.setdefault("components", {}).setdefault("schemas", {})
-    err_path = spec_dir / "ErrorEnvelope.schema.json"
-    if not err_path.exists():
-        all_schemas["ErrorEnvelope"] = _fallback_error_envelope_schema()
-        return
-    err_raw = json.loads(err_path.read_text(encoding="utf-8"))
+    err_raw = load_json_object_resource(
+        "bazi_engine.resources", "schemas", "ErrorEnvelope.schema.json"
+    )
     err_raw.pop("$schema", None)
     err_raw.pop("$id", None)
     err_raw.pop("examples", None)
@@ -284,7 +265,7 @@ def _deprecate_legacy_operations(schema: dict[str, Any]) -> None:
     (tests/unit/openapi-legacy-deprecated.test.ts).
     """
     for path, _method, op in _iter_openapi_operations(schema):
-        if path != "/" and not path.startswith("/v1"):
+        if path != "/" and not path.startswith(("/v1", "/v2")):
             op["deprecated"] = True
 
 
@@ -295,8 +276,6 @@ def install_custom_openapi(app: FastAPI) -> None:
         """Patch generated OpenAPI with contract schemas and shared metadata."""
         if app.openapi_schema:
             return app.openapi_schema
-
-        from pathlib import Path
 
         from fastapi.openapi.utils import get_openapi
 
@@ -312,11 +291,10 @@ def install_custom_openapi(app: FastAPI) -> None:
         schema["servers"] = _openapi_servers()
         _add_standard_response_headers(schema)
 
-        spec_dir = Path(__file__).resolve().parent.parent / "spec" / "schemas"
-        all_schemas = _load_contract_schemas(schema, spec_dir)
+        all_schemas = _load_contract_schemas(schema)
         _patch_validate_routes(schema)
         _add_response_examples(all_schemas)
-        _patch_error_envelope_schema(schema, spec_dir)
+        _patch_error_envelope_schema(schema)
         _inject_common_error_responses(schema)
         _deprecate_legacy_operations(schema)
 

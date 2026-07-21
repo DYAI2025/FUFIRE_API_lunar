@@ -7,7 +7,7 @@ Legacy routes: keyed by remote IP address (backward compat).
 Storage:
   - If REDIS_URL is set: uses Redis for persistent, cross-worker counters.
   - Otherwise: in-memory storage (single-worker only, lost on restart).
-  - in_memory_fallback_enabled=True: auto-degrades to memory if Redis is unavailable.
+  - A configured/required Redis never silently falls back to process memory.
 """
 from __future__ import annotations
 
@@ -21,6 +21,21 @@ from slowapi.util import get_remote_address
 from starlette.requests import Request
 
 _log = logging.getLogger(__name__)
+
+
+def _truthy(value: str | None) -> bool:
+    return (value or "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _replica_count() -> int | None:
+    raw = os.environ.get("FUFIRE_REPLICA_COUNT", "").strip()
+    if not raw:
+        return None
+    try:
+        value = int(raw)
+    except ValueError:
+        return None
+    return value if value > 0 else None
 
 
 def get_rate_limit_key(request: Request) -> str:
@@ -46,13 +61,18 @@ def _resolve_storage_uri() -> Optional[str]:
 
 
 _storage_uri = _resolve_storage_uri()
+_redis_is_required = (
+    _storage_uri is not None
+    or _truthy(os.environ.get("FUFIRE_REQUIRE_REDIS"))
+    or (_replica_count() or 0) > 1
+)
 
 limiter = Limiter(
     key_func=get_rate_limit_key,
     storage_uri=_storage_uri,
-    # When Redis is configured but unreachable, fall back to in-memory
-    # rather than rejecting all requests.
-    in_memory_fallback_enabled=_storage_uri is not None,
+    # A configured or required Redis is part of correctness, because
+    # per-process fallback counters are not globally consistent.
+    in_memory_fallback_enabled=False,
     key_prefix="fufire_rl:",
 )
 
@@ -64,10 +84,16 @@ def get_storage_status() -> dict:
     """Return storage health info for /health endpoint.
 
     Returns:
-        {"type": "redis"|"memory", "status": "ok"|"degraded"|"unavailable", "uri": ...}
+        A secret-safe status mapping. Connection URIs are never returned.
     """
     if _storage_uri is None:
-        return {"type": "memory", "status": "ok", "uri": None}
+        status = "unavailable" if _redis_is_required else "ok"
+        return {
+            "type": "memory",
+            "status": status,
+            "required": _redis_is_required,
+            "configured": False,
+        }
 
     try:
         # Attempt a lightweight check on the underlying limits storage
@@ -76,10 +102,10 @@ def get_storage_status() -> dict:
             # limits.storage.RedisStorage has a .check() method
             check = getattr(storage, "check", None)
             if callable(check) and check():
-                return {"type": "redis", "status": "ok", "uri": _storage_uri}
-        return {"type": "redis", "status": "degraded", "uri": _storage_uri}
+                return {"type": "redis", "status": "ok", "required": True, "configured": True}
+        return {"type": "redis", "status": "degraded", "required": True, "configured": True}
     except Exception:
-        return {"type": "redis", "status": "unavailable", "uri": _storage_uri}
+        return {"type": "redis", "status": "unavailable", "required": True, "configured": True}
 
 
 def tier_limit(key: str) -> str:

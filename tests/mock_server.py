@@ -24,7 +24,18 @@ from typing import Any
 from fastapi import FastAPI, Header, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
+from bazi_engine.wuxing.analysis import calculate_wuxing_from_bazi_with_ledger
+
 SNAPSHOTS_DIR = Path(__file__).parent / "snapshots" / "moseph"
+
+# Precision-sensitive surfaces intentionally not represented by the mock.
+# Consumers must call a real SWIEPH-backed test boundary for these paths.
+MOCK_EXCLUSIONS: dict[str, str] = {
+    "/v2/astronomy/lunar-state": (
+        "Scientific Lunar V2 values and provider provenance must come from a "
+        "real locked ephemeris boundary, not a fabricated endpoint-tester response."
+    ),
+}
 
 # ---------------------------------------------------------------------------
 # Scenario registry — maps scenario prefixes to snapshot case IDs
@@ -297,6 +308,44 @@ def calculate_wuxing(
     data = _load_snapshot(_resolve_case("wuxing"), "wuxing")
     return Response(
         content=json.dumps(data),
+        media_type="application/json",
+        headers=_std_headers(x_request_id),
+    )
+
+
+@app.post("/calculate/bazi/wuxing")
+@app.post("/v1/calculate/bazi/wuxing")
+def calculate_bazi_wuxing(
+    request: Request,
+    x_api_key: str | None = Header(None),
+    x_request_id: str | None = Header(None),
+):
+    """Derive the BaZi Wu-Xing mock from the selected frozen BaZi snapshot."""
+    del request, x_api_key
+    _simulate_latency()
+    _maybe_fail()
+    bazi = _load_snapshot(_resolve_case("bazi"), "bazi")
+    pillars = {
+        name: {"stem": item["stamm"], "branch": item["zweig"]}
+        for name, item in bazi["pillars"].items()
+    }
+    vector, ledger = calculate_wuxing_from_bazi_with_ledger(pillars)
+    values = vector.to_dict()
+    ephemeris_id = bazi["provenance"].get("ephemeris_id", "")
+    mode = "MOSEPH" if ephemeris_id == "moshier_analytic" else "SWIEPH"
+    body = {
+        "input": bazi["input"],
+        "wu_xing_vector": values,
+        "dominant_element": max(values, key=values.__getitem__),
+        "basis": "bazi_four_pillars",
+        "pillars": pillars,
+        "contribution_ledger": {"bazi": ledger},
+        "provenance": bazi["provenance"],
+        "quality_flags": {"ephemeris_mode": mode},
+        "precision": bazi["precision"],
+    }
+    return Response(
+        content=json.dumps(body),
         media_type="application/json",
         headers=_std_headers(x_request_id),
     )

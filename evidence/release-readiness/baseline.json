@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-07-21T23:40:36+02:00",
+  "repository": {
+    "full_name": "DYAI2025/FUFIRE_API_lunar",
+    "visibility": "public",
+    "head_sha": "fe8f0198f6a4bda1568d986bf8aac06efe4e123c",
+    "head_message": "Initial commit",
+    "default_branch": "master",
+    "branches": [
+      "dependabot/docker/python-3.14-slim",
+      "dependabot/github_actions/actions/setup-python-7",
+      "master"
+    ],
+    "tags": [],
+    "integration_branch": "release/readiness-integration",
+    "snapshot_matches_live_head": true,
+    "authenticated_permissions": [
+      "admin",
+      "maintain",
+      "pull",
+      "push",
+      "triage"
+    ]
+  },
+  "ci": {
+    "combined_status": "success",
+    "statuses": [
+      {
+        "context": "FuFire_API - FUFIRE_API_lunar",
+        "state": "success",
+        "provider": "Railway"
+      }
+    ],
+    "pull_request_workflow_runs": [],
+    "github_actions_run_inventory": {
+      "status": "MISSING",
+      "reason": "The available connector exposes PR-associated runs only; the baseline commit has none."
+    }
+  },
+  "external_configuration": {
+    "branch_protection": {
+      "status": "MISSING",
+      "reason": "No branch-protection or repository-ruleset read operation is available in the connected GitHub surface."
+    },
+    "railway_source_branch": {
+      "status": "MISSING",
+      "reason": "A successful Railway commit status is observable, but project settings and source branch are not exposed."
+    },
+    "railway_environment_and_secrets": {
+      "status": "MISSING",
+      "reason": "Railway project configuration and secrets were not provided and were not inferred from repository data."
+    }
+  },
+  "local_baseline": {
+    "python": "3.12.13",
+    "dependency_install": "local-verified with uv --frozen --all-extras and CC=gcc",
+    "pytest_collect_before_fix": {
+      "status": "failed",
+      "collected": 3625,
+      "errors": 1,
+      "root_cause": "config/claude/lib/gate_contracts.py missing"
+    }
+  },
+  "recovered_source": {
+    "gate_contracts": {
+      "repository": "DYAI2025/FuFirE",
+      "commit": "9b00e0e4b7902db045b17032691dfc91f5bb55b5",
+      "blob_sha": "1827e081d45d86134ac2de478c82523fc3e1b190"
+    }
+  },
+  "release_decision": "BLOCKED"
+}
