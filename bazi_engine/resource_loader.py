@@ -8,14 +8,18 @@ malformed required data instead of substituting fabricated defaults.
 from __future__ import annotations
 
 import json
-import sys
 from importlib.resources import files
-from typing import Any
+from typing import Any, Protocol
 
-if sys.version_info >= (3, 11):
-    from importlib.resources.abc import Traversable
-else:  # pragma: no cover - exercised by the Python 3.10 distribution job
-    from importlib.resources import Traversable  # type: ignore[attr-defined]
+
+class ResourceTraversable(Protocol):
+    """Minimal cross-version interface used from ``importlib.resources``."""
+
+    def joinpath(self, descendant: str, /) -> "ResourceTraversable": ...
+
+    def is_file(self) -> bool: ...
+
+    def read_bytes(self) -> bytes: ...
 
 
 class PackageResourceError(RuntimeError):
@@ -30,7 +34,7 @@ class PackageResourceIntegrityError(PackageResourceError):
     """A required resource exists but cannot be decoded or validated."""
 
 
-def package_resource(package: str, *parts: str) -> Traversable:
+def package_resource(package: str, *parts: str) -> ResourceTraversable:
     """Return a safe ``Traversable`` below ``package``.
 
     Each path component must be a literal child name.  Rejecting separators
