@@ -31,4 +31,8 @@ def test_runtime_installs_verified_wheel_without_source_tree() -> None:
     assert "uv export" in dockerfile
     assert "--frozen" in dockerfile
     assert "--require-hashes" in dockerfile
+    assert "--ignore-installed" in dockerfile
+    assert "pip install --no-cache-dir --no-deps" in dockerfile
+    assert "packaging==26.0" in dockerfile
+    assert "pyproject-hooks==1.2.0" in dockerfile
     assert "pyswisseph does not publish a CPython 3.12 Linux wheel" in dockerfile

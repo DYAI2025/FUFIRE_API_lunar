@@ -89,6 +89,19 @@ def _docker_errors(root: Path) -> list[str]:
             raw = dockerfile.read_text(encoding="utf-8")
             if "uv export" not in raw or "--frozen" not in raw or "--require-hashes" not in raw:
                 errors.append("Dockerfile must install the frozen uv export with hash enforcement")
+            if "--ignore-installed" not in raw:
+                errors.append(
+                    "Dockerfile must isolate the runtime prefix from builder packages"
+                )
+            for build_input in (
+                "build==1.3.0",
+                "packaging==26.0",
+                "pyproject-hooks==1.2.0",
+            ):
+                if build_input not in raw:
+                    errors.append(f"Dockerfile does not pin {build_input}")
+            if "pip install --no-cache-dir --no-deps" not in raw:
+                errors.append("Dockerfile builder bootstrap may resolve mutable dependencies")
     return errors
 
 

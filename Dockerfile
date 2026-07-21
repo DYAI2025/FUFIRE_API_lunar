@@ -31,12 +31,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
-RUN python -m pip install --no-cache-dir \
+RUN python -m pip install --no-cache-dir --no-deps \
       pip==26.1.2 \
       uv==0.11.29 \
       setuptools==80.9.0 \
       wheel==0.45.1 \
-      build==1.3.0
+      build==1.3.0 \
+      packaging==26.0 \
+      pyproject-hooks==1.2.0
 
 COPY pyproject.toml uv.lock ./
 RUN uv export \
@@ -46,6 +48,7 @@ RUN uv export \
       --output-file /build/runtime.requirements.txt && \
     python -m pip install \
       --no-cache-dir \
+      --ignore-installed \
       --require-hashes \
       --prefix=/install \
       -r /build/runtime.requirements.txt
