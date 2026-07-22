@@ -36,10 +36,12 @@ def _workflow_errors(root: Path) -> list[str]:
         return ["no GitHub workflows found"]
 
     combined = ""
+    workflow_lines: list[tuple[Path, int, str]] = []
     for workflow in workflows:
         raw = workflow.read_text(encoding="utf-8")
         combined += raw
         for line_number, line in enumerate(raw.splitlines(), 1):
+            workflow_lines.append((workflow, line_number, line.strip()))
             match = re.search(r"\buses:\s*([^\s#]+)", line)
             if not match:
                 continue
@@ -75,10 +77,17 @@ def _workflow_errors(root: Path) -> list[str]:
     pyproject_path = root / "pyproject.toml"
     if pyproject_path.is_file():
         pyproject = tomllib.loads(pyproject_path.read_text(encoding="utf-8"))
-        for requirement in pyproject["build-system"]["requires"]:
-            compact = requirement.replace(" ", "")
-            if compact not in combined:
-                errors.append(f"workflows do not install build-system requirement {compact}")
+        build_requirements = [requirement.replace(" ", "") for requirement in pyproject["build-system"]["requires"]]
+        build_names = [requirement.split("==", 1)[0] for requirement in build_requirements]
+        for workflow, line_number, line in workflow_lines:
+            if "pip install " not in line or not any(f"{name}==" in line for name in build_names):
+                continue
+            missing = [requirement for requirement in build_requirements if requirement not in line]
+            if missing:
+                errors.append(
+                    f"{workflow.relative_to(root)}:{line_number}: build bootstrap drifts from pyproject; "
+                    f"missing {', '.join(missing)}"
+                )
     return errors
 
 
