@@ -1,4 +1,5 @@
 """Fail closed when release-critical build inputs are mutable or unpinned."""
+
 from __future__ import annotations
 
 import argparse
@@ -19,6 +20,7 @@ IMAGE_DIGEST = re.compile(r"^[^\s]+@sha256:[0-9a-f]{64}$")
 EXACT_REQUIREMENT = re.compile(r"^[A-Za-z0-9_.-]+(?:\[[^]]+\])?==[^;\s]+(?:;.+)?$")
 
 EXPECTED_TOOLCHAIN = {
+    "python": "3.12",
     "pip": "26.1.2",
     "uv": "0.11.29",
     "node": "22.21.1",
@@ -85,14 +87,19 @@ def _docker_errors(root: Path) -> list[str]:
             image = line.split()[1]
             if not IMAGE_DIGEST.fullmatch(image):
                 errors.append(f"{dockerfile.name}:{line_number}: mutable base image {image}")
+            if dockerfile.name == "Dockerfile" and image.startswith("python:"):
+                approved_prefix = f"python:{EXPECTED_TOOLCHAIN['python']}-slim@sha256:"
+                if not image.startswith(approved_prefix):
+                    errors.append(
+                        f"Dockerfile:{line_number}: unapproved Python base {image}; "
+                        f"expected Python {EXPECTED_TOOLCHAIN['python']}-slim with digest"
+                    )
         if dockerfile.name == "Dockerfile":
             raw = dockerfile.read_text(encoding="utf-8")
             if "uv export" not in raw or "--frozen" not in raw or "--require-hashes" not in raw:
                 errors.append("Dockerfile must install the frozen uv export with hash enforcement")
             if "--ignore-installed" not in raw:
-                errors.append(
-                    "Dockerfile must isolate the runtime prefix from builder packages"
-                )
+                errors.append("Dockerfile must isolate the runtime prefix from builder packages")
             for build_input in (
                 "build==1.3.0",
                 "packaging==26.0",
@@ -126,7 +133,7 @@ def _python_lock_errors(root: Path) -> list[str]:
             errors.append(f"requirements.lock:{line_number}: non-exact requirement {line.strip()}")
 
     lock_text = uv_lock_path.read_text(encoding="utf-8")
-    if 'revision = 3' not in lock_text:
+    if "revision = 3" not in lock_text:
         errors.append("uv.lock is not the expected revision-3 lock format")
     return errors
 

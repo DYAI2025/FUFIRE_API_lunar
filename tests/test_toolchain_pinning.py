@@ -33,6 +33,28 @@ def test_validator_rejects_mutable_action_reference(tmp_path: Path) -> None:
     assert any("mutable action" in error for error in errors)
 
 
+def test_validator_rejects_unapproved_python_runtime_even_when_digest_pinned(
+    tmp_path: Path,
+) -> None:
+    for filename in ("pyproject.toml", "uv.lock", "requirements.lock", "package.json", "package-lock.json"):
+        shutil.copy2(ROOT / filename, tmp_path / filename)
+    dockerfile = (
+        (ROOT / "Dockerfile")
+        .read_text(encoding="utf-8")
+        .replace(
+            "python:3.12-slim@sha256:",
+            "python:3.14-slim@sha256:",
+        )
+    )
+    (tmp_path / "Dockerfile").write_text(dockerfile, encoding="utf-8")
+    shutil.copy2(ROOT / "Dockerfile.ephe-base", tmp_path / "Dockerfile.ephe-base")
+    workflows = tmp_path / ".github" / "workflows"
+    shutil.copytree(ROOT / ".github" / "workflows", workflows)
+
+    errors = validator.validate(tmp_path)
+    assert any("unapproved Python base" in error for error in errors)
+
+
 def test_node_lock_root_matches_package_manifest() -> None:
     package = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
     lock = json.loads((ROOT / "package-lock.json").read_text(encoding="utf-8"))
