@@ -77,12 +77,12 @@ def test_validator_rejects_ci_build_backend_drift(tmp_path: Path) -> None:
     shutil.copytree(ROOT / ".github" / "workflows", workflows)
     ci_path = workflows / "ci.yml"
     ci_path.write_text(
-        ci_path.read_text(encoding="utf-8").replace("wheel==0.47.0", "wheel==0.45.1"),
+        ci_path.read_text(encoding="utf-8").replace("wheel==0.47.0", "wheel==0.45.1", 1),
         encoding="utf-8",
     )
 
     errors = validator.validate(tmp_path)
-    assert any("workflows do not install build-system requirement wheel==0.47.0" in error for error in errors)
+    assert any("build bootstrap drifts from pyproject" in error and "wheel==0.47.0" in error for error in errors)
 
 
 def test_node_lock_root_matches_package_manifest() -> None:
