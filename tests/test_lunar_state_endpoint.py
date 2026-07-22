@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi.testclient import TestClient
 
 from bazi_engine.app import app
+from bazi_engine.lunar_state import EPHEMERIS_LOCK_ID
 
 client = TestClient(app)
 
@@ -29,6 +30,15 @@ def test_v2_lunar_state_endpoint_returns_canonical_shape() -> None:
     assert body["lunar_state"]["phase"]["illumination_fraction"] < 0.01
     assert body["lunar_state"]["method"]["id"] == "canonical-geocentric-lunar-state-v2"
     assert body["lunar_state"]["method"]["reference_frame"] == "geocentric_apparent_ecliptic_of_date"
+    method = body["lunar_state"]["method"]
+    assert method["precision_grade"] in {"high_precision", "degraded"}
+    assert method["precision_grade"] != "exact"
+    if method["ephemeris_mode"] == "SWIEPH":
+        assert method["ephemeris_lock_id"] == EPHEMERIS_LOCK_ID
+    else:
+        assert method["ephemeris_lock_id"] is None
+    assert method["supported_utc_start"] == "1900-01-01T00:00:00+00:00"
+    assert method["supported_utc_end_exclusive"] == "2100-01-01T00:00:00+00:00"
 
 
 def test_v2_lunar_state_endpoint_preserves_fold_choice() -> None:
@@ -67,6 +77,22 @@ def test_v2_lunar_state_rejects_nonexistent_time_before_astronomy() -> None:
 def test_lunar_state_is_v2_only() -> None:
     assert client.post("/astronomy/lunar-state", json=_payload()).status_code == 404
     assert client.post("/v1/astronomy/lunar-state", json=_payload()).status_code == 404
+
+
+def test_lunar_state_rejects_instant_outside_supported_range() -> None:
+    payload = _payload()
+    payload["instant"] = {
+        "datetime_local": "2100-01-01T00:00:00",
+        "timezone": "UTC",
+        "ambiguousTime": "earlier",
+        "nonexistentTime": "error",
+    }
+
+    response = client.post("/v2/astronomy/lunar-state", json=payload)
+
+    assert response.status_code == 422
+    assert response.json()["error"] == "input_error"
+    assert "supported_utc_end_exclusive" in response.json()["detail"]
 
 
 def test_openapi_contains_typed_v2_lunar_state_contract() -> None:

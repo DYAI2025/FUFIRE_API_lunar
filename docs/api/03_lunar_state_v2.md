@@ -77,7 +77,11 @@ horizon visibility are not part of this contract.
       "id": "canonical-geocentric-lunar-state-v2",
       "ephemeris_mode": "SWIEPH",
       "reference_frame": "geocentric_apparent_ecliptic_of_date",
-      "precision_grade": "exact",
+      "precision_grade": "high_precision",
+      "provider_version": "2.10.03",
+      "ephemeris_lock_id": "c2185af9a436e8381bcf2e6584afd793a280ec0a70796c03b54ba9441fe27623",
+      "supported_utc_start": "1900-01-01T00:00:00+00:00",
+      "supported_utc_end_exclusive": "2100-01-01T00:00:00+00:00",
       "warnings": []
     }
   }
@@ -120,6 +124,30 @@ return `422`. Missing high-precision SE1 files under the production SWIEPH
 configuration return `503`; the engine does not silently claim SWIEPH after a
 Moshier fallback. Numerical failures return the standard `calculation_error`
 envelope.
+
+The supported interval is `1900-01-01T00:00:00Z` inclusive through
+`2100-01-01T00:00:00Z` exclusive. A local timestamp is checked after timezone
+resolution against that UTC interval; out-of-range input returns `422
+input_error`. This is a deliberately conservative public contract inside the
+locked `sepl_18`/`semo_18` file era, not a claim about Swiss Ephemeris' maximum
+theoretical range.
+
+`high_precision` means the request was computed in attested SWIEPH mode with
+the exact package-disclosed ephemeris lock. It intentionally does not say
+`exact`: model, time-scale, source-data, and rounding uncertainty still exist.
+In non-production development mode, another provider is reported as
+`degraded` and the lock ID is `null`.
+
+## Independent phase-time reference gate
+
+The locked test corpus records the four primary phases from the official
+[U.S. Naval Observatory phase service](https://aa.usno.navy.mil/data/MoonPhases)
+for 1900, 1950, 2000, 2024, and 2099. The published values have one-minute
+resolution. CI refines each event with the locked SWIEPH provider and currently
+requires agreement within 90 seconds, plus transition and seeded lunation
+invariants. The 90-second value is a conservative engineering gate; formal
+astronomy/domain-owner approval of that tolerance remains **MISSING**, so a
+green technical test alone does not authorize production promotion.
 
 ## Compatibility boundary
 

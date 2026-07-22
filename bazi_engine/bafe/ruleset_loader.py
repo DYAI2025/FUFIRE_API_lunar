@@ -1,25 +1,16 @@
 from __future__ import annotations
 
-import json
-from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from bazi_engine.resource_loader import load_json_object_resource
 
-def _repo_root_from_here() -> Path:
-    # bazi_engine/bafe/ruleset_loader.py -> bazi_engine -> repo root
-    here = Path(__file__).resolve()
-    return here.parents[2]
-
-def _spec_rulesets_dir() -> Path:
-    return _repo_root_from_here() / "spec" / "rulesets"
 
 def load_ruleset(ruleset_id: str) -> Dict[str, Any]:
     # Canonical mapping: id -> filename
     filename = f"{ruleset_id}.json"
-    path = _spec_rulesets_dir() / filename
-    if not path.exists():
-        raise FileNotFoundError(f"Ruleset not found: {ruleset_id} ({path})")
-    data = json.loads(path.read_text(encoding="utf-8"))
+    data = load_json_object_resource(
+        "bazi_engine.resources", "rulesets", filename
+    )
     if data.get("ruleset_id") != ruleset_id:
         raise ValueError("Ruleset id mismatch in file")
     return data

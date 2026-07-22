@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import json
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from jsonschema import Draft7Validator
+
+from bazi_engine.resource_loader import load_json_object_resource
 
 from .canonical_json import config_fingerprint as compute_fingerprint
 from .errors import make_issue
@@ -20,13 +20,10 @@ from .ruleset_loader import day_cycle_anchor_status, load_ruleset, ruleset_versi
 from .time_model import evaluate_time
 
 
-def _repo_root_from_here() -> Path:
-    here = Path(__file__).resolve()
-    return here.parents[2]
-
 def _load_schema(name: str) -> Dict[str, Any]:
-    path = _repo_root_from_here() / "spec" / "schemas" / name
-    return json.loads(path.read_text(encoding="utf-8"))
+    return load_json_object_resource(
+        "bazi_engine.resources", "schemas", name
+    )
 
 _VALIDATE_REQUEST_SCHEMA = _load_schema("ValidateRequest.schema.json")
 _VALIDATE_RESPONSE_SCHEMA = _load_schema("ValidateResponse.schema.json")

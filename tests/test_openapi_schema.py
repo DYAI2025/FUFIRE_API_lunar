@@ -4,8 +4,8 @@ test_openapi_schema.py — Spec truth: servers list and legacy deprecation.
 These tests pin two facts about the served /openapi.json:
   - The servers list names ONLY live deployments (Railway); the old Fly.io
     and Cloud Run URLs are decommissioned and must never reappear.
-  - Every legacy (non-/v1) operation carries deprecated:true; /v1 is the
-    canonical surface and must never be deprecated.
+  - Every unversioned legacy operation carries deprecated:true; /v1 and /v2
+    are versioned surfaces and must never be deprecated.
 
 The landingpage repo mirrors the deprecation rule fail-closed in
 tests/unit/openapi-legacy-deprecated.test.ts — a regression here breaks
@@ -41,7 +41,7 @@ def test_legacy_unversioned_operations_are_deprecated():
     schema = client.get("/openapi.json").json()
     offenders = []
     for path, methods in schema["paths"].items():
-        if path == "/" or path.startswith("/v1"):
+        if path == "/" or path.startswith(("/v1", "/v2")):
             continue
         for method, op in methods.items():
             if method in HTTP_METHODS and isinstance(op, dict) and op.get("deprecated") is not True:
@@ -54,6 +54,18 @@ def test_v1_operations_are_not_deprecated():
     wrongly = []
     for path, methods in schema["paths"].items():
         if not path.startswith("/v1"):
+            continue
+        for method, op in methods.items():
+            if method in HTTP_METHODS and isinstance(op, dict) and op.get("deprecated") is True:
+                wrongly.append(f"{method.upper()} {path}")
+    assert wrongly == [], wrongly
+
+
+def test_v2_operations_are_not_deprecated():
+    schema = client.get("/openapi.json").json()
+    wrongly = []
+    for path, methods in schema["paths"].items():
+        if not path.startswith("/v2"):
             continue
         for method, op in methods.items():
             if method in HTTP_METHODS and isinstance(op, dict) and op.get("deprecated") is True:

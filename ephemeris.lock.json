@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "lock_id": "c2185af9a436e8381bcf2e6584afd793a280ec0a70796c03b54ba9441fe27623",
+  "source": {
+    "repository": "aloistr/swisseph",
+    "commit": "2f18c14c37ecf96264e87b2b6ed67b2028ae0c96",
+    "subdirectory": "ephe"
+  },
+  "files": [
+    {
+      "name": "sepl_18.se1",
+      "size": 484061,
+      "sha256": "b8e657c1f5a9c51821ef973baf233a3c07137101e35b95e00ac0e9eeea7fbeb8"
+    },
+    {
+      "name": "semo_18.se1",
+      "size": 1304771,
+      "sha256": "7034c7825a0fef2f660d99161aa8e60429adfa315d269ac68042ef5a5e6319bf"
+    },
+    {
+      "name": "seas_18.se1",
+      "size": 223004,
+      "sha256": "6559b0fc637eaed42ae747187cfd1426540d12b08114603bc39fd13f3bf80c83"
+    },
+    {
+      "name": "seplm06.se1",
+      "size": 484277,
+      "sha256": "bd6c47f96abf2876a825500a3b09594b9d7887f52e67389d4ff25e25f9d37497"
+    }
+  ],
+  "policy": {
+    "release_mode": "swieph-only",
+    "network_fallback": false,
+    "snapshot_updates_in_release_ci": false
+  }
+}

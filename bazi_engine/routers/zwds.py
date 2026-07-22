@@ -32,9 +32,7 @@ through ``services/zwds_service.py`` and the ZWDS error contract from
 
 from __future__ import annotations
 
-import json
 from functools import lru_cache
-from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
 
 from fastapi import APIRouter, HTTPException, Request
@@ -42,6 +40,7 @@ from jsonschema import Draft202012Validator
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..limiter import limiter, tier_limit
+from ..resource_loader import load_json_object_resource
 from ..services import zwds_service
 from ..zwds.errors import (
     ZwdsDirectionBasisMissingError,
@@ -53,19 +52,12 @@ router = APIRouter(tags=["ZWDS"])
 
 # --- vendored request schema (cross-field conditional invariants) ------------
 
-_REQUEST_SCHEMA_PATH = (
-    Path(__file__).resolve().parents[2]
-    / "spec"
-    / "schemas"
-    / "zwds"
-    / "ZwdsRequest.schema.json"
-)
-
-
 @lru_cache(maxsize=1)
 def _request_validator() -> Draft202012Validator:
     """Load and cache the Draft-2020-12 validator for the request schema."""
-    schema = json.loads(_REQUEST_SCHEMA_PATH.read_text(encoding="utf-8"))
+    schema = load_json_object_resource(
+        "bazi_engine.resources", "schemas", "zwds", "ZwdsRequest.schema.json"
+    )
     return Draft202012Validator(schema)
 
 

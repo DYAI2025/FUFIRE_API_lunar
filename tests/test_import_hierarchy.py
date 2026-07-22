@@ -35,6 +35,7 @@ ENGINE_ROOT = REPO_ROOT / "bazi_engine"
 LAYERS: Dict[str, int] = {
     "constants":   0,
     "exc":         0,  # exception hierarchy — zero internal deps
+    "resource_loader": 0,  # stdlib-only immutable package-resource boundary
     "provenance":  1,  # only imports __version__ — no domain deps
     "types":       1,
     "ephemeris":   2,
@@ -91,7 +92,7 @@ LAYERS: Dict[str, int] = {
     "bafe.harmonics":       5,
     "bafe.canonical_json":  5,
     "bafe.errors":          5,
-    "bafe.ruleset_loader":  2,  # pure data loader: stdlib-only, no internal deps
+    "bafe.ruleset_loader":  2,  # pure data loader via the Layer-0 resource boundary
     # routers and services also live at Layer 5
     "routers.shared":       5,
     "routers.info":         5,

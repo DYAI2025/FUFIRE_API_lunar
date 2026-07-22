@@ -4,6 +4,7 @@ from datetime import datetime
 
 import pytest
 
+from bazi_engine.exc import InputError
 from bazi_engine.lunar_state import (
     CelestialPosition,
     LunarPhenomena,
@@ -135,3 +136,25 @@ def test_equivalent_physical_instants_have_identical_lunar_state() -> None:
     assert a.jd_ut == b.jd_ut
     assert a.phase.elongation_deg == b.phase.elongation_deg
     assert a.lunation == b.lunation
+
+
+@pytest.mark.parametrize(
+    "local_iso",
+    ["1899-12-31T23:59:59", "2100-01-01T00:00:00"],
+)
+def test_supported_range_fails_closed_before_provider_use(local_iso: str) -> None:
+    resolved = resolve_local_instant(local_iso, "UTC")
+
+    with pytest.raises(InputError, match="1900-01-01"):
+        compute_lunar_state(resolved, provider=LinearLunarProvider())
+
+
+def test_swieph_precision_label_does_not_claim_exactness() -> None:
+    resolved = resolve_local_instant("2024-01-01T12:00:00", "UTC")
+    provider = LinearLunarProvider()
+    provider.mode = "SWIEPH"
+    state = compute_lunar_state(resolved, provider=provider)
+
+    assert state.method.precision_grade == "high_precision"
+    assert state.method.precision_grade != "exact"
+    assert state.method.ephemeris_lock_id is not None

@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.5.0](https://github.com/DYAI2025/FuFirE/compare/v1.4.0...v1.5.0) (2026-07-21)
+
+### Features
+
+* **wuxing:** add canonical BaZi Wu-Xing endpoint; label planetary one ([8530b30](https://github.com/DYAI2025/FuFirE/commit/8530b30c150eeccc4280ba6ca1eec902e9705964))
+* **wuxing:** canonical BaZi Wu-Xing endpoint + label the planetary one ([9911b97](https://github.com/DYAI2025/FuFirE/commit/9911b97d94c0bba0ad9d1117d56d0cb597b0b7d0))
+
+This entry reconstructs the package baseline from the canonical `DYAI2025/FuFirE`
+history. The new Lunar repository itself still begins at commit `fe8f0198`; no
+tags or commits have been fabricated or copied into its Git history.
+
 ## [1.4.0](https://github.com/DYAI2025/FuFirE/compare/v1.3.0...v1.4.0) (2026-07-18)
 
 
