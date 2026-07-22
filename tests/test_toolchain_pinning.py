@@ -55,6 +55,36 @@ def test_validator_rejects_unapproved_python_runtime_even_when_digest_pinned(
     assert any("unapproved Python base" in error for error in errors)
 
 
+def test_validator_rejects_docker_build_backend_drift(tmp_path: Path) -> None:
+    for filename in ("pyproject.toml", "uv.lock", "requirements.lock", "package.json", "package-lock.json"):
+        shutil.copy2(ROOT / filename, tmp_path / filename)
+    dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8").replace("wheel==0.47.0", "wheel==0.45.1")
+    (tmp_path / "Dockerfile").write_text(dockerfile, encoding="utf-8")
+    shutil.copy2(ROOT / "Dockerfile.ephe-base", tmp_path / "Dockerfile.ephe-base")
+    workflows = tmp_path / ".github" / "workflows"
+    shutil.copytree(ROOT / ".github" / "workflows", workflows)
+
+    errors = validator.validate(tmp_path)
+    assert any("Dockerfile build frontend drifts" in error for error in errors)
+
+
+def test_validator_rejects_ci_build_backend_drift(tmp_path: Path) -> None:
+    for filename in ("pyproject.toml", "uv.lock", "requirements.lock", "package.json", "package-lock.json"):
+        shutil.copy2(ROOT / filename, tmp_path / filename)
+    shutil.copy2(ROOT / "Dockerfile", tmp_path / "Dockerfile")
+    shutil.copy2(ROOT / "Dockerfile.ephe-base", tmp_path / "Dockerfile.ephe-base")
+    workflows = tmp_path / ".github" / "workflows"
+    shutil.copytree(ROOT / ".github" / "workflows", workflows)
+    ci_path = workflows / "ci.yml"
+    ci_path.write_text(
+        ci_path.read_text(encoding="utf-8").replace("wheel==0.47.0", "wheel==0.45.1"),
+        encoding="utf-8",
+    )
+
+    errors = validator.validate(tmp_path)
+    assert any("workflows do not install build-system requirement wheel==0.47.0" in error for error in errors)
+
+
 def test_node_lock_root_matches_package_manifest() -> None:
     package = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
     lock = json.loads((ROOT / "package-lock.json").read_text(encoding="utf-8"))
