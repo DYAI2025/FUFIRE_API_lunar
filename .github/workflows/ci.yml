@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, master]
   pull_request:
-    branches: [main]
+    branches: [main, master]
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -241,7 +241,7 @@ jobs:
 
       - name: Install pinned build frontend
         run: |
-          python -m pip install pip==26.1.2 uv==0.11.29 setuptools==80.9.0 wheel==0.45.1 build==1.3.0
+          python -m pip install pip==26.1.2 uv==0.11.29 setuptools==80.9.0 wheel==0.47.0 build==1.3.0
           uv export --frozen --no-emit-project --format requirements-txt --output-file /tmp/runtime.requirements.txt
 
       - name: Build and inspect wheel and sdist
@@ -258,7 +258,7 @@ jobs:
           (cd /tmp && /tmp/fufire-wheel/bin/python "$GITHUB_WORKSPACE/scripts/distribution_smoke.py")
 
           python -m venv /tmp/fufire-sdist
-          /tmp/fufire-sdist/bin/python -m pip install pip==26.1.2 setuptools==80.9.0 wheel==0.45.1
+          /tmp/fufire-sdist/bin/python -m pip install pip==26.1.2 setuptools==80.9.0 wheel==0.47.0
           /tmp/fufire-sdist/bin/python -m pip install --require-hashes -r /tmp/runtime.requirements.txt
           /tmp/fufire-sdist/bin/python -m pip install --no-build-isolation --no-deps dist/*.tar.gz
           (cd /tmp && /tmp/fufire-sdist/bin/python "$GITHUB_WORKSPACE/scripts/distribution_smoke.py")
