@@ -36,10 +36,12 @@ def _workflow_errors(root: Path) -> list[str]:
         return ["no GitHub workflows found"]
 
     combined = ""
+    workflow_lines: list[tuple[Path, int, str]] = []
     for workflow in workflows:
         raw = workflow.read_text(encoding="utf-8")
         combined += raw
         for line_number, line in enumerate(raw.splitlines(), 1):
+            workflow_lines.append((workflow, line_number, line.strip()))
             match = re.search(r"\buses:\s*([^\s#]+)", line)
             if not match:
                 continue
@@ -72,6 +74,20 @@ def _workflow_errors(root: Path) -> list[str]:
         errors.append("Python CI does not enforce uv.lock with --frozen")
     if "uv export --frozen" not in combined or "--require-hashes" not in combined:
         errors.append("distribution CI does not install a hash-locked uv export")
+    pyproject_path = root / "pyproject.toml"
+    if pyproject_path.is_file():
+        pyproject = tomllib.loads(pyproject_path.read_text(encoding="utf-8"))
+        build_requirements = [requirement.replace(" ", "") for requirement in pyproject["build-system"]["requires"]]
+        build_names = [requirement.split("==", 1)[0] for requirement in build_requirements]
+        for workflow, line_number, line in workflow_lines:
+            if "pip install " not in line or not any(f"{name}==" in line for name in build_names):
+                continue
+            missing = [requirement for requirement in build_requirements if requirement not in line]
+            if missing:
+                errors.append(
+                    f"{workflow.relative_to(root)}:{line_number}: build bootstrap drifts from pyproject; "
+                    f"missing {', '.join(missing)}"
+                )
     return errors
 
 
@@ -107,6 +123,15 @@ def _docker_errors(root: Path) -> list[str]:
             ):
                 if build_input not in raw:
                     errors.append(f"Dockerfile does not pin {build_input}")
+            pyproject_path = root / "pyproject.toml"
+            if pyproject_path.is_file():
+                pyproject = tomllib.loads(pyproject_path.read_text(encoding="utf-8"))
+                for requirement in pyproject["build-system"]["requires"]:
+                    compact = requirement.replace(" ", "")
+                    if compact not in raw:
+                        errors.append(
+                            f"Dockerfile build frontend drifts from pyproject: missing {compact}"
+                        )
             if "pip install --no-cache-dir --no-deps" not in raw:
                 errors.append("Dockerfile builder bootstrap may resolve mutable dependencies")
     return errors
@@ -121,6 +146,11 @@ def _python_lock_errors(root: Path) -> list[str]:
         return ["pyproject.toml, uv.lock, and requirements.lock are all mandatory"]
 
     pyproject = tomllib.loads(pyproject_path.read_text(encoding="utf-8"))
+    build_requirements = pyproject["build-system"]["requires"]
+    for requirement in build_requirements:
+        compact = requirement.replace(" ", "")
+        if not EXACT_REQUIREMENT.fullmatch(compact):
+            errors.append(f"build-system requirement is not exact-pinned: {requirement}")
     dev_requirements = pyproject["project"]["optional-dependencies"]["dev"]
     for requirement in dev_requirements:
         compact = requirement.replace(" ", "")

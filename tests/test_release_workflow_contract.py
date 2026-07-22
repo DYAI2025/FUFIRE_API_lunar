@@ -35,11 +35,10 @@ def test_atomic_release_gate_transitively_requires_every_mandatory_job() -> None
     assert "result != \"success\"" in gate["steps"][0]["run"]
 
 
-def test_ci_targets_only_the_canonical_main_branch() -> None:
+def test_ci_covers_canonical_main_and_deployed_master_branches() -> None:
     raw = CI_PATH.read_text(encoding="utf-8")
 
-    assert "branches: [main]" in raw
-    assert "branches: [master]" not in raw
+    assert raw.count("branches: [main, master]") == 2
 
 
 def test_docker_gate_executes_non_root_ephemeris_runtime_smoke() -> None:
