@@ -1,0 +1,264 @@
+{
+  "schema_version": "fufire.live-production-gates.v1",
+  "as_of": "2026-07-22",
+  "release_decision": "BLOCKED",
+  "release_decision_reason": "Mandatory external legal, control-plane, staging, performance, observability, domain, portal, promotion, and rollback evidence is missing.",
+  "repositories": {
+    "engine": {
+      "name": "DYAI2025/FUFIRE_API_lunar",
+      "main_sha": "d51df762746591aa6928edec9459fff18aa606fc",
+      "master_sha": "d51df762746591aa6928edec9459fff18aa606fc",
+      "content_converged": true,
+      "github_default_branch": "master",
+      "intended_canonical_branch": "main",
+      "railway_source_branch": null
+    },
+    "portal": {
+      "name": "DYAI2025/FuFire_API_LIVE",
+      "head_sha": null,
+      "openapi_sha256": null,
+      "lunar_live_proof": null
+    }
+  },
+  "closed_actions": [
+    {
+      "id": "ACTION-001",
+      "description": "Safely fast-forwarded Engine main to master without force push.",
+      "evidence_class": "production-observed",
+      "evidence": [
+        "main and master are identical at d51df762746591aa6928edec9459fff18aa606fc"
+      ]
+    },
+    {
+      "id": "ACTION-002",
+      "description": "Closed stale Engine PRs 6 and 16 as superseded.",
+      "evidence_class": "production-observed",
+      "evidence": [
+        "https://github.com/DYAI2025/FUFIRE_API_lunar/pull/6",
+        "https://github.com/DYAI2025/FUFIRE_API_lunar/pull/16"
+      ]
+    }
+  ],
+  "gates": [
+    {
+      "id": "LR-001",
+      "priority": "P0",
+      "name": "Canonical branch, default branch, and Railway source",
+      "status": "PARTIAL",
+      "owner": "Repository Admin / Platform",
+      "evidence_class": "production-observed",
+      "evidence": ["main and master content are identical at d51df762746591aa6928edec9459fff18aa606fc"],
+      "missing": ["GitHub default branch is still master", "Railway source branch and deployed SHA are not evidenced"]
+    },
+    {
+      "id": "LR-002",
+      "priority": "P0",
+      "name": "Protected branch rules and required checks",
+      "status": "MISSING",
+      "owner": "Repository Admin / Security",
+      "evidence_class": "fake-only",
+      "evidence": [],
+      "missing": ["Ruleset export", "Required-check proof", "No-bypass proof"]
+    },
+    {
+      "id": "LR-003",
+      "priority": "P0",
+      "name": "Least-privilege release identity",
+      "status": "MISSING",
+      "owner": "Repository Admin / Security",
+      "evidence_class": "fake-only",
+      "evidence": [],
+      "missing": ["Provisioned RELEASE_PLEASE_TOKEN identity", "Successful bot release PR", "Audit/check-suite evidence"]
+    },
+    {
+      "id": "LR-004",
+      "priority": "P0",
+      "name": "Swiss Ephemeris license approval",
+      "status": "BLOCKED",
+      "owner": "Legal / Product",
+      "evidence_class": "fake-only",
+      "evidence": ["docs/release/swiss-ephemeris-license-gate.md"],
+      "missing": ["Written approval ID", "Permitted hosted-service and artifact scope", "Consistent artifact license inventory"]
+    },
+    {
+      "id": "LR-005",
+      "priority": "P0",
+      "name": "Astronomy tolerance and supported range",
+      "status": "BLOCKED",
+      "owner": "Astronomy Domain Owner",
+      "evidence_class": "unit-only",
+      "evidence": ["tests/test_lunar_state_swieph_reference.py", "tests/fixtures/lunar_phase_usno_reference.json"],
+      "missing": ["Approval ID for tolerance", "Approval ID for supported range", "Signed observed-error report"]
+    },
+    {
+      "id": "LR-006",
+      "priority": "P0",
+      "name": "Public release and version authority",
+      "status": "BLOCKED",
+      "owner": "Product / Release Owner",
+      "evidence_class": "unit-only",
+      "evidence": ["docs/adr/ADR-003-lunar-release-baseline.md"],
+      "missing": ["Approved public release version", "Single version authority across package, runtime, OpenAPI, manifest, changelog, and tag"]
+    },
+    {
+      "id": "LR-007",
+      "priority": "P0",
+      "name": "Merged review findings resolved",
+      "status": "PARTIAL",
+      "owner": "Engine Maintainer",
+      "evidence_class": "fake-only",
+      "evidence": ["Python 3.10 tomllib/tomli compatibility patch on fix/lunar-v2-production-readiness-preflight"],
+      "missing": ["Green Python 3.10/3.11/3.12 CI on patch", "Explicit generated OpenAPI 503 readiness schema", "Approved version-policy closure", "Zero unresolved review threads"]
+    },
+    {
+      "id": "LR-008",
+      "priority": "P0",
+      "name": "Public runtime SWIEPH and ephemeris lock proof",
+      "status": "MISSING",
+      "owner": "Platform / QA",
+      "evidence_class": "unit-only",
+      "evidence": ["ephemeris.lock.json", "tests/test_lunar_state_swieph_reference.py"],
+      "missing": ["Real-boundary /ready proof", "Live Lunar provenance proof", "Missing/corrupt ephemeris failure injection"]
+    },
+    {
+      "id": "LR-009",
+      "priority": "P0",
+      "name": "Auth, CORS, Redis, rate limit, key rotation at real boundary",
+      "status": "MISSING",
+      "owner": "Security / QA / Platform",
+      "evidence_class": "unit-only",
+      "evidence": ["bazi_engine/config_guard.py", "bazi_engine/auth.py", "bazi_engine/limiter.py"],
+      "missing": ["Staging no-key/invalid/valid/revoked/rotated matrix", "CORS allow/deny proof", "Shared Redis 429 proof", "Sanitized log review"]
+    },
+    {
+      "id": "LR-010",
+      "priority": "P0",
+      "name": "Readiness 503 contract",
+      "status": "PARTIAL",
+      "owner": "Engine Maintainer / Platform",
+      "evidence_class": "unit-only",
+      "evidence": ["bazi_engine/routers/info.py", "tests/test_readiness_policy.py"],
+      "missing": ["Accepted ADR", "Generated OpenAPI 503 HealthResponse schema test", "Railway probe verification"]
+    },
+    {
+      "id": "LR-011",
+      "priority": "P0",
+      "name": "Build once and promote immutable image digest",
+      "status": "MISSING",
+      "owner": "Platform / Release Owner",
+      "evidence_class": "integration",
+      "evidence": ["Current CI builds an image but does not provide production-promotion evidence"],
+      "missing": ["Approved registry", "Pushed immutable digest", "Same digest in Staging and Production"]
+    },
+    {
+      "id": "LR-012",
+      "priority": "P0",
+      "name": "Image, SBOM, and release provenance",
+      "status": "MISSING",
+      "owner": "Security / Release Owner",
+      "evidence_class": "integration",
+      "evidence": ["scripts/build_release_evidence.py currently fails closed as BLOCKED"],
+      "missing": ["Verifiable image attestation", "Verifiable SBOM attestation", "Complete signed evidence manifest"]
+    },
+    {
+      "id": "LR-013",
+      "priority": "P0",
+      "name": "Production-equivalent isolated Engine Staging",
+      "status": "MISSING",
+      "owner": "Platform",
+      "evidence_class": "fake-only",
+      "evidence": [],
+      "missing": ["Railway staging environment", "Exact digest deployment", "Redis and SWIEPH configuration", "Staging identity report"]
+    },
+    {
+      "id": "LR-014",
+      "priority": "P0",
+      "name": "Performance, burst, and soak thresholds",
+      "status": "MISSING",
+      "owner": "Product / SRE / QA",
+      "evidence_class": "fake-only",
+      "evidence": [],
+      "missing": ["Approved p95/p99/error/resource thresholds", "Measured steady/burst/soak report"]
+    },
+    {
+      "id": "LR-015",
+      "priority": "P0",
+      "name": "Observability, alerts, ownership, and observation window",
+      "status": "MISSING",
+      "owner": "SRE / Platform",
+      "evidence_class": "fake-only",
+      "evidence": [],
+      "missing": ["Dashboards", "Alert tests", "On-call owner", "Retention", "Approved observation window"]
+    },
+    {
+      "id": "LR-016",
+      "priority": "P0",
+      "name": "Rollback rehearsal",
+      "status": "MISSING",
+      "owner": "Platform / SRE",
+      "evidence_class": "fake-only",
+      "evidence": [],
+      "missing": ["Previous healthy digest", "Executed rollback", "Measured recovery time", "Post-rollback smokes"]
+    },
+    {
+      "id": "LR-017",
+      "priority": "P0",
+      "name": "Public domain and approved Engine identity",
+      "status": "MISSING",
+      "owner": "Platform / QA",
+      "evidence_class": "fake-only",
+      "evidence": [],
+      "missing": ["DNS/TLS/service binding", "Public /build identity", "Public OpenAPI SHA", "Public Lunar smoke"]
+    },
+    {
+      "id": "LR-018",
+      "priority": "P0",
+      "name": "Portal mirror contains exact approved Lunar contract",
+      "status": "MISSING",
+      "owner": "Portal Maintainer",
+      "evidence_class": "unit-only",
+      "evidence": [],
+      "missing": ["Portal head SHA", "Exact Engine OpenAPI SHA", "Lunar schema/path authority checks"]
+    },
+    {
+      "id": "LR-019",
+      "priority": "P0",
+      "name": "Portal Lunar V2 catalog and release flag",
+      "status": "MISSING",
+      "owner": "Portal Maintainer / Product",
+      "evidence_class": "unit-only",
+      "evidence": [],
+      "missing": ["Explicit V2 allowlist", "Lunar category/navigation", "Feature flag", "Coverage tests"]
+    },
+    {
+      "id": "LR-020",
+      "priority": "P0",
+      "name": "Non-skippable direct, BFF, and browser Lunar release proof",
+      "status": "MISSING",
+      "owner": "Portal Maintainer / QA / Release Owner",
+      "evidence_class": "fake-only",
+      "evidence": [],
+      "missing": ["Required staging check", "Credentials-present fail-closed behavior", "Zero skipped live cases", "Sanitized Playwright/network evidence"]
+    },
+    {
+      "id": "LR-021",
+      "priority": "P1/P0-if-promised",
+      "name": "Quota and product claims match enforcement",
+      "status": "MISSING",
+      "owner": "Product / Engine / Portal",
+      "evidence_class": "unit-only",
+      "evidence": [],
+      "missing": ["Approved quota semantics", "Contract and copy alignment", "Operational enforcement evidence if promised"]
+    },
+    {
+      "id": "LR-022",
+      "priority": "P0",
+      "name": "Ordered two-repository promotion and compatibility rollback",
+      "status": "MISSING",
+      "owner": "Release Owner / Platform / Portal",
+      "evidence_class": "fake-only",
+      "evidence": [],
+      "missing": ["Engine-first/Portal-second rehearsal", "Portal-first rollback proof", "Compatibility matrix"]
+    }
+  ]
+}
