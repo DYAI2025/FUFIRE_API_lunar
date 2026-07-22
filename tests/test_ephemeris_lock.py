@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
+import io
 import json
+import stat
 from pathlib import Path
 
 import pytest
@@ -80,3 +82,21 @@ def test_verify_accepts_exact_locked_bytes(tmp_path: Path) -> None:
     (tmp_path / "test.se1").write_bytes(data)
 
     fetch_ephemeris.verify_directory(tmp_path, lock)
+
+
+def test_fetch_installs_locked_file_with_runtime_read_permissions(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    data = b"trusted-binary-payload"
+    lock = _lock_for("test.se1", data)
+
+    def _open_locked_url(*args: object, **kwargs: object) -> io.BytesIO:
+        return io.BytesIO(data)
+
+    monkeypatch.setattr(fetch_ephemeris.urllib.request, "urlopen", _open_locked_url)
+
+    fetch_ephemeris.fetch_locked_files(tmp_path, lock)
+
+    installed = tmp_path / "test.se1"
+    assert stat.S_IMODE(installed.stat().st_mode) == 0o644
+    assert installed.read_bytes() == data

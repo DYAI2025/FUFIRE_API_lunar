@@ -16,6 +16,7 @@ DEFAULT_LOCK = ROOT / "ephemeris.lock.json"
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 _REPOSITORY_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
+_INSTALLED_FILE_MODE = 0o644
 
 
 class EphemerisLockError(RuntimeError):
@@ -130,6 +131,11 @@ def fetch_locked_files(destination: Path, lock: dict[str, Any], *, timeout: floa
             with os.fdopen(fd, "wb") as handle:
                 handle.write(data)
                 handle.flush()
+                # mkstemp() deliberately creates mode 0600. The runtime image
+                # copies these root-owned files and executes as UID 10001, so
+                # make the verified payload readable before atomically exposing
+                # it at the final path.
+                os.fchmod(handle.fileno(), _INSTALLED_FILE_MODE)
                 os.fsync(handle.fileno())
             os.replace(temporary_path, destination / entry["name"])
         finally:

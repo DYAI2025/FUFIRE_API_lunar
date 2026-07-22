@@ -201,9 +201,29 @@ jobs:
         with:
           context: .
           push: false
+          load: true
           tags: fufire-engine:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Verify non-root runtime can read every locked ephemeris file
+        run: |
+          docker run --rm --entrypoint python fufire-engine:ci -c '
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          assert os.getuid() == 10001, f"unexpected runtime uid: {os.getuid()}"
+          lock = json.loads(Path("/app/ephemeris.lock.json").read_text(encoding="utf-8"))
+          root = Path(os.environ["SE_EPHE_PATH"])
+          for entry in lock["files"]:
+              path = root / entry["name"]
+              data = path.read_bytes()
+              assert len(data) == entry["size"], path
+              assert hashlib.sha256(data).hexdigest() == entry["sha256"], path
+          print(f"OK: UID {os.getuid()} read {len(lock['"'"'files'"'"'])} locked ephemeris files")
+          '
 
   distribution:
     runs-on: ubuntu-latest
