@@ -19,6 +19,7 @@ import json
 import os
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -75,27 +76,37 @@ def _export_schema_via_subprocess(seed: int) -> dict:
     """
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     spec_path = os.path.join(project_root, "spec", "openapi", "openapi.json")
-    env = {**os.environ, "PYTHONHASHSEED": str(seed), "PYTHONPATH": project_root}
-    # Delete stale spec file before each subprocess call so we always read fresh output
-    if os.path.exists(spec_path):
-        os.remove(spec_path)
-    result = subprocess.run(
-        [sys.executable, "scripts/export_openapi.py"],
-        capture_output=True,
-        text=True,
-        env=env,
-        cwd=project_root,
-    )
-    if result.returncode != 0:
-        pytest.skip(
-            f"export_openapi.py failed (seed={seed}): {result.stderr[:300]}"
-        )
+    inherited_pythonpath = os.environ.get("PYTHONPATH", "")
+    pythonpath = os.pathsep.join(part for part in (project_root, inherited_pythonpath) if part)
+    env = {**os.environ, "PYTHONHASHSEED": str(seed), "PYTHONPATH": pythonpath}
+    canonical_path = Path(spec_path)
+    original = canonical_path.read_bytes() if canonical_path.is_file() else None
     try:
-        return json.loads(
-            open(spec_path, encoding="utf-8").read()
+        # Delete stale spec before the subprocess, but always restore the
+        # canonical tracked artifact even when the local environment cannot
+        # execute the exporter and this test is skipped.
+        canonical_path.unlink(missing_ok=True)
+        result = subprocess.run(
+            [sys.executable, "scripts/export_openapi.py"],
+            capture_output=True,
+            text=True,
+            env=env,
+            cwd=project_root,
         )
-    except (FileNotFoundError, json.JSONDecodeError) as exc:
-        pytest.skip(f"Could not read generated spec (seed={seed}): {exc}")
+        if result.returncode != 0:
+            pytest.skip(
+                f"export_openapi.py failed (seed={seed}): {result.stderr[:300]}"
+            )
+        try:
+            generated = json.loads(canonical_path.read_text(encoding="utf-8"))
+        except (FileNotFoundError, json.JSONDecodeError) as exc:
+            pytest.skip(f"Could not read generated spec (seed={seed}): {exc}")
+    finally:
+        if original is None:
+            canonical_path.unlink(missing_ok=True)
+        else:
+            canonical_path.write_bytes(original)
+    return generated
 
 
 # ---------------------------------------------------------------------------

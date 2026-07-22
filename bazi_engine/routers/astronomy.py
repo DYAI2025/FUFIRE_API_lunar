@@ -100,7 +100,11 @@ class LunarMethodResponse(BaseModel):
     id: str
     ephemeris_mode: str
     reference_frame: str
-    precision_grade: Literal["exact", "degraded"]
+    precision_grade: Literal["high_precision", "degraded"]
+    provider_version: str
+    ephemeris_lock_id: str | None
+    supported_utc_start: str
+    supported_utc_end_exclusive: str
     warnings: list[str]
 
 
@@ -190,6 +194,10 @@ def lunar_state_endpoint(request: Request, body: LunarStateRequest) -> dict[str,
                 "ephemeris_mode": state.method.ephemeris_mode,
                 "reference_frame": state.method.reference_frame,
                 "precision_grade": state.method.precision_grade,
+                "provider_version": state.method.provider_version,
+                "ephemeris_lock_id": state.method.ephemeris_lock_id,
+                "supported_utc_start": state.method.supported_utc_start,
+                "supported_utc_end_exclusive": state.method.supported_utc_end_exclusive,
                 "warnings": list(state.method.warnings),
             },
         },

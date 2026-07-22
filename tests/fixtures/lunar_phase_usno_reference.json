@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "authority": "U.S. Naval Observatory Astronomical Applications Department",
+  "retrieved_at": "2026-07-21",
+  "time_scale": "UTC",
+  "published_resolution_seconds": 60,
+  "provisional_tolerance_seconds": 90,
+  "tolerance_approval": "MISSING: astronomy/domain owner",
+  "source_urls": [
+    "https://aa.usno.navy.mil/api/moon/phases/year?year=1900",
+    "https://aa.usno.navy.mil/api/moon/phases/year?year=1950",
+    "https://aa.usno.navy.mil/api/moon/phases/year?year=2000",
+    "https://aa.usno.navy.mil/api/moon/phases/year?year=2024",
+    "https://aa.usno.navy.mil/api/moon/phases/year?year=2099"
+  ],
+  "events": [
+    {"phase_id": "new_moon", "utc": "1900-01-01T13:52:00Z"},
+    {"phase_id": "first_quarter", "utc": "1900-01-08T05:40:00Z"},
+    {"phase_id": "full_moon", "utc": "1900-01-15T19:07:00Z"},
+    {"phase_id": "last_quarter", "utc": "1900-01-23T23:53:00Z"},
+    {"phase_id": "full_moon", "utc": "1950-01-04T07:48:00Z"},
+    {"phase_id": "last_quarter", "utc": "1950-01-11T10:31:00Z"},
+    {"phase_id": "new_moon", "utc": "1950-01-18T07:59:00Z"},
+    {"phase_id": "first_quarter", "utc": "1950-01-26T04:39:00Z"},
+    {"phase_id": "new_moon", "utc": "2000-01-06T18:14:00Z"},
+    {"phase_id": "first_quarter", "utc": "2000-01-14T13:34:00Z"},
+    {"phase_id": "full_moon", "utc": "2000-01-21T04:40:00Z"},
+    {"phase_id": "last_quarter", "utc": "2000-01-28T07:57:00Z"},
+    {"phase_id": "last_quarter", "utc": "2024-01-04T03:30:00Z"},
+    {"phase_id": "new_moon", "utc": "2024-01-11T11:57:00Z"},
+    {"phase_id": "first_quarter", "utc": "2024-01-18T03:52:00Z"},
+    {"phase_id": "full_moon", "utc": "2024-01-25T17:54:00Z"},
+    {"phase_id": "full_moon", "utc": "2099-01-07T01:52:00Z"},
+    {"phase_id": "last_quarter", "utc": "2099-01-13T17:27:00Z"},
+    {"phase_id": "new_moon", "utc": "2099-01-21T09:09:00Z"},
+    {"phase_id": "first_quarter", "utc": "2099-01-29T14:40:00Z"}
+  ]
+}

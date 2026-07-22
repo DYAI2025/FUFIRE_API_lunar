@@ -1,20 +1,24 @@
 """Canonical quiz keyword → sector weight resolver."""
 from __future__ import annotations
 
-import json
 import logging
-from pathlib import Path
 from typing import List
+
+from bazi_engine.resource_loader import (
+    PackageResourceIntegrityError,
+    load_json_object_resource,
+)
 
 logger = logging.getLogger(__name__)
 
-_MAP_PATH = Path(__file__).parent.parent / "data" / "affinity_map.json"
-
-try:
-    _MAP = json.loads(_MAP_PATH.read_text(encoding="utf-8"))
-except (FileNotFoundError, json.JSONDecodeError, OSError) as exc:
-    logger.error("Failed to load affinity_map.json: %s", exc)
-    _MAP = {"keywords": {}, "tags": {}}
+_MAP = load_json_object_resource("bazi_engine.data", "affinity_map.json")
+if not isinstance(_MAP.get("keywords"), dict) or not isinstance(
+    _MAP.get("tags"), dict
+):
+    raise PackageResourceIntegrityError(
+        "required package resource has an invalid affinity-map shape: "
+        "bazi_engine.data:affinity_map.json"
+    )
 
 
 def resolve_quiz_sectors(keyword: str) -> List[float]:

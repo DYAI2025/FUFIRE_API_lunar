@@ -35,10 +35,12 @@ def _reset_caches() -> None:
 def clean_env():
     """Snapshot + restore the env vars these tests mutate."""
     keys = ("KEY_STORE_BACKEND", "FUFIRE_ADMIN_TOKEN", "FUFIRE_API_KEYS",
-            "FUFIRE_REQUIRE_API_KEYS", "FUFIRE_KEY_TIER_OVERRIDES")
+            "FUFIRE_REQUIRE_API_KEYS", "FUFIRE_KEY_TIER_OVERRIDES",
+            "FUFIRE_ENABLE_KEY_ISSUANCE")
     saved = {k: os.environ.get(k) for k in keys}
     for k in keys:
         os.environ.pop(k, None)
+    os.environ["FUFIRE_ENABLE_KEY_ISSUANCE"] = "true"
     _reset_caches()
     yield
     for k, v in saved.items():

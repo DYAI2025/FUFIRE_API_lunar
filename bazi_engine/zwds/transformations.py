@@ -20,19 +20,18 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any, Dict, List
 
+from bazi_engine.resource_loader import package_resource
 from bazi_engine.zwds.domain import StemId
 
 # The versioned ruleset data file (bazi_engine/data/zwds/rulesets/<id>/...).
-TABLE_PATH: Path = (
-    Path(__file__).resolve().parent.parent
-    / "data"
-    / "zwds"
-    / "rulesets"
-    / "zwds.fufire.core-seed.v1"
-    / "transformations.json"
+TABLE_PATH = package_resource(
+    "bazi_engine.data",
+    "zwds",
+    "rulesets",
+    "zwds.fufire.core-seed.v1",
+    "transformations.json",
 )
 
 # Fixed emission order of the four transformation types (design-pack §12).

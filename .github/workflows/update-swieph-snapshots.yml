@@ -1,0 +1,66 @@
+name: Update SWIEPH snapshots (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: Reviewed reason for changing expected astronomical results
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build-reviewed-diff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install system and Python dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libswe-dev
+          python -m pip install pip==26.1.2 uv==0.11.29
+          uv sync --frozen --extra dev
+
+      - name: Fetch and verify locked ephemeris
+        run: uv run python scripts/fetch_ephemeris.py --destination /tmp/ephe --print-lock-id
+
+      - name: Regenerate SWIEPH snapshots outside the release gate
+        env:
+          SE_EPHE_PATH: /tmp/ephe
+          UPDATE_SNAPSHOTS: "1"
+        run: uv run pytest tests/test_snapshot_stability.py -q --tb=short
+
+      - name: Require and capture a reviewable diff
+        env:
+          SNAPSHOT_UPDATE_REASON: ${{ inputs.reason }}
+        run: |
+          test -n "$SNAPSHOT_UPDATE_REASON"
+          git diff --exit-code --quiet -- tests/snapshots/swieph && {
+            echo "No SWIEPH snapshot changes were produced."
+            exit 1
+          }
+          git diff --binary -- tests/snapshots/swieph > snapshot-update.patch
+          sha256sum ephemeris.lock.json snapshot-update.patch > snapshot-update.sha256
+
+      - name: Upload review-only snapshot diff
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: swieph-snapshot-review-${{ github.sha }}
+          path: |
+            snapshot-update.patch
+            snapshot-update.sha256
+            ephemeris.lock.json
+          if-no-files-found: error
+
+      # This workflow deliberately has no write permission and never commits.
+      # A maintainer must review the patch and submit it through a normal PR,
+      # where the atomic release-gate validates the resulting snapshots.

@@ -285,7 +285,7 @@
       "POST"
     ],
     false,
-    true
+    false
   ],
   [
     "/v1/api",
@@ -389,7 +389,7 @@
       "POST"
     ],
     true,
-    true
+    false
   ],
   [
     "/v1/chronometry/resolve",
@@ -485,7 +485,7 @@
       "GET"
     ],
     true,
-    true
+    false
   ],
   [
     "/v1/personalize",

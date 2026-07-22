@@ -29,17 +29,19 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any, Dict
 
+from bazi_engine.resource_loader import package_resource
 from bazi_engine.zwds.errors import (
     ZwdsRulesetIntegrityFailedError,
     ZwdsRulesetNotFoundError,
 )
 
-# Root of the versioned ruleset data tree (bazi_engine/data/zwds/rulesets/).
-RULESETS_DIR: Path = (
-    Path(__file__).resolve().parent.parent / "data" / "zwds" / "rulesets"
+# Root of the versioned package-data tree (bazi_engine/data/zwds/rulesets/).
+# The Traversable remains monkeypatchable with a pathlib.Path in integrity
+# tests while working for wheel/zip resource readers as well.
+RULESETS_DIR = package_resource(
+    "bazi_engine.data", "zwds", "rulesets"
 )
 
 _MANIFEST_FILENAME = "manifest.json"
@@ -48,9 +50,9 @@ _MANIFEST_FILENAME = "manifest.json"
 # --- Deterministic hashing helpers (local — never import bafe) ---------------
 
 
-def sha256_of_file(path: Path) -> str:
+def sha256_of_file(path: Any) -> str:
     """Return the SHA-256 hex digest of ``path``'s raw bytes."""
-    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def canonical_sha256(obj: Any) -> str:
@@ -92,7 +94,7 @@ class RulesetRef:
     time_policy_sha256: str
 
 
-def _load_manifest(ruleset_id: str) -> tuple[Path, Dict[str, Any]]:
+def _load_manifest(ruleset_id: str) -> tuple[Any, Dict[str, Any]]:
     """Locate and parse a ruleset's manifest, or fail with not-found."""
     # Reject anything that is not a single, in-tree path segment so a crafted
     # id can never traverse out of the ruleset root.
@@ -112,7 +114,7 @@ def _load_manifest(ruleset_id: str) -> tuple[Path, Dict[str, Any]]:
     return ruleset_dir, manifest
 
 
-def _verify_integrity(ruleset_id: str, ruleset_dir: Path, manifest: Dict[str, Any]) -> None:
+def _verify_integrity(ruleset_id: str, ruleset_dir: Any, manifest: Dict[str, Any]) -> None:
     """Verify every recorded component file's bytes against the manifest.
 
     Raises :class:`ZwdsRulesetIntegrityFailedError` on the first divergence —

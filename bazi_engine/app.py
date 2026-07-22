@@ -13,7 +13,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import __version__
-from .config_guard import assert_production_auth_config
+from .config_guard import assert_runtime_config
 from .error_handlers import register_exception_handlers
 from .limiter import limiter
 from .middleware import RequestIdMiddleware
@@ -31,7 +31,7 @@ async def lifespan(app: FastAPI):
 # FUFIRE-006: fail-closed startup guard — a production-profile deployment
 # (FUFIRE_ENV=production|prod|staging) must never boot with auth disabled.
 # Runs at module load, before the app exists and before any router mounts.
-assert_production_auth_config()
+assert_runtime_config()
 
 app = FastAPI(
     title="FuFirE — Fusion Firmament Engine",

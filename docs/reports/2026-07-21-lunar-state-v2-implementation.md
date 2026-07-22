@@ -17,6 +17,11 @@ Source plan: `2026-07-20-canonical-instant-tlst-v2.md` supplied with the task
 - Protected V2-only `POST /v2/astronomy/lunar-state`; no V1 or bare alias.
 - Typed request/response models, rate limit, OpenAPI artifact, route snapshot,
   endpoint documentation, and import-layer registration.
+- Public UTC range `[1900-01-01, 2100-01-01)`, fail-closed validation, and an
+  honest `high_precision|degraded` precision grade (never `exact`).
+- Provider version and immutable ephemeris-lock ID in every SWIEPH response.
+- Twenty independent, minute-resolution USNO phase events across five epochs,
+  checked with a provisional 90-second engineering tolerance.
 
 ## Compatibility
 
@@ -54,11 +59,13 @@ No new full-suite failure category was introduced. The remaining failures are
 pre-existing snapshot drift, an incomplete mock route, one ephemeris security
 test interaction, and optional space-weather/Superglue test dependencies.
 
-## Environment limitation
+## Current release boundary
 
-Real SWIEPH SE1 files were not available in the execution environment. The
-reference-event and endpoint tests therefore ran in the repository's explicit
-MOSEPH fallback test mode and correctly reported `precision_grade=degraded`.
-Production construction remains fail-closed for missing SWIEPH files, and CI
-with SE1 assets should rerun the same reference-event test in SWIEPH mode before
-deployment approval.
+The 2026-07-21 release-readiness execution reran the Lunar reference work with
+the four files from `ephemeris.lock.json` in real SWIEPH mode. The superseded
+MOSEPH-only limitation above therefore no longer applies. Final evidence counts
+are written by the RC gate after the complete suite runs.
+
+The technical reference gate is implemented, but the astronomy/domain owner
+has not yet approved the provisional 90-second tolerance. That decision remains
+MISSING and blocks a final release claim.

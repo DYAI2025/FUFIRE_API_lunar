@@ -10,6 +10,7 @@ from typing import Any, Dict, Literal, Optional
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
+from starlette.responses import JSONResponse
 
 from .. import __version__ as _ENGINE_VERSION
 from ..ephemeris import SwissEphBackend
@@ -34,7 +35,8 @@ class RootResponse(BaseModel):
 
 
 class DependencyStatus(BaseModel):
-    status: str  # "ok" | "unavailable"
+    status: str  # "ok" | "degraded" | "unavailable"
+    required: bool = True
     detail: Optional[str] = None
 
 
@@ -116,22 +118,17 @@ def _check_rate_limiter() -> DependencyStatus:
     """Check rate limiter storage health."""
     info = get_storage_status()
     status = info["status"]
+    required = bool(info.get("required", info.get("type") == "redis"))
     if status == "ok":
-        return DependencyStatus(status="ok", detail=f"type={info['type']}")
-    return DependencyStatus(status=status, detail=f"type={info['type']}, uri={info.get('uri', 'n/a')}")
+        return DependencyStatus(status="ok", required=required, detail=f"type={info['type']}")
+    return DependencyStatus(status=status, required=required, detail=f"type={info['type']}")
 
 
 def _health_payload() -> Dict[str, Any]:
     ephemeris = _check_ephemeris()
     rate_limiter = _check_rate_limiter()
     deps = {"ephemeris": ephemeris, "rate_limiter": rate_limiter}
-    # Degraded if any critical dependency is unavailable
-    if ephemeris.status == "unavailable":
-        overall = "degraded"
-    elif rate_limiter.status == "unavailable":
-        overall = "degraded"
-    else:
-        overall = "healthy"
+    overall = "degraded" if any(dep.required and dep.status != "ok" for dep in deps.values()) else "healthy"
     return {
         "status": overall,
         "engine": "FuFirE",
@@ -147,18 +144,11 @@ def health_check() -> Dict[str, Any]:
 
 
 @router.get("/ready", response_model=HealthResponse)
-def readiness_check() -> Dict[str, Any]:
+def readiness_check() -> Dict[str, Any] | JSONResponse:
     """Readiness endpoint for load balancers and orchestration."""
     payload = _health_payload()
-    if payload["status"] == "degraded":
-        raise HTTPException(
-            status_code=503,
-            detail={
-                "error": "service_unready",
-                "message": "Service dependencies are degraded",
-                "detail": payload.get("dependencies", {}),
-            },
-        )
+    if payload["status"] != "healthy":
+        return JSONResponse(status_code=503, content=payload)
     return payload
 
 
