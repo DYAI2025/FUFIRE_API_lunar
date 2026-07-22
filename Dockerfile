@@ -60,8 +60,8 @@ RUN python -m build --wheel --no-isolation --outdir /dist && \
     python scripts/verify_distribution.py /dist/*.whl && \
     python -m pip install --no-cache-dir --prefix=/install --no-deps /dist/*.whl
 
-# Stage 3: source-free, non-root runtime.
-FROM python:3.12-slim@sha256:57cd7c3a7a273101a6485ba99423ee568157882804b1124b4dd04266317710de AS runtime
+# Stage 2: application
+FROM python:3.14-slim
 
 WORKDIR /app
 RUN groupadd --gid 10001 fufire \
