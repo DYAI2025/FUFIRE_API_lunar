@@ -10,18 +10,12 @@ concurrency:
   group: audit-hardening-${{ github.ref }}
   cancel-in-progress: true
 
+# FUF-158: the `uv lock --check` freshness gate deliberately does NOT live here
+# any more. As a job inside this reusable workflow it ran in parallel with the
+# jobs that consume uv.lock, so it could never block them. It is now the
+# top-level `lock-freshness` preflight in ci.yml, and this whole workflow is
+# gated behind it. Do not re-add a second copy here.
 jobs:
-  lock-freshness:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
-        with:
-          python-version: "3.12"
-      - run: python -m pip install pip==26.1.2 uv==0.11.29
-      - name: Require resolver-fresh uv.lock
-        run: uv lock --check
-
   moseph-no-se1:
     runs-on: ubuntu-latest
     steps:
@@ -203,7 +197,6 @@ jobs:
     name: audit-hardening-gate
     if: always()
     needs:
-      - lock-freshness
       - moseph-no-se1
       - contract-feature-matrix
       - release-config
@@ -213,7 +206,6 @@ jobs:
     steps:
       - name: Require every audit hardening job to succeed
         env:
-          LOCK: ${{ needs.lock-freshness.result }}
           MOSEPH: ${{ needs.moseph-no-se1.result }}
           CONTRACT: ${{ needs.contract-feature-matrix.result }}
           RELEASE: ${{ needs.release-config.result }}
@@ -222,7 +214,7 @@ jobs:
         run: |
           python - <<'PY'
           import os
-          results = {k: os.environ[k] for k in ('LOCK','MOSEPH','CONTRACT','RELEASE','VERSION','SECURITY')}
+          results = {k: os.environ[k] for k in ('MOSEPH','CONTRACT','RELEASE','VERSION','SECURITY')}
           failed = {k: v for k, v in results.items() if v != 'success'}
           print(results)
           if failed:
