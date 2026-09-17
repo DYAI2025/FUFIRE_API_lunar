@@ -1,0 +1,233 @@
+name: Audit Hardening
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: audit-hardening-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lock-freshness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install pip==26.1.2 uv==0.11.29
+      - name: Require resolver-fresh uv.lock
+        run: uv lock --check
+
+  moseph-no-se1:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libswe-dev
+      - name: Install locked dependencies
+        run: |
+          python -m pip install pip==26.1.2 uv==0.11.29
+          uv sync --frozen --extra dev
+      - name: Run SE1-free suite in explicit MOSEPH mode
+        env:
+          EPHEMERIS_MODE: MOSEPH
+        run: |
+          unset SE_EPHE_PATH
+          uv run pytest -q
+
+  contract-feature-matrix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libswe-dev
+      - name: Install locked dependencies
+        run: |
+          python -m pip install pip==26.1.2 uv==0.11.29
+          uv sync --frozen --extra dev
+      - name: Default contract excludes gated surfaces
+        run: |
+          unset FUFIRE_ENABLE_ZWDS FUFIRE_ENABLE_KEY_ISSUANCE
+          uv run python - <<'PY'
+          from bazi_engine.app import app
+          paths = set(app.openapi()["paths"])
+          assert "/v1/admin/keys" not in paths
+          assert "/v1/calculate/zwds" not in paths
+          assert "/v1/metadata/zwds/rulesets/{ruleset_id}" not in paths
+          PY
+      - name: ZWDS-enabled contract exposes only ZWDS gated surfaces
+        env:
+          FUFIRE_ENABLE_ZWDS: "1"
+          FUFIRE_ENABLE_KEY_ISSUANCE: "0"
+        run: |
+          uv run python - <<'PY'
+          from bazi_engine.app import app
+          paths = set(app.openapi()["paths"])
+          assert "/v1/calculate/zwds" in paths
+          assert "/v1/metadata/zwds/rulesets/{ruleset_id}" in paths
+          assert "/v1/admin/keys" not in paths
+          PY
+      - name: Key-issuance-enabled contract exposes only admin gated surface
+        env:
+          FUFIRE_ENABLE_ZWDS: "0"
+          FUFIRE_ENABLE_KEY_ISSUANCE: "1"
+        run: |
+          uv run python - <<'PY'
+          from bazi_engine.app import app
+          paths = set(app.openapi()["paths"])
+          assert "/v1/admin/keys" in paths
+          assert "/v1/calculate/zwds" not in paths
+          assert "/v1/metadata/zwds/rulesets/{ruleset_id}" not in paths
+          PY
+
+  release-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: release-please must cover repository default branch
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          python - <<'PY'
+          import os, re
+          from pathlib import Path
+          text = Path('.github/workflows/release-please.yml').read_text(encoding='utf-8')
+          match = re.search(r'(?m)^\s*branches:\s*\[([^\]]+)\]\s*$', text)
+          if not match:
+              raise SystemExit('release-please branch list not found')
+          branches = {x.strip().strip('"\'') for x in match.group(1).split(',') if x.strip()}
+          default = os.environ['DEFAULT_BRANCH']
+          if default not in branches:
+              raise SystemExit(f'default branch {default!r} missing from release-please branches {sorted(branches)!r}')
+          PY
+
+  version-identity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libswe-dev
+      - name: Install locked package
+        run: |
+          python -m pip install pip==26.1.2 uv==0.11.29
+          uv sync --frozen
+      - name: Require one release identity
+        run: |
+          uv run python - <<'PY'
+          import json, tomllib
+          from pathlib import Path
+          import bazi_engine
+          from bazi_engine.app import app
+          values = {
+              'pyproject': tomllib.loads(Path('pyproject.toml').read_text())['project']['version'],
+              'release_manifest': json.loads(Path('.release-please-manifest.json').read_text())['.'],
+              'runtime': bazi_engine.__version__,
+              'openapi': app.openapi()['info']['version'],
+          }
+          print(values)
+          if len(set(values.values())) != 1:
+              raise SystemExit(f'version identity drift: {values}')
+          PY
+
+  security-boundary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libswe-dev
+      - name: Install locked dependencies
+        run: |
+          python -m pip install pip==26.1.2 uv==0.11.29
+          uv sync --frozen --extra dev
+      - name: Existing production and limiter contracts
+        run: uv run pytest -q tests/test_production_profile.py tests/test_rate_limit_coverage.py
+      - name: Expensive public/internal surfaces must have an explicit limiter
+        run: |
+          uv run python - <<'PY'
+          from fastapi.routing import APIRoute
+          from bazi_engine.app import app
+          from bazi_engine.limiter import limiter
+
+          required = {
+              ('GET', '/api'), ('GET', '/v1/api'),
+              ('GET', '/health'), ('GET', '/v1/health'),
+              ('GET', '/ready'), ('GET', '/v1/ready'),
+              ('POST', '/internal/api/webhooks/chart'),
+          }
+
+          def limited(route):
+              fn = route.endpoint
+              key = f'{fn.__module__}.{fn.__qualname__}'
+              return key in limiter._route_limits or key in limiter._dynamic_route_limits
+
+          missing = []
+          for route in app.routes:
+              if not isinstance(route, APIRoute):
+                  continue
+              for method in route.methods:
+                  if (method, route.path) in required and not limited(route):
+                      missing.append(f'{method} {route.path}')
+          if missing:
+              raise SystemExit('expensive routes without explicit limiter: ' + ', '.join(sorted(missing)))
+          PY
+
+  audit-hardening-gate:
+    name: audit-hardening-gate
+    if: always()
+    needs:
+      - lock-freshness
+      - moseph-no-se1
+      - contract-feature-matrix
+      - release-config
+      - version-identity
+      - security-boundary
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every audit hardening job to succeed
+        env:
+          LOCK: ${{ needs.lock-freshness.result }}
+          MOSEPH: ${{ needs.moseph-no-se1.result }}
+          CONTRACT: ${{ needs.contract-feature-matrix.result }}
+          RELEASE: ${{ needs.release-config.result }}
+          VERSION: ${{ needs.version-identity.result }}
+          SECURITY: ${{ needs.security-boundary.result }}
+        run: |
+          python - <<'PY'
+          import os
+          results = {k: os.environ[k] for k in ('LOCK','MOSEPH','CONTRACT','RELEASE','VERSION','SECURITY')}
+          failed = {k: v for k, v in results.items() if v != 'success'}
+          print(results)
+          if failed:
+              raise SystemExit(f'audit-hardening-gate blocked: {failed}')
+          PY
