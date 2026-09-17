@@ -70,8 +70,11 @@ def _workflow_errors(root: Path) -> list[str]:
         errors.append("codegen does not select the approved exact Node version")
     if "npm ci --ignore-scripts" not in combined:
         errors.append("codegen does not use the npm lockfile with scripts disabled")
+    # `--frozen` only guarantees a deterministic install from the committed lock;
+    # it never checks that the lock is fresh against pyproject.toml. Lock freshness
+    # is a separate gate (`uv lock --check` in audit-hardening.yml, FUF-158).
     if "uv sync --frozen" not in combined:
-        errors.append("Python CI does not enforce uv.lock with --frozen")
+        errors.append("Python CI does not install from the committed uv.lock with --frozen")
     if "uv export --frozen" not in combined or "--require-hashes" not in combined:
         errors.append("distribution CI does not install a hash-locked uv export")
     pyproject_path = root / "pyproject.toml"
