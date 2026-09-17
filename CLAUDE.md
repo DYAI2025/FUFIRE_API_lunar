@@ -271,6 +271,17 @@ Mechanics:
      SWIEPH does not have this problem — its tree is table-driven and verifies fine on macOS.
   Never hand-edit snapshot JSON. Review the patch before committing: an added/removed key is a contract
   change, a moved float is a calculation change.
+- **Known local asymmetry — the moseph tree is pinned to `ubuntu-latest`.** Because of the MOSEPH
+  platform dependence above, these **17 of 200** snapshot cases fail on an Apple-Silicon macOS box and
+  are green in CI, by design — 16 `western-*` cases on `$.bodies.TrueNorthNode.speed` plus
+  `bazi-std_2025_la` on `$.solar_terms_count`:
+  `std_1960_paris`, `std_2025_la`, `lichun_2024_{before,after}_berlin`, `zi_2359_tokyo`,
+  `zi_0030_beijing`, `zi_boundary_madrid`, `hilat_{reykjavik,tromso,fairbanks}`, `tz_utc`,
+  `tz_cet_vienna`, `tz_est_toronto`, `tz_ist_delhi`, `tz_hst_honolulu`, `tz_brt_saopaulo`.
+  A local `EPHEMERIS_MODE=MOSEPH` run therefore ends at `17 failed, 3200 passed` on macOS while
+  `audit-hardening / moseph-no-se1` is green. Do NOT "fix" that by rebaselining locally — that only
+  moves the same 17 failures back onto CI (measured both directions under FUF-157). Judge a local
+  MOSEPH run against this list; anything outside it is a real regression.
 - Scale: ~183 top-level test files + 22 in `tests/zwds/`. Dedicated suites beyond the basics: match (14 files + sentinel payloads), dayun (13), impact, ephemeris supply-chain governance (`test_ephemeris_*`), release/toolchain gates (`test_release_*`, `test_toolchain_pinning.py`, `test_requirements_lock.py`, `test_sbom_validation.py`), lunar state (USNO reference fixture), natal, golden vectors, `test_import_hierarchy.py`, `test_openapi_contract.py`, `test_app_composition.py` (route-table golden).
 
 ## OpenAPI Contract

@@ -193,10 +193,10 @@
     "chart_type_quality": null,
     "ephemeris_mode": "MOSEPH"
   },
-  "solar_terms_count": 23,
+  "solar_terms_count": 24,
   "transition": {
     "is_before_lichun": false,
-    "lichun_next": "2026-02-03T12:02:08.050938-08:00",
+    "lichun_next": "2026-02-03T12:02:08.050978-08:00",
     "lichun_year_start": "2025-02-03T06:10:28.922452-08:00",
     "solar_year": 2025
   }
