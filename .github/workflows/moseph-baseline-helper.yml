@@ -1,0 +1,76 @@
+# TEMPORARY (FUF-157). Delete once the MOSEPH baselines below are committed.
+#
+# The permanent home for this is the `target: moseph` job in
+# update-swieph-snapshots.yml. That workflow is currently NOT dispatchable:
+# GitHub has only ever registered ci.yml, audit-hardening.yml and
+# pr-title-lint.yml for this repository (see
+# `gh api repos/:owner/:repo/actions/workflows`), so
+# `gh workflow run update-swieph-snapshots.yml` answers
+# "not found on the default branch" even though the file is present on master.
+# A workflow_dispatch workflow has to reach the default branch through a normal
+# merge before it becomes callable; a push-triggered workflow does not.
+#
+# So this helper exists only to produce the Linux baselines once. It has no
+# write permission, never commits, and is scoped to this single branch.
+name: MOSEPH baseline helper (temporary, FUF-157)
+
+on:
+  push:
+    branches: [ci/audit-regression-gates-20260917]
+
+permissions:
+  contents: read
+
+jobs:
+  build-reviewed-moseph-diff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install system and Python dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libswe-dev
+          python -m pip install pip==26.1.2 uv==0.11.29
+          uv sync --frozen --extra dev
+
+      # Deliberately no ephemeris fetch: this must reproduce the SE1-free
+      # environment of the `audit-hardening / moseph-no-se1` gate exactly.
+      - name: Regenerate MOSEPH snapshots outside the release gate
+        env:
+          EPHEMERIS_MODE: MOSEPH
+          UPDATE_SNAPSHOTS: "1"
+        run: |
+          unset SE_EPHE_PATH
+          uv run pytest tests/test_snapshot_stability.py -q --tb=short
+
+      - name: Capture a reviewable diff
+        run: |
+          git diff --exit-code --quiet -- tests/snapshots/swieph || {
+            echo "A MOSEPH regeneration must never touch tests/snapshots/swieph."
+            git diff --stat -- tests/snapshots/swieph
+            exit 1
+          }
+          if git diff --exit-code --quiet -- tests/snapshots/moseph; then
+            echo "NO_MOSEPH_DIFF: the committed baselines already match this platform."
+            : > snapshot-update.patch
+          else
+            git diff --binary -- tests/snapshots/moseph > snapshot-update.patch
+          fi
+          git diff --stat -- tests/snapshots/moseph | tail -5
+          sha256sum snapshot-update.patch > snapshot-update.sha256
+
+      - name: Upload review-only snapshot diff
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: moseph-snapshot-review-${{ github.sha }}
+          path: |
+            snapshot-update.patch
+            snapshot-update.sha256
+          if-no-files-found: error
