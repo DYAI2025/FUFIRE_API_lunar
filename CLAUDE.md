@@ -251,7 +251,20 @@ CI runs on Python 3.10–3.12, installs with `uv sync --frozen --extra dev`, fet
 Mechanics:
 - Markers: `swieph` (registered dynamically in conftest — deliberately NOT duplicated in pyproject; add it to any SE1-dependent test) and `integration` (needs a reachable LeanDeep service; auto-skips).
 - Autouse conftest fixtures reset transit caches and the in-memory rate limiter between tests — don't re-add per-test resets or worry about TestClient tests tripping limits.
-- Snapshots: `tests/snapshots/{moseph,swieph}/` chosen by active backend. Regenerate moseph locally with `UPDATE_SNAPSHOTS=1 pytest tests/test_snapshot_stability.py`; **swieph baselines only via the manual `update-swieph-snapshots.yml` workflow** (emits a review-only patch artifact, never commits). Never hand-edit snapshot JSON.
+- Snapshots: `tests/snapshots/{moseph,swieph}/` chosen by active backend — and the backend, not the
+  command, picks the directory that gets written. Regenerating moseph therefore requires the mode to be
+  **explicit**; on a machine that has SE1 files a bare `UPDATE_SNAPSHOTS=1 pytest` rewrites the *swieph*
+  tree and leaves moseph stale (FUF-157 — that is exactly how the moseph tree fell 25 response fields
+  behind). Use:
+  ```bash
+  # moseph baselines — explicit mode + an SE1-free path, so this cannot hit the swieph tree
+  UPDATE_SNAPSHOTS=1 EPHEMERIS_MODE=MOSEPH SE_EPHE_PATH="$(mktemp -d)" \
+    pytest tests/test_snapshot_stability.py
+  git status --porcelain tests/snapshots/   # must list ONLY tests/snapshots/moseph/
+  ```
+  **swieph baselines only via the manual `update-swieph-snapshots.yml` workflow** (emits a review-only
+  patch artifact, never commits). Never hand-edit snapshot JSON. Review the regenerated diff before
+  committing: an added/removed key is a contract change, a moved float is a calculation change.
 - Scale: ~183 top-level test files + 22 in `tests/zwds/`. Dedicated suites beyond the basics: match (14 files + sentinel payloads), dayun (13), impact, ephemeris supply-chain governance (`test_ephemeris_*`), release/toolchain gates (`test_release_*`, `test_toolchain_pinning.py`, `test_requirements_lock.py`, `test_sbom_validation.py`), lunar state (USNO reference fixture), natal, golden vectors, `test_import_hierarchy.py`, `test_openapi_contract.py`, `test_app_composition.py` (route-table golden).
 
 ## OpenAPI Contract

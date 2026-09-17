@@ -196,7 +196,16 @@ def test_ephemeris_unavailable_503_does_not_leak_resolved_path(tmp_path, caplog)
     empty_dir.mkdir()
     ensure_ephemeris_files.cache_clear()
     try:
-        with patch.dict("os.environ", {"SE_EPHE_PATH": str(empty_dir)}):
+        # FUF-157: this test's expectation (missing SE1 files => 503) only holds
+        # in SWIEPH mode. Under the SE1-free MOSEPH matrix (conftest's fallback,
+        # or an explicit EPHEMERIS_MODE=MOSEPH CI job) the Moshier backend needs
+        # no SE1 files at all and the request legitimately returns 200, so
+        # pinning SE_EPHE_PATH alone made the assertion mode-dependent.
+        # Force the mode this finding is about instead of inheriting the matrix.
+        with patch.dict(
+            "os.environ",
+            {"SE_EPHE_PATH": str(empty_dir), "EPHEMERIS_MODE": "SWIEPH"},
+        ):
             with caplog.at_level(logging.ERROR, logger="bazi_engine.ephemeris"):
                 resp = client.post(
                     "/calculate/bazi",

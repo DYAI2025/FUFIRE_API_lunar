@@ -5,8 +5,18 @@ On first run, generates baseline snapshots to tests/snapshots/.
 On subsequent runs, compares current output to stored snapshot and fails on
 ANY numerical deviation.
 
-Set UPDATE_SNAPSHOTS=1 to regenerate baselines:
-    UPDATE_SNAPSHOTS=1 pytest tests/test_snapshot_stability.py
+Set UPDATE_SNAPSHOTS=1 to regenerate baselines. The ACTIVE BACKEND selects the
+directory that is written (see _ephemeris_tag), so the mode must be explicit --
+on a machine that has SE1 files a bare `UPDATE_SNAPSHOTS=1 pytest` regenerates
+tests/snapshots/swieph/ and silently leaves tests/snapshots/moseph/ stale
+(FUF-157). Regenerate the moseph baselines with:
+
+    UPDATE_SNAPSHOTS=1 EPHEMERIS_MODE=MOSEPH SE_EPHE_PATH="$(mktemp -d)" \
+        pytest tests/test_snapshot_stability.py
+
+and confirm `git status --porcelain tests/snapshots/` lists only moseph paths.
+The swieph baselines are regenerated exclusively by the manual
+.github/workflows/update-swieph-snapshots.yml workflow.
 """
 from __future__ import annotations
 

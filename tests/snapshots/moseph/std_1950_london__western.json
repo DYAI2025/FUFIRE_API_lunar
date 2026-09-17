@@ -361,7 +361,7 @@
     },
     "parameter_set_id": "default_v1",
     "ruleset_id": "traditional_bazi_2026",
-    "tzdb_version_id": "unknown",
+    "tzdb_version_id": "2026.2",
     "zodiac_mode": "tropical"
   },
   "quality_flags": {
