@@ -168,7 +168,7 @@ jobs:
           uv run python - <<'PY'
           from fastapi.routing import APIRoute
           from bazi_engine.app import app
-          from bazi_engine.limiter import limiter
+          from bazi_engine.limiter import infra_limiter, limiter
 
           required = {
               ('GET', '/api'), ('GET', '/v1/api'),
@@ -177,10 +177,18 @@ jobs:
               ('POST', '/internal/api/webhooks/chart'),
           }
 
+          # A surface counts as limited when EITHER limiter owns it: the shared
+          # application limiter, or the memory-only infrastructure-probe limiter
+          # that /health and /ready use so a Redis outage stays reportable.
+          LIMITERS = (limiter, infra_limiter)
+
           def limited(route):
               fn = route.endpoint
               key = f'{fn.__module__}.{fn.__qualname__}'
-              return key in limiter._route_limits or key in limiter._dynamic_route_limits
+              return any(
+                  key in lim._route_limits or key in lim._dynamic_route_limits
+                  for lim in LIMITERS
+              )
 
           missing = []
           for route in app.routes:

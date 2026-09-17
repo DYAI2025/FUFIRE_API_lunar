@@ -10,13 +10,14 @@ from typing import Any, Dict, Literal, Optional
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
+from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from .. import __version__ as _ENGINE_VERSION
 from ..ephemeris import SwissEphBackend
 from ..exc import BaziEngineError
 from ..fusion import PLANET_TO_WUXING, WUXING_ORDER
-from ..limiter import get_storage_status
+from ..limiter import INFRA_PROBE_LIMIT, get_storage_status, infra_limiter
 from ..time_utils import resolve_local_iso
 from ..western import compute_western_chart
 from .shared import ZODIAC_SIGNS_DE
@@ -138,13 +139,15 @@ def _health_payload() -> Dict[str, Any]:
 
 
 @router.get("/health", response_model=HealthResponse)
-def health_check() -> Dict[str, Any]:
+@infra_limiter.limit(INFRA_PROBE_LIMIT)
+def health_check(request: Request) -> Dict[str, Any]:
     """Liveness check. Returns engine status and per-dependency health (ephemeris). No authentication required. Use `/ready` for load-balancer probes."""
     return _health_payload()
 
 
 @router.get("/ready", response_model=HealthResponse)
-def readiness_check() -> Dict[str, Any] | JSONResponse:
+@infra_limiter.limit(INFRA_PROBE_LIMIT)
+def readiness_check(request: Request) -> Dict[str, Any] | JSONResponse:
     """Readiness endpoint for load balancers and orchestration."""
     payload = _health_payload()
     if payload["status"] != "healthy":
