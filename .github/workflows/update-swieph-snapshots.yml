@@ -1,4 +1,7 @@
-name: Update SWIEPH snapshots (manual)
+# FUF-157: the filename is deliberately frozen as `update-swieph-snapshots.yml`.
+# A workflow_dispatch workflow is only dispatchable once it exists on the default
+# branch, so renaming it here would make it undispatchable from a feature branch.
+name: Update ephemeris snapshots (manual)
 
 on:
   workflow_dispatch:
@@ -7,12 +10,21 @@ on:
         description: Reviewed reason for changing expected astronomical results
         required: true
         type: string
+      target:
+        description: Which snapshot tree to regenerate
+        required: false
+        default: swieph
+        type: choice
+        options:
+          - swieph
+          - moseph
 
 permissions:
   contents: read
 
 jobs:
   build-reviewed-diff:
+    if: inputs.target == 'swieph'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -64,3 +76,72 @@ jobs:
       # This workflow deliberately has no write permission and never commits.
       # A maintainer must review the patch and submit it through a normal PR,
       # where the atomic release-gate validates the resulting snapshots.
+
+  # FUF-157. MOSEPH is the analytic Moshier backend: it computes positions from
+  # libm transcendentals instead of interpolating the precomputed SE1 tables, so
+  # its output is PLATFORM-DEPENDENT in a way SWIEPH's is not. Measured on
+  # b0f89af: baselines regenerated on macOS left 17 of 200 cases failing on the
+  # ubuntu-latest gate -- 16 on $.bodies.TrueNorthNode.speed (a near-zero node
+  # speed, |delta| 1e-6..1.5e-5, just over the suite's abs_tol=1e-6 / rel_tol=1e-4)
+  # and one on $.solar_terms_count, an integer that flipped 23 -> 24 for
+  # std_2025_la and therefore has no tolerance at all.
+  #
+  # Consequence: the moseph tree must be generated on the same platform as the
+  # gate that enforces it, exactly like the swieph tree. Neither tree may be
+  # rebaselined from a developer laptop.
+  build-reviewed-moseph-diff:
+    if: inputs.target == 'moseph'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install system and Python dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libswe-dev
+          python -m pip install pip==26.1.2 uv==0.11.29
+          uv sync --frozen --extra dev
+
+      # Deliberately no ephemeris fetch: this must reproduce the SE1-free
+      # environment of the `audit-hardening / moseph-no-se1` gate exactly.
+      - name: Regenerate MOSEPH snapshots outside the release gate
+        env:
+          EPHEMERIS_MODE: MOSEPH
+          UPDATE_SNAPSHOTS: "1"
+        run: |
+          unset SE_EPHE_PATH
+          uv run pytest tests/test_snapshot_stability.py -q --tb=short
+
+      - name: Require and capture a reviewable diff
+        env:
+          SNAPSHOT_UPDATE_REASON: ${{ inputs.reason }}
+        run: |
+          test -n "$SNAPSHOT_UPDATE_REASON"
+          git diff --exit-code --quiet -- tests/snapshots/swieph || {
+            echo "A MOSEPH regeneration must never touch tests/snapshots/swieph."
+            git diff --stat -- tests/snapshots/swieph
+            exit 1
+          }
+          git diff --exit-code --quiet -- tests/snapshots/moseph && {
+            echo "No MOSEPH snapshot changes were produced."
+            exit 1
+          }
+          git diff --binary -- tests/snapshots/moseph > snapshot-update.patch
+          sha256sum snapshot-update.patch > snapshot-update.sha256
+
+      - name: Upload review-only snapshot diff
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: moseph-snapshot-review-${{ github.sha }}
+          path: |
+            snapshot-update.patch
+            snapshot-update.sha256
+          if-no-files-found: error
+
+      # Same discipline as the SWIEPH job: no write permission, never commits.

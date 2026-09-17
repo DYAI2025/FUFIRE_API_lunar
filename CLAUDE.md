@@ -251,20 +251,26 @@ CI runs on Python 3.10–3.12, installs with `uv sync --frozen --extra dev`, fet
 Mechanics:
 - Markers: `swieph` (registered dynamically in conftest — deliberately NOT duplicated in pyproject; add it to any SE1-dependent test) and `integration` (needs a reachable LeanDeep service; auto-skips).
 - Autouse conftest fixtures reset transit caches and the in-memory rate limiter between tests — don't re-add per-test resets or worry about TestClient tests tripping limits.
-- Snapshots: `tests/snapshots/{moseph,swieph}/` chosen by active backend — and the backend, not the
-  command, picks the directory that gets written. Regenerating moseph therefore requires the mode to be
-  **explicit**; on a machine that has SE1 files a bare `UPDATE_SNAPSHOTS=1 pytest` rewrites the *swieph*
-  tree and leaves moseph stale (FUF-157 — that is exactly how the moseph tree fell 25 response fields
-  behind). Use:
+- Snapshots: `tests/snapshots/{moseph,swieph}/` chosen by the **active backend**, not by the command —
+  so `UPDATE_SNAPSHOTS=1 pytest` writes whichever tree the current mode selects. **Neither tree may be
+  rebaselined from a developer laptop.** Both come from the manual
+  `update-swieph-snapshots.yml` workflow (filename frozen so it stays dispatchable), which emits a
+  review-only patch artifact and never commits:
   ```bash
-  # moseph baselines — explicit mode + an SE1-free path, so this cannot hit the swieph tree
-  UPDATE_SNAPSHOTS=1 EPHEMERIS_MODE=MOSEPH SE_EPHE_PATH="$(mktemp -d)" \
-    pytest tests/test_snapshot_stability.py
-  git status --porcelain tests/snapshots/   # must list ONLY tests/snapshots/moseph/
+  gh workflow run update-swieph-snapshots.yml --ref <branch> -f reason='<why>' -f target=swieph
+  gh workflow run update-swieph-snapshots.yml --ref <branch> -f reason='<why>' -f target=moseph
   ```
-  **swieph baselines only via the manual `update-swieph-snapshots.yml` workflow** (emits a review-only
-  patch artifact, never commits). Never hand-edit snapshot JSON. Review the regenerated diff before
-  committing: an added/removed key is a contract change, a moved float is a calculation change.
+  Two distinct traps, both measured under FUF-157:
+  1. On a machine that has SE1 files, a bare `UPDATE_SNAPSHOTS=1 pytest` rewrites the *swieph* tree and
+     silently leaves moseph stale — that is how moseph fell 25 response fields behind.
+  2. **MOSEPH output is platform-dependent.** Moshier computes from libm transcendentals instead of
+     interpolating the SE1 tables, so macOS and glibc disagree. Baselines regenerated on macOS left
+     17/200 cases red on the ubuntu-latest gate: 16 on `$.bodies.TrueNorthNode.speed` (near-zero node
+     speed, |Δ| 1e-6…1.5e-5, just over the suite's `abs_tol=1e-6`/`rel_tol=1e-4`) and one on
+     `$.solar_terms_count`, an integer that flipped 23→24 and therefore has no tolerance at all.
+     SWIEPH does not have this problem — its tree is table-driven and verifies fine on macOS.
+  Never hand-edit snapshot JSON. Review the patch before committing: an added/removed key is a contract
+  change, a moved float is a calculation change.
 - Scale: ~183 top-level test files + 22 in `tests/zwds/`. Dedicated suites beyond the basics: match (14 files + sentinel payloads), dayun (13), impact, ephemeris supply-chain governance (`test_ephemeris_*`), release/toolchain gates (`test_release_*`, `test_toolchain_pinning.py`, `test_requirements_lock.py`, `test_sbom_validation.py`), lunar state (USNO reference fixture), natal, golden vectors, `test_import_hierarchy.py`, `test_openapi_contract.py`, `test_app_composition.py` (route-table golden).
 
 ## OpenAPI Contract
