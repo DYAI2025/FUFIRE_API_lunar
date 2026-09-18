@@ -297,3 +297,78 @@ def test_readback_marks_non_secret_safe_values_with_their_value() -> None:
     by_name = {r["name"]: r for r in payload["variables"]}
     assert by_name["FUFIRE_ENV"]["value"] == "staging"
     assert payload["profile"] == "production"
+
+
+# ── Profile classification: one authoritative definition ─────────────────────
+#
+# The contract owns the FUFIRE_ENV value set. The startup guard and the readback
+# both derive from it, so a deployment can never be production-shaped to one and
+# development-shaped to the other.
+
+
+def test_production_profile_values_are_a_subset_of_the_allowed_set(contract) -> None:
+    """A production alias outside allowed_values would be unreachable."""
+    from bazi_engine.runtime_contract import (
+        allowed_fufire_env_values,
+        production_fufire_env_values,
+    )
+
+    allowed = allowed_fufire_env_values()
+    production = production_fufire_env_values()
+    assert production, "the contract declares no production profile values"
+    assert allowed, "the contract declares no allowed FUFIRE_ENV values"
+    assert production <= allowed, (
+        f"production aliases outside allowed_values: {sorted(production - allowed)}"
+    )
+
+
+def test_allowed_values_are_declared_in_normalised_form(contract) -> None:
+    """The stored set is already the comparison form — no hidden coercion."""
+    from bazi_engine.runtime_contract import normalise_fufire_env
+
+    entry = next(e for e in contract["variables"] if e["name"] == "FUFIRE_ENV")
+    for value in entry["allowed_values"]:
+        assert value == normalise_fufire_env(value), (
+            f"contract declares {value!r}, which is not its own normalised form"
+        )
+
+
+def test_readback_and_startup_classify_every_allowed_value_identically(contract) -> None:
+    """R12 extended: the two consumers of the contract cannot disagree."""
+    from bazi_engine.runtime_contract import (
+        allowed_fufire_env_values,
+        classify_runtime_profile,
+        resolve_profile,
+    )
+
+    for value in sorted(allowed_fufire_env_values()):
+        env = {"FUFIRE_ENV": value}
+        assert resolve_profile(env) == classify_runtime_profile(env), (
+            f"readback and startup disagree about FUFIRE_ENV={value!r}"
+        )
+
+
+def test_readback_flags_an_uncontracted_profile_value() -> None:
+    """The typo the startup guard now rejects is also invalid on readback.
+
+    Proven through the packaged CLI in a subprocess, so this is a claim about
+    the shipped entry point rather than about a warm in-process call.
+    """
+    rc, out = _readback({"FUFIRE_ENV": "prodcution"})
+    payload = json.loads(out)
+    by_name = {r["name"]: r for r in payload["variables"]}
+
+    assert by_name["FUFIRE_ENV"]["valid"] is False
+    assert by_name["FUFIRE_ENV"]["issue"] == "invalid_value"
+    assert payload["valid"] is False
+    assert rc != 0, "readback exited 0 for an uncontracted FUFIRE_ENV value"
+
+
+def test_readback_accepts_a_contracted_development_value() -> None:
+    """Canary for the test above: a declared value must NOT be flagged."""
+    _rc, out = _readback({"FUFIRE_ENV": "local", "EPHEMERIS_MODE": "SWIEPH"})
+    payload = json.loads(out)
+    by_name = {r["name"]: r for r in payload["variables"]}
+
+    assert by_name["FUFIRE_ENV"]["valid"] is True
+    assert payload["profile"] == "development"

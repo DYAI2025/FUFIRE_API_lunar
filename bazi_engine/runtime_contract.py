@@ -51,6 +51,10 @@ CONTRACT_RESOURCE = "runtime_contract.v1.json"
 
 PROFILE_PRODUCTION = "production"
 PROFILE_DEVELOPMENT = "development"
+# Not a profile a deployment can run under: a declared FUFIRE_ENV value that the
+# contract does not list at all. Kept distinct from PROFILE_DEVELOPMENT so a typo
+# can never be mistaken for a request for the permissive profile.
+PROFILE_INVALID = "invalid"
 
 # Variable names this module references by literal, so the drift gate in
 # tests/test_runtime_contract.py can see that the fail-closed rows really do
@@ -114,11 +118,84 @@ def _env(env: Optional[Mapping[str, str]]) -> Mapping[str, str]:
     return os.environ if env is None else env
 
 
+def normalise_fufire_env(raw: Optional[str]) -> str:
+    """Canonical comparison form for a declared profile value."""
+    return (raw or "").strip().lower()
+
+
+def allowed_fufire_env_values() -> frozenset[str]:
+    """Every ``FUFIRE_ENV`` value the contract declares legal.
+
+    The contract's ``FUFIRE_ENV`` row owns this set and nothing else may restate
+    it. A non-empty value outside it is a typo or a mis-wired deployment.
+    """
+    entry = variable(ENV_PROFILE) or {}
+    return frozenset(
+        normalise_fufire_env(str(value)) for value in entry.get("allowed_values", ())
+    )
+
+
+def production_fufire_env_values() -> frozenset[str]:
+    """The allowed values that select the fail-closed production profile."""
+    profile = load_contract()["profiles"][PROFILE_PRODUCTION]
+    return frozenset(
+        normalise_fufire_env(str(value)) for value in profile["fufire_env_values"]
+    )
+
+
+def classify_runtime_profile(env: Optional[Mapping[str, str]] = None) -> str:
+    """Classify a deployment as production, development or invalid.
+
+    THE authoritative profile classifier: the startup guard and the readback
+    both derive from it, so a value can never be production-shaped to one and
+    development-shaped to the other.
+
+    An unset value classifies as ``development`` — "no profile declared" is the
+    local developer's case, and it is policed separately by
+    ``FUFIRE_REQUIRE_EXPLICIT_ENV``, which every container image sets. A
+    non-empty value outside the contract's allowed set classifies as
+    ``invalid`` and must never be silently served the permissive profile.
+    """
+    current = normalise_fufire_env(_env(env).get(ENV_PROFILE))
+    if not current:
+        return PROFILE_DEVELOPMENT
+    if current in production_fufire_env_values():
+        return PROFILE_PRODUCTION
+    if current in allowed_fufire_env_values():
+        return PROFILE_DEVELOPMENT
+    return PROFILE_INVALID
+
+
+def unknown_profile_violation(env: Optional[Mapping[str, str]] = None) -> Optional[str]:
+    """Return why the declared profile is not a contracted value, or None.
+
+    ``FUFIRE_ENV`` is a non-secret row whose readback policy is ``value``, so
+    echoing the rejected value is safe — and it is what makes a typo
+    diagnosable from a crash log instead of a silent downgrade.
+    """
+    if classify_runtime_profile(env) != PROFILE_INVALID:
+        return None
+    declared = normalise_fufire_env(_env(env).get(ENV_PROFILE))
+    allowed = ", ".join(sorted(allowed_fufire_env_values()))
+    return (
+        f"{ENV_PROFILE}={declared!r} is not a value the runtime contract allows "
+        f"({allowed}). A mis-declared profile would silently skip every "
+        "production check. Refusing to start (fail-closed)."
+    )
+
+
 def resolve_profile(env: Optional[Mapping[str, str]] = None) -> str:
-    """Return the contract profile a deployment falls into."""
-    values = load_contract()["profiles"][PROFILE_PRODUCTION]["fufire_env_values"]
-    current = (_env(env).get(ENV_PROFILE) or "").strip().lower()
-    return PROFILE_PRODUCTION if current in values else PROFILE_DEVELOPMENT
+    """Return the contract profile used by the READBACK payload.
+
+    Derived from ``classify_runtime_profile`` so it cannot drift from the
+    startup guard. The readback's ``profile`` field deliberately stays
+    two-valued: an invalid value is reported there by the ``FUFIRE_ENV`` row's
+    own ``allowed_values`` check (issue ``invalid_value``), which keeps every
+    other row's ``required_profiles`` evaluation meaningful instead of grading
+    them against a profile the contract has no entry for.
+    """
+    profile = classify_runtime_profile(env)
+    return PROFILE_DEVELOPMENT if profile == PROFILE_INVALID else profile
 
 
 # ── Rate-limit pseudonymisation ──────────────────────────────────────────────
