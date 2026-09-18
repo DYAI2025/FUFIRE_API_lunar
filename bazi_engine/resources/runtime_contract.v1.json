@@ -1,0 +1,416 @@
+{
+  "schema": "fufire.runtime-config-contract.v1",
+  "contract_version": "1.0.0",
+  "description": "Provider-neutral inventory of the runtime variables materially consumed at the FuFirE Engine/Uvicorn boundary. Secrets-free by construction: this file records names, ownership, required status, allowed shapes and readback policy — never a configured value. Provider-specific bindings (which platform supplies which value) live in the deployment, not here.",
+  "profiles": {
+    "production": {
+      "fufire_env_values": ["production", "prod", "staging"],
+      "description": "Fail-closed profile. Missing or unsafe values abort startup."
+    },
+    "development": {
+      "fufire_env_values": ["*"],
+      "description": "Permissive local profile. The documented dev-mode bypass stays available."
+    }
+  },
+  "readback_policies": {
+    "value": "Non-secret and explicitly safe to echo verbatim in a readback.",
+    "presence": "Only configured/valid booleans are emitted. No value, prefix, suffix or length."
+  },
+  "fail_closed_codes": {
+    "startup_abort": "config_guard.assert_runtime_config() raises at import time.",
+    "reject_invalid_value": "The consuming module raises on an unsupported value.",
+    "none": "Advisory or presentation-only; no fail-closed behaviour."
+  },
+  "variables": [
+    {
+      "name": "FUFIRE_ENV",
+      "owner_area": "runtime-profile",
+      "consumer": "engine",
+      "secret": false,
+      "required_profiles": ["production"],
+      "allowed_values": ["production", "prod", "staging", "dev", "development", "test", "local"],
+      "readback": "value",
+      "fail_closed": "startup_abort",
+      "description": "Declares the deployment profile. Selects the fail-closed production contract."
+    },
+    {
+      "name": "FUFIRE_REQUIRE_EXPLICIT_ENV",
+      "owner_area": "runtime-profile",
+      "consumer": "engine",
+      "secret": false,
+      "required_profiles": [],
+      "readback": "value",
+      "fail_closed": "startup_abort",
+      "description": "Truthy in every container image: refuses to start when FUFIRE_ENV is unset."
+    },
+    {
+      "name": "FUFIRE_REQUIRE_API_KEYS",
+      "owner_area": "auth",
+      "consumer": "engine",
+      "secret": false,
+      "required_profiles": ["production"],
+      "production_required_truthy": true,
+      "readback": "value",
+      "fail_closed": "startup_abort",
+      "description": "Forces API-key enforcement. Production must set it truthy; the dev-mode bypass is then unreachable."
+    },
+    {
+      "name": "FUFIRE_API_KEYS",
+      "owner_area": "auth",
+      "consumer": "engine",
+      "secret": true,
+      "required_profiles": ["production"],
+      "satisfied_by": ["KEY_STORE_BACKEND"],
+      "readback": "presence",
+      "fail_closed": "startup_abort",
+      "description": "Comma-separated static API keys. Credential material: never echoed. A configured KeyStore backend satisfies the production requirement instead."
+    },
+    {
+      "name": "KEY_STORE_BACKEND",
+      "owner_area": "auth",
+      "consumer": "engine",
+      "secret": false,
+      "required_profiles": [],
+      "allowed_values": ["none", "memory"],
+      "readback": "value",
+      "fail_closed": "reject_invalid_value",
+      "description": "Selects the pluggable store for runtime-minted keys. Unsupported values raise instead of falling back."
+    },
+    {
+      "name": "FUFIRE_KEY_TIER_OVERRIDES",
+      "owner_area": "auth",
+      "consumer": "engine",
+      "secret": true,
+      "required_profiles": [],
+      "readback": "presence",
+      "fail_closed": "none",
+      "description": "Comma-separated key:tier pairs. Contains key material on the left-hand side, so it is treated as a secret."
+    },
+    {
+      "name": "FUFIRE_ADMIN_TOKEN",
+      "owner_area": "auth",
+      "consumer": "engine",
+      "secret": true,
+      "required_profiles": [],
+      "readback": "presence",
+      "fail_closed": "none",
+      "description": "Bearer token for the admin key-issuance surface. Gated additionally by the key_issuance feature flag."
+    },
+    {
+      "name": "ELEVENLABS_TOOL_SECRET",
+      "owner_area": "integration-webhook",
+      "consumer": "engine",
+      "secret": true,
+      "required_profiles": [],
+      "readback": "presence",
+      "fail_closed": "none",
+      "description": "HMAC shared secret for the internal ElevenLabs webhook."
+    },
+    {
+      "name": "WEBHOOK_HMAC_ONLY",
+      "owner_area": "integration-webhook",
+      "consumer": "engine",
+      "secret": false,
+      "required_profiles": [],
+      "readback": "value",
+      "fail_closed": "none",
+      "description": "Restricts webhook authentication to HMAC, disabling the API-key fallback."
+    },
+    {
+      "name": "SUPERGLUE_API_KEY",
+      "owner_area": "integration-superglue",
+      "consumer": "engine",
+      "secret": true,
+      "required_profiles": [],
+      "readback": "presence",
+      "fail_closed": "none",
+      "description": "Upstream credential for the legacy Superglue proxy surface."
+    },
+    {
+      "name": "CORS_ALLOWED_ORIGINS",
+      "owner_area": "http-boundary",
+      "consumer": "engine",
+      "secret": false,
+      "required_profiles": ["production"],
+      "production_forbidden_values": ["*"],
+      "readback": "value",
+      "fail_closed": "startup_abort",
+      "description": "Explicit origin allowlist. Production rejects a wildcard and any local origin."
+    },
+    {
+      "name": "FUFIRE_REPLICA_COUNT",
+      "owner_area": "scaling",
+      "consumer": "engine",
+      "secret": false,
+      "required_profiles": ["production"],
+      "value_pattern": "^[1-9][0-9]*$",
+      "readback": "value",
+      "fail_closed": "startup_abort",
+      "description": "Declared replica count. Drives the shared-counter and Redis requirements."
+    },
+    {
+      "name": "FUFIRE_REQUIRE_REDIS",
+      "owner_area": "scaling",
+      "consumer": "engine",
+      "secret": false,
+      "required_profiles": [],
+      "readback": "value",
+      "fail_closed": "startup_abort",
+      "description": "Forces Redis-backed limiter storage regardless of replica count."
+    },
+    {
+      "name": "REDIS_URL",
+      "owner_area": "scaling",
+      "consumer": "engine",
+      "secret": true,
+      "required_profiles": [],
+      "readback": "presence",
+      "fail_closed": "startup_abort",
+      "description": "Primary limiter storage connection URI. Carries credentials, so it is never echoed."
+    },
+    {
+      "name": "REDIS_PRIVATE_URL",
+      "owner_area": "scaling",
+      "consumer": "engine",
+      "secret": true,
+      "required_profiles": [],
+      "readback": "presence",
+      "fail_closed": "startup_abort",
+      "description": "Secondary limiter storage connection URI, resolved after REDIS_URL. Carries credentials."
+    },
+    {
+      "name": "FUFIRE_RL_PEPPER",
+      "owner_area": "rate-limit-identity",
+      "consumer": "engine",
+      "secret": true,
+      "required_profiles": [],
+      "required_when": "shared_limiter_counters",
+      "constraints": {
+        "min_length": 32
+      },
+      "readback": "presence",
+      "fail_closed": "startup_abort",
+      "description": "Operator-supplied pepper for the shared limiter's pseudonymous identities. Separate from every API key, the admin token and the webhook secret. Must be stable across replicas and restarts whenever limiter counters outlive a single process; a process-local value would shard every shared counter. Never logged and never echoed."
+    },
+    {
+      "name": "FORWARDED_ALLOW_IPS",
+      "owner_area": "proxy-trust",
+      "consumer": "uvicorn",
+      "secret": false,
+      "required_profiles": [],
+      "production_forbidden_values": ["*"],
+      "safe_default_values": ["", "127.0.0.1"],
+      "evidence_variable": "FUFIRE_TRUSTED_PROXY_EVIDENCE_ID",
+      "readback": "value",
+      "fail_closed": "startup_abort",
+      "description": "Uvicorn's trusted forwarded-header peer allowlist. This contract does NOT set or widen it: unset keeps Uvicorn's own loopback-only default. Production rejects a wildcard unconditionally, and any non-default value requires a recorded runtime-evidence reference. The concrete ingress binding is owned by the runtime-evidence subtask and is not asserted here."
+    },
+    {
+      "name": "FUFIRE_TRUSTED_PROXY_EVIDENCE_ID",
+      "owner_area": "proxy-trust",
+      "consumer": "engine",
+      "secret": false,
+      "required_profiles": [],
+      "required_when": "non_default_proxy_trust",
+      "readback": "value",
+      "fail_closed": "startup_abort",
+      "description": "Reference to the recorded ingress evidence that justifies a non-default FORWARDED_ALLOW_IPS allowlist. Never satisfies a wildcard."
+    },
+    {
+      "name": "EPHEMERIS_MODE",
+      "owner_area": "ephemeris",
+      "consumer": "engine",
+      "secret": false,
+      "required_profiles": [],
+      "allowed_values": ["SWIEPH", "MOSEPH"],
+      "production_allowed_values": ["SWIEPH"],
+      "readback": "value",
+      "fail_closed": "startup_abort",
+      "description": "Swiss Ephemeris backend selector. Production permits SWIEPH only."
+    },
+    {
+      "name": "SE_EPHE_PATH",
+      "owner_area": "ephemeris",
+      "consumer": "engine",
+      "secret": false,
+      "required_profiles": [],
+      "readback": "presence",
+      "fail_closed": "none",
+      "description": "Filesystem location of the SE1 ephemeris files. Reported as present/absent only; a host path is an infrastructure detail."
+    },
+    {
+      "name": "FUFIRE_MOSEPH_ATTESTATION_ENFORCE",
+      "owner_area": "ephemeris",
+      "consumer": "engine",
+      "secret": false,
+      "required_profiles": [],
+      "readback": "value",
+      "fail_closed": "none",
+      "description": "Enforces the Moshier attestation check outside the production profile."
+    },
+    {
+      "name": "FUFIRE_ENABLE_KEY_ISSUANCE",
+      "owner_area": "feature-policy",
+      "consumer": "engine",
+      "secret": false,
+      "required_profiles": [],
+      "production_forbidden_truthy": true,
+      "readback": "value",
+      "fail_closed": "startup_abort",
+      "description": "Engine-side key issuance. Forbidden in production; the durable BFF plane owns issuance."
+    },
+    {
+      "name": "FUFIRE_ENABLE_ZWDS",
+      "owner_area": "feature-policy",
+      "consumer": "engine",
+      "secret": false,
+      "required_profiles": [],
+      "readback": "value",
+      "fail_closed": "startup_abort",
+      "description": "Exposes the ZWDS surface. Production additionally requires an explicit sign-off id."
+    },
+    {
+      "name": "FUFIRE_ZWDS_SIGNOFF_ID",
+      "owner_area": "feature-policy",
+      "consumer": "engine",
+      "secret": false,
+      "required_profiles": [],
+      "readback": "value",
+      "fail_closed": "startup_abort",
+      "description": "Release sign-off reference required before ZWDS may be enabled in production."
+    },
+    {
+      "name": "FUFIRE_ENABLE_HEHUN_MARKETING",
+      "owner_area": "feature-policy",
+      "consumer": "engine",
+      "secret": false,
+      "required_profiles": [],
+      "production_forbidden_truthy": true,
+      "readback": "value",
+      "fail_closed": "startup_abort",
+      "description": "Hehun marketing surface. Remains disabled in production pending release approval."
+    },
+    {
+      "name": "FUFIRE_BAZI_PRECISION_V2_DEFAULT",
+      "owner_area": "feature-policy",
+      "consumer": "engine",
+      "secret": false,
+      "required_profiles": [],
+      "production_forbidden_truthy": true,
+      "readback": "value",
+      "fail_closed": "startup_abort",
+      "description": "Switches BaZi Precision V2 on as the default. Forbidden in production."
+    },
+    {
+      "name": "PORT",
+      "owner_area": "http-boundary",
+      "consumer": "uvicorn",
+      "secret": false,
+      "required_profiles": [],
+      "value_pattern": "^[1-9][0-9]{0,4}$",
+      "readback": "value",
+      "fail_closed": "none",
+      "description": "Listening port for the ASGI server entry point."
+    },
+    {
+      "name": "BUILD_VERSION",
+      "owner_area": "build-identity",
+      "consumer": "engine",
+      "secret": false,
+      "required_profiles": [],
+      "readback": "value",
+      "fail_closed": "none",
+      "description": "Overrides the reported build version. Defaults to the engine build label."
+    },
+    {
+      "name": "EXPOSE_BUILD_METADATA",
+      "owner_area": "build-identity",
+      "consumer": "engine",
+      "secret": false,
+      "required_profiles": [],
+      "readback": "value",
+      "fail_closed": "none",
+      "description": "Enables deploy-identity fields on the public build endpoint."
+    },
+    {
+      "name": "FUFIRE_BUILD_PROVIDER",
+      "owner_area": "build-identity",
+      "consumer": "engine",
+      "secret": false,
+      "required_profiles": [],
+      "readback": "value",
+      "fail_closed": "none",
+      "description": "Provider-neutral name of the platform that produced this running candidate."
+    },
+    {
+      "name": "FUFIRE_BUILD_COMMIT_SHA",
+      "owner_area": "build-identity",
+      "consumer": "engine",
+      "secret": false,
+      "required_profiles": [],
+      "readback": "value",
+      "fail_closed": "none",
+      "description": "Provider-neutral commit/revision identity of the running candidate."
+    },
+    {
+      "name": "FUFIRE_BUILD_RELEASE_ID",
+      "owner_area": "build-identity",
+      "consumer": "engine",
+      "secret": false,
+      "required_profiles": [],
+      "readback": "value",
+      "fail_closed": "none",
+      "description": "Provider-neutral deployment/release identity of the running candidate."
+    },
+    {
+      "name": "FUFIRE_BUILD_IMAGE_REF",
+      "owner_area": "build-identity",
+      "consumer": "engine",
+      "secret": false,
+      "required_profiles": [],
+      "readback": "value",
+      "fail_closed": "none",
+      "description": "Provider-neutral image reference of the running candidate."
+    },
+    {
+      "name": "RAILWAY_GIT_COMMIT_SHA",
+      "owner_area": "build-identity",
+      "consumer": "engine",
+      "secret": false,
+      "required_profiles": [],
+      "readback": "value",
+      "fail_closed": "none",
+      "description": "Railway-supplied commit identity. Retained as an alternative provider binding."
+    },
+    {
+      "name": "RAILWAY_DEPLOYMENT_ID",
+      "owner_area": "build-identity",
+      "consumer": "engine",
+      "secret": false,
+      "required_profiles": [],
+      "readback": "value",
+      "fail_closed": "none",
+      "description": "Railway-supplied deployment identity. Retained as an alternative provider binding."
+    },
+    {
+      "name": "FLY_ALLOC_ID",
+      "owner_area": "build-identity",
+      "consumer": "engine",
+      "secret": false,
+      "required_profiles": [],
+      "readback": "value",
+      "fail_closed": "none",
+      "description": "Historical Fly.io allocation identity. Decommissioned provider, retained for response-shape compatibility."
+    },
+    {
+      "name": "FLY_REGION",
+      "owner_area": "build-identity",
+      "consumer": "engine",
+      "secret": false,
+      "required_profiles": [],
+      "readback": "value",
+      "fail_closed": "none",
+      "description": "Historical Fly.io region identity. Decommissioned provider, retained for response-shape compatibility."
+    }
+  ]
+}

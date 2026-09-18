@@ -48,7 +48,7 @@ include = ["bazi_engine*"]
 [tool.setuptools.package-data]
 bazi_engine = ["py.typed"]
 "bazi_engine.bafe" = ["py.typed"]
-"bazi_engine.resources" = ["ephemeris.lock.json"]
+"bazi_engine.resources" = ["ephemeris.lock.json", "runtime_contract.v1.json"]
 "bazi_engine.data" = [
     "affinity_map.json",
     "zwds/rulesets/zwds.fufire.core-seed.v1/*.json",

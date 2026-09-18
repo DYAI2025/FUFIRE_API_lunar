@@ -49,7 +49,20 @@ class HealthResponse(BaseModel):
 
 
 class BuildResponse(BaseModel):
+    """Build/candidate identity.
+
+    The ``provider``/``commit_sha``/``release_id``/``image_ref`` quartet is the
+    provider-neutral surface (FUF-159): any platform can populate it through the
+    explicit ``FUFIRE_BUILD_*`` variables, so runtime evidence can identify a
+    deployed candidate without the engine knowing which platform it runs on.
+    The ``railway_*``/``fly_*`` fields are retained unchanged for compatibility.
+    """
+
     version: str
+    provider: Optional[str] = None
+    commit_sha: Optional[str] = None
+    release_id: Optional[str] = None
+    image_ref: Optional[str] = None
     railway_commit_sha: Optional[str] = None
     railway_deploy_id: Optional[str] = None
     fly_alloc_id: Optional[str] = None
@@ -70,12 +83,27 @@ class WuxingMappingResponse(BaseModel):
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 def _build_metadata() -> Dict[str, str]:
+    """Return the build/candidate identity, provider-neutral first.
+
+    ``FUFIRE_BUILD_*`` are explicit, platform-independent variables a deployment
+    sets itself; they take precedence. Where they are absent the historical
+    Railway variables still populate the neutral fields, so an existing Railway
+    deployment keeps reporting the same commit/deploy identity it always did.
+    No platform-specific variable name is invented here for any other provider —
+    a new platform supplies the neutral ``FUFIRE_BUILD_*`` set.
+    """
     meta: Dict[str, str] = {"version": _BUILD_VERSION}
     if os.environ.get("EXPOSE_BUILD_METADATA"):
-        meta["railway_commit_sha"] = os.environ.get("RAILWAY_GIT_COMMIT_SHA", "")
-        meta["railway_deploy_id"] = os.environ.get("RAILWAY_DEPLOYMENT_ID", "")
+        railway_commit = os.environ.get("RAILWAY_GIT_COMMIT_SHA", "")
+        railway_deploy = os.environ.get("RAILWAY_DEPLOYMENT_ID", "")
+        meta["railway_commit_sha"] = railway_commit
+        meta["railway_deploy_id"] = railway_deploy
         meta["fly_alloc_id"] = os.environ.get("FLY_ALLOC_ID", "")
         meta["fly_region"] = os.environ.get("FLY_REGION", "")
+        meta["provider"] = os.environ.get("FUFIRE_BUILD_PROVIDER", "")
+        meta["commit_sha"] = os.environ.get("FUFIRE_BUILD_COMMIT_SHA", "") or railway_commit
+        meta["release_id"] = os.environ.get("FUFIRE_BUILD_RELEASE_ID", "") or railway_deploy
+        meta["image_ref"] = os.environ.get("FUFIRE_BUILD_IMAGE_REF", "")
     return meta
 
 

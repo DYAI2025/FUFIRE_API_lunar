@@ -19,6 +19,7 @@ import hmac
 import ipaddress
 import logging
 import os
+import re
 import secrets
 from typing import Optional
 
@@ -26,7 +27,41 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from starlette.requests import Request
 
+from .runtime_contract import PSEUDONYM_LENGTH, pseudonymise
+
 _log = logging.getLogger(__name__)
+
+# ── Shared-limiter rate identities (FUF-159) ─────────────────────────────────
+#
+# slowapi writes the key function's return value into BOTH the limiter storage
+# key (``__evaluate_limits``: ``args = [limit_key, limit_scope]``) and the
+# ``"ratelimit %s (%s) exceeded at endpoint: %s"`` WARNING log line. Returning
+# the raw API key or the raw client address — as this module did before FUF-159
+# — therefore persisted and logged them on every limited request.
+#
+# The replacement is a STRUCTURED pseudonym rather than a bare digest, because
+# ``tier_limit`` receives exactly this string and nothing else: collapsing an
+# authenticated identity to an opaque hash would destroy tier resolution and
+# silently drop every paid caller to the free-tier ceiling. The tier travels in
+# the clear (it is not a secret and not caller-supplied); only the credential is
+# pseudonymised.
+#
+#     authenticated : k:<tier>:<32 hex>
+#     address-keyed : ip:<32 hex>
+IDENTITY_KEY_PREFIX = "k:"
+IDENTITY_IP_PREFIX = "ip:"
+
+# Legacy fallback for unauthenticated, address-keyed routes. Unchanged by
+# FUF-159 — this slice moves identities, never numeric policy.
+LEGACY_IP_LIMIT = "30/minute"
+
+# Applied when a structured identity does not parse. Deliberately NOT the free
+# tier: a malformed authenticated identity is a defect, and silently serving it
+# the free-tier ceiling would make that defect indistinguishable from a genuine
+# free-tier caller. Strictly below every real tier, and always logged.
+MALFORMED_IDENTITY_LIMIT = "1/minute"
+
+_DIGEST_RE = re.compile(r"^[0-9a-f]{%d}$" % PSEUDONYM_LENGTH)
 
 
 def _truthy(value: str | None) -> bool:
@@ -45,11 +80,21 @@ def _replica_count() -> int | None:
 
 
 def get_rate_limit_key(request: Request) -> str:
-    """Extract rate limit key: API key for /v1/, IP for legacy routes."""
+    """Return the pseudonymous rate identity for a shared-limiter request.
+
+    Neither the raw API key nor the raw client address ever leaves this
+    function — see the structured-identity note at the top of this module for
+    why the tier still travels in the clear.
+
+    The parameter name ``request`` is load-bearing: slowapi inspects
+    ``inspect.signature(key_func).parameters`` and only passes the request when
+    it finds that exact name — otherwise it calls ``key_func()`` with no
+    arguments and raises TypeError.
+    """
     key_info = getattr(getattr(request, "state", None), "key_info", None)
     if key_info is not None:
-        return key_info.key
-    return get_remote_address(request)
+        return f"{IDENTITY_KEY_PREFIX}{key_info.tier}:{pseudonymise(key_info.key)}"
+    return f"{IDENTITY_IP_PREFIX}{pseudonymise(get_remote_address(request))}"
 
 
 def _resolve_storage_uri() -> Optional[str]:
@@ -218,37 +263,86 @@ def get_storage_status() -> dict:
         return {"type": "redis", "status": "unavailable", "required": True, "configured": True}
 
 
-def tier_limit(key: str) -> str:
-    """Return the rate limit string for the given rate-limit key.
+# Enterprise/dev tiers carry ``requests_per_minute=0`` (meaning unlimited);
+# they are capped so slowapi storage never sees an unbounded window.
+UNLIMITED_TIER_CAP = "10000/minute"
 
-    slowapi calls this with the result of key_func(request) — i.e. the API
-    key string (for V1 routes) or the client IP address (for legacy routes).
-    The parameter name ``key`` is load-bearing: slowapi's LimitGroup.__iter__
-    inspects ``inspect.signature(callable).parameters`` and, if it finds a
-    parameter named ``"key"``, calls ``callable(key_func(request))`` instead
-    of ``callable()`` (which is the zero-argument form that the previous
-    ContextVar approach relied on incorrectly).
 
-    API keys follow the ``ff_<tier>_<secret>`` format, so resolve_key_info
-    can extract the tier from the key string directly.  IP addresses don't
-    match the prefix pattern and are treated as the 'free' tier.
+def _rpm_to_limit(requests_per_minute: int) -> str:
+    if requests_per_minute == 0:
+        return UNLIMITED_TIER_CAP
+    return f"{requests_per_minute}/minute"
 
-    Enterprise keys use ``requests_per_minute=0`` (meaning unlimited);
-    they are capped at 10 000/minute so slowapi storage never sees an
-    unbounded window.
+
+def _malformed_identity(reason: str) -> str:
+    """Fail closed on an unparseable identity — but never silently.
+
+    The identity itself is deliberately NOT logged: on a rollback boundary a
+    malformed value is exactly where raw credential material could appear.
     """
-    # Legacy (unauthenticated) routes are keyed by IP address — apply 30/minute fallback
+    _log.warning("limiter.malformed_identity reason=%s applying=%s", reason, MALFORMED_IDENTITY_LIMIT)
+    return MALFORMED_IDENTITY_LIMIT
+
+
+def _structured_key_limit(identity: str) -> str:
+    """Resolve ``k:<tier>:<digest>`` without ever consulting resolve_key_info.
+
+    The digest is a pseudonym, not a key: feeding it to the key resolver would
+    classify every authenticated caller as free tier.
+    """
+    from .auth import TIER_LIMITS
+
+    parts = identity.split(":")
+    if len(parts) != 3:
+        return _malformed_identity("field_count")
+    _, tier, digest = parts
+    if tier not in TIER_LIMITS:
+        return _malformed_identity("unknown_tier")
+    if not _DIGEST_RE.match(digest):
+        return _malformed_identity("bad_digest")
+    return _rpm_to_limit(TIER_LIMITS[tier][1])
+
+
+def _legacy_raw_limit(key: str) -> str:
+    """Parse the pre-FUF-159 raw identity forms, so a revert stays narrow."""
     try:
         ipaddress.ip_address(key)
-        return "30/minute"
+        return LEGACY_IP_LIMIT
     except ValueError:
         pass
     from .auth import resolve_key_info
-    info = resolve_key_info(key)
-    rpm = info.requests_per_minute
-    if rpm == 0:
-        return "10000/minute"  # dev/enterprise: effectively unlimited
-    return f"{rpm}/minute"
+
+    return _rpm_to_limit(resolve_key_info(key).requests_per_minute)
+
+
+def tier_limit(key: str) -> str:
+    """Return the rate limit string for the given rate-limit key.
+
+    slowapi calls this with the result of ``key_func(request)``. The parameter
+    name ``key`` is load-bearing: slowapi's ``LimitGroup.__iter__`` inspects
+    ``inspect.signature(callable).parameters`` and, if it finds a parameter
+    named ``"key"``, calls ``callable(key_func(request))`` instead of
+    ``callable()`` (the zero-argument form the old ContextVar approach relied
+    on incorrectly).
+
+    Two identity generations are accepted:
+
+    * **Structured (current)** — ``k:<tier>:<digest>`` and ``ip:<digest>``, as
+      produced by ``get_rate_limit_key``. The tier is read directly from the
+      identity; the digest is never resolved as a key.
+    * **Raw (pre-FUF-159)** — a bare ``ff_<tier>_<secret>`` key, ``dev-mode``,
+      or a bare IP address. Kept so reverting the key function alone restores
+      the previous behaviour without a second coordinated change.
+
+    Numeric policy is unchanged by FUF-159: free/starter/pro/enterprise and the
+    legacy address fallback all keep the ceilings they had before.
+    """
+    if key.startswith(IDENTITY_KEY_PREFIX):
+        return _structured_key_limit(key)
+    if key.startswith(IDENTITY_IP_PREFIX):
+        digest = key[len(IDENTITY_IP_PREFIX):]
+        return LEGACY_IP_LIMIT if _DIGEST_RE.match(digest) else _malformed_identity("bad_digest")
+    return _legacy_raw_limit(key)
 
 
 def reset_limiter_storage() -> None:

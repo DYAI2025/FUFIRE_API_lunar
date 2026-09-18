@@ -12,6 +12,12 @@ from __future__ import annotations
 
 import os
 
+from .runtime_contract import (
+    proxy_trust_violation,
+    rate_limit_pepper_violation,
+    shared_limiter_counters_outlive_process,
+)
+
 _PRODUCTION_ENVS = {"production", "prod", "staging"}
 
 
@@ -97,6 +103,33 @@ def _assert_release_feature_policy() -> None:
         )
 
 
+def _assert_rate_limit_pepper(*, required: bool) -> None:
+    """FUF-159: the shared limiter's pseudonymisation secret must be usable.
+
+    The normative constraint (minimum strength) lives in the packaged runtime
+    contract, not here, so the contract and this guard cannot drift apart. The
+    raised message is built by ``runtime_contract`` and never echoes the value.
+    """
+    violation = rate_limit_pepper_violation(required=required)
+    if violation is not None:
+        raise RuntimeError(violation)
+
+
+def _assert_proxy_trust_policy() -> None:
+    """FUF-159: reject unsafe or unevidenced trusted-proxy configuration.
+
+    This guard does NOT enable proxy trust and does NOT supply a value for
+    ``FORWARDED_ALLOW_IPS``. Leaving it unset keeps the server's own
+    loopback-only default. A wildcard is refused outright; any other deviation
+    requires ``FUFIRE_TRUSTED_PROXY_EVIDENCE_ID`` to point at recorded ingress
+    evidence. No ingress CIDR is assumed, inferred or shipped anywhere in this
+    repository — that binding is a separate, unresolved runtime-evidence task.
+    """
+    violation = proxy_trust_violation()
+    if violation is not None:
+        raise RuntimeError(violation)
+
+
 def assert_runtime_config() -> None:
     """Validate the complete deployment profile without exposing secrets.
 
@@ -107,6 +140,11 @@ def assert_runtime_config() -> None:
     env = os.getenv("FUFIRE_ENV", "").strip().lower()
     if _truthy(os.getenv("FUFIRE_REQUIRE_EXPLICIT_ENV")) and not env:
         raise RuntimeError("FUFIRE_ENV must be set explicitly for this runtime")
+
+    # Profile-independent: a secret that is set but unusable is a configuration
+    # error everywhere, not something to silently ignore outside production.
+    _assert_rate_limit_pepper(required=False)
+
     if env not in _PRODUCTION_ENVS:
         return
 
@@ -118,3 +156,5 @@ def assert_runtime_config() -> None:
     replica_count = _production_replica_count()
     _assert_production_dependencies(replica_count)
     _assert_release_feature_policy()
+    _assert_rate_limit_pepper(required=shared_limiter_counters_outlive_process())
+    _assert_proxy_trust_policy()
