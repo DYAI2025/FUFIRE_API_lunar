@@ -18,16 +18,25 @@ UNLIMITED_ALLOWLIST: set[str] = set()
 # ``infra_limiter`` rather than the shared application limiter — see
 # bazi_engine/limiter.py for why a Redis outage must stay reportable.
 #
-# Scope note: the remaining FUF-156 surfaces (GET /api, GET /v1/api,
-# POST /internal/api/webhooks/chart) are NOT listed here yet. They are
-# deliberately still unimplemented in this slice, and the executable
-# audit-hardening security-boundary gate — not this file — is what holds them
-# red until then.
+# Scope note: the remaining FUF-156 surfaces (GET /api, GET /v1/api) are NOT
+# listed anywhere in this file yet. They are deliberately still unimplemented,
+# and the executable audit-hardening security-boundary gate — not this file — is
+# what holds them red until then.
 INFRA_PROBE_ROUTES: set[tuple[str, str]] = {
     ("GET", "/health"),
     ("GET", "/v1/health"),
     ("GET", "/ready"),
     ("GET", "/v1/ready"),
+}
+
+# FUF-156B: authenticated internal integration surfaces. HMAC-protected rather
+# than API-key protected, so the require_api_key sweep cannot see them either,
+# yet one valid signature drives geocoding plus BaZi, Western and Fusion
+# computation per request. These ride the SHARED application limiter, because
+# their counters must stay consistent across replicas wherever Redis is
+# configured — the opposite of the infra-probe decision above.
+AUTHENTICATED_INTEGRATION_ROUTES: set[tuple[str, str]] = {
+    ("POST", "/internal/api/webhooks/chart"),
 }
 
 
@@ -123,4 +132,60 @@ def test_infra_probe_routes_are_owned_by_the_infra_limiter() -> None:
             assert not in_app, (
                 f"{method} {route.path} is also on the shared application limiter — "
                 "a Redis outage would turn it into an opaque 500"
+            )
+
+
+def test_every_authenticated_integration_route_is_rate_limited() -> None:
+    """FUF-156B: the internal ElevenLabs webhook carries an explicit limit.
+
+    It is neither API-key protected nor an infra probe, so both sweeps above
+    skip it — without this check the most expensive unauthenticated-reachable
+    compute path in the app could silently lose its decorator again.
+    """
+    found: set[tuple[str, str]] = set()
+    missing: set[tuple[str, str]] = set()
+
+    for route in app.routes:
+        if not isinstance(route, APIRoute):
+            continue
+        for method in route.methods:
+            pair = (method, route.path)
+            if pair in AUTHENTICATED_INTEGRATION_ROUTES:
+                found.add(pair)
+                if not _is_limited(route):
+                    missing.add(pair)
+
+    unmounted = AUTHENTICATED_INTEGRATION_ROUTES - found
+    assert not unmounted, f"authenticated integration routes are not mounted at all: {sorted(unmounted)}"
+    assert not missing, "Authenticated integration routes without an explicit limit:\n" + "\n".join(
+        f"{m} {p}" for m, p in sorted(missing)
+    )
+
+
+def test_authenticated_integration_routes_are_owned_by_the_application_limiter() -> None:
+    """They must be on the Redis-capable shared limiter, not the memory-only one.
+
+    infra_limiter is pinned to process memory so a readiness probe survives a
+    Redis outage. Production webhook traffic has the opposite requirement: its
+    counters must be shared across replicas whenever Redis is configured, so
+    putting this route on infra_limiter would silently give every replica its
+    own full quota.
+    """
+    for route in app.routes:
+        if not isinstance(route, APIRoute):
+            continue
+        for method in route.methods:
+            if (method, route.path) not in AUTHENTICATED_INTEGRATION_ROUTES:
+                continue
+            fn = route.endpoint
+            key = f"{fn.__module__}.{fn.__qualname__}"
+            in_app = key in limiter._route_limits or key in limiter._dynamic_route_limits
+            in_infra = (
+                key in infra_limiter._route_limits
+                or key in infra_limiter._dynamic_route_limits
+            )
+            assert in_app, f"{method} {route.path} is not on the shared application limiter"
+            assert not in_infra, (
+                f"{method} {route.path} is on the memory-only infra limiter — "
+                "its counters would not be shared across replicas"
             )

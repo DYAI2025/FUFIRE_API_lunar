@@ -146,6 +146,50 @@ infra_limiter = Limiter(
 )
 
 
+# ── Authenticated ElevenLabs webhook (FUF-156B) ──────────────────────────────
+#
+# The FuFirE webhook contract exposes ONE logical ElevenLabs integration, so the
+# authenticated rate identity is a single constant bucket rather than a
+# per-caller one. This is an explicit product decision: keying by IP would
+# either shard one integration's quota across a rotating egress pool or, behind
+# a shared proxy, fuse unrelated callers into one bucket.
+#
+# Ceiling rationale: 60/minute is the PO policy for the current product stage —
+# one voice agent issuing at most one chart per second. It is deliberately NOT
+# derived from the 30/minute anonymous legacy fallback in ``tier_limit``.
+#
+# This limit rides the SHARED application limiter, not ``infra_limiter``: the
+# webhook is production traffic whose counters must stay consistent across
+# replicas whenever Redis is configured. Unlike /health and /ready, a webhook
+# that fails while Redis is down is correct behaviour, not a lost signal.
+WEBHOOK_INTEGRATION_LIMIT = "60/minute"
+
+# The literal, non-secret identity of that single integration. It is a constant
+# on purpose: nothing request-derived may reach the limiter key, because slowapi
+# writes the key func's return value into BOTH the limiter storage key
+# (``__evaluate_limits``: ``args = [limit_key, limit_scope]``) and the
+# ``"ratelimit %s (%s) exceeded at endpoint: %s"`` WARNING log line. A key built
+# from the HMAC signature, the shared secret, the API-key fallback, the client
+# address or the request body would therefore be persisted and logged.
+WEBHOOK_INTEGRATION_IDENTITY = "integration:elevenlabs"
+
+
+def webhook_integration_key(request: Request) -> str:
+    """Return the constant rate identity of the one logical ElevenLabs integration.
+
+    The request is deliberately unread. The parameter name ``request`` is
+    load-bearing all the same: slowapi inspects
+    ``inspect.signature(key_func).parameters`` and only passes the request when
+    it finds that exact name — otherwise it calls ``key_func()`` with no
+    arguments and raises TypeError.
+
+    Quota is only ever consumed by an already-authenticated request: the route's
+    auth dependency resolves before the limiter wrapper runs, so unauthenticated
+    traffic cannot drain this bucket (see tests/test_webhook_rate_limit.py).
+    """
+    return WEBHOOK_INTEGRATION_IDENTITY
+
+
 def get_storage_status() -> dict:
     """Return storage health info for /health endpoint.
 
