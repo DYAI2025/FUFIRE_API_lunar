@@ -414,17 +414,23 @@ def _spellings(value: str) -> tuple[str, ...]:
 
     The letters are fixed; only their case and the surrounding whitespace move,
     so a spelling can never smuggle in a value the contract does not declare.
+    Works for a value declared in either case (``production`` or ``SWIEPH``).
     """
+    lower = value.lower()
     alternating = "".join(
-        char.upper() if index % 2 == 0 else char for index, char in enumerate(value)
+        char.upper() if index % 2 == 0 else char for index, char in enumerate(lower)
     )
-    return (
+    candidates = (
         value,
+        lower,
         value.upper(),
-        value.capitalize(),
+        lower.capitalize(),
+        alternating,
+        f" {value} ",
         f" {value.upper()} ",
         f"\t{alternating}\n",
     )
+    return tuple(dict.fromkeys(candidates))
 
 
 def _env_spellings(values: tuple[str, ...] | list[str]) -> list[str]:
@@ -556,16 +562,649 @@ def test_normalisation_never_rescues_an_uncontracted_value_on_readback(
     assert rc != 0, out
 
 
-def test_readback_normalisation_is_scoped_to_the_profile_row() -> None:
-    """Only FUFIRE_ENV is normalised; the validator is NOT case-insensitive.
+# ── FUF-159: comparison semantics are declared by the contract, per row ──────
+#
+# The contract has exactly three ``allowed_values`` rows, and each one's REAL
+# consumer compares its variable in a specific form:
+#
+#   FUFIRE_ENV         classify_runtime_profile    strip + lower
+#   KEY_STORE_BACKEND  key_store.get_key_store     strip + lower
+#   EPHEMERIS_MODE     config_guard / ephemeris    upper (config_guard also strips)
+#
+# Until this slice the readback knew only the first of those, through a
+# code-side ``if name == FUFIRE_ENV`` branch. ``KEY_STORE_BACKEND=MEMORY`` and
+# ``EPHEMERIS_MODE=swieph`` therefore ran fine and still failed their own
+# preflight. The comparison form is now the row's machine-readable
+# ``value_normalization`` field, and every test below pits a REAL consumer
+# against the packaged readback CLI in a fresh process. Base values are derived
+# from the packaged contract so this file never becomes a second value list.
 
-    Other contracted rows declare their allowed values in a specific case and
-    ``value_pattern`` rows are case-sensitive by construction. A blanket
-    case-fold in the validator would quietly widen every one of those sets.
-    The input is already ``.strip()``ed by the caller.
+UNSUPPORTED_KEY_STORE_BACKENDS = ("postgres", "firestore", "foo")
+UNSUPPORTED_EPHEMERIS_MODES = ("JPLEPH", "swiss", "foo")
+
+# Captured at import, before ``clean_contract_env`` clears every contracted
+# variable. SE_EPHE_PATH is a contract row, but for the backend tests it is the
+# host's SE1 location, not a value under test: CI keeps the files ONLY at
+# SE_EPHE_PATH (/tmp/ephe), so clearing it strands SWIEPH construction.
+_HOST_SE_EPHE_PATH = os.environ.get("SE_EPHE_PATH")
+
+
+def _row(name: str) -> dict[str, Any]:
+    from bazi_engine.runtime_contract import variable
+
+    entry = variable(name)
+    assert entry is not None, f"the packaged contract has no {name} row"
+    return entry
+
+
+def _row_values(name: str, field: str = "allowed_values") -> list[str]:
+    return [str(value) for value in _row(name).get(field, [])]
+
+
+def _row_spellings(name: str, *, padded: bool | None = None) -> list[tuple[str, str]]:
+    """``(base, spelling)`` pairs for every contracted value of ``name``.
+
+    ``padded`` selects spellings with (True) or without (False) surrounding
+    whitespace; None keeps both.
     """
-    from bazi_engine.runtime_contract import ENV_PROFILE, _comparison_value
+    pairs = [(base, spelling) for base in _row_values(name) for spelling in _spellings(base)]
+    if padded is None:
+        return pairs
+    return [(base, spelling) for base, spelling in pairs if (spelling != spelling.strip()) is padded]
 
-    assert _comparison_value(ENV_PROFILE, "Production") == "production"
-    for name in ("EPHEMERIS_MODE", "KEY_STORE_BACKEND", "FUFIRE_REPLICA_COUNT"):
-        assert _comparison_value(name, "SwIePh") == "SwIePh", name
+
+def _row_record(out: str, name: str) -> tuple[dict[str, Any], dict[str, Any]]:
+    payload = json.loads(out)
+    return payload, {r["name"]: r for r in payload["variables"]}[name]
+
+
+def _swieph_marks(base: str) -> tuple[pytest.MarkDecorator, ...]:
+    # MOSEPH is the one mode SwissEphBackend constructs without SE1 files; every
+    # other accepted mode reaches ensure_ephemeris_files().
+    return () if base == "MOSEPH" else (pytest.mark.swieph,)
+
+
+def _apply_with_host_ephemeris(monkeypatch: pytest.MonkeyPatch, env: dict[str, str]) -> None:
+    _apply(monkeypatch, env)
+    if _HOST_SE_EPHE_PATH is not None:
+        monkeypatch.setenv("SE_EPHE_PATH", _HOST_SE_EPHE_PATH)
+
+
+# ── TDD regressions: one per mismatched row ──────────────────────────────────
+
+def test_uppercase_key_store_backend_agrees_across_key_store_and_readback(
+    clean_contract_env: pytest.MonkeyPatch,
+) -> None:
+    """FUF-159 regression: ``KEY_STORE_BACKEND=MEMORY`` ran and failed preflight.
+
+    ``get_key_store`` strips and lower-cases the value and returns the in-memory
+    backend; the readback compared it case-sensitively and reported
+    ``invalid_value`` with a non-zero exit.
+    """
+    from bazi_engine.key_store import InMemoryKeyStore, get_key_store
+
+    env = {"FUFIRE_ENV": "dev", "KEY_STORE_BACKEND": "MEMORY"}
+
+    # 1. the real consumer accepts it and resolves the memory backend
+    _apply(clean_contract_env, env)
+    assert isinstance(get_key_store(), InMemoryKeyStore)
+
+    # 2. the packaged readback, in a fresh process
+    rc, out = _readback(env)
+    payload, record = _row_record(out, "KEY_STORE_BACKEND")
+    assert record["valid"] is True, f"readback rejected what the key store accepted: {record}"
+    assert "issue" not in record, record
+    assert payload["valid"] is True, payload["violations"]
+    assert rc == 0, out
+
+
+def test_lowercase_ephemeris_mode_agrees_across_production_guard_and_readback(
+    clean_contract_env: pytest.MonkeyPatch,
+) -> None:
+    """FUF-159 regression: ``EPHEMERIS_MODE=swieph`` passed startup, failed preflight.
+
+    The production guard upper-cases the value and accepts it as SWIEPH, and the
+    transit engine resolves it to SWIEPH; the readback compared it
+    case-sensitively and graded a complete production deployment invalid.
+    """
+    from bazi_engine.config_guard import assert_runtime_config
+    from bazi_engine.runtime_contract import PROFILE_PRODUCTION
+    from bazi_engine.transit import _effective_ephemeris_mode
+
+    env = dict(PRODUCTION_COMPLETE_ENV, FUFIRE_ENV="production", EPHEMERIS_MODE="swieph")
+
+    # 1. the production guard treats it as SWIEPH (it raises for anything else)
+    _apply(clean_contract_env, env)
+    assert_runtime_config()
+    assert _effective_ephemeris_mode() == "SWIEPH"
+
+    # 2. the packaged readback, in a fresh process
+    rc, out = _readback(env)
+    payload, record = _row_record(out, "EPHEMERIS_MODE")
+    assert payload["profile"] == PROFILE_PRODUCTION
+    assert record["valid"] is True, f"readback rejected what the guard accepted: {record}"
+    assert "issue" not in record, record
+    assert payload["valid"] is True, payload["violations"]
+    assert rc == 0, out
+
+
+# ── KEY_STORE_BACKEND parity matrix ──────────────────────────────────────────
+
+@pytest.mark.parametrize(("base", "spelling"), _row_spellings("KEY_STORE_BACKEND"))
+def test_key_store_and_readback_agree_on_every_contracted_spelling(
+    clean_contract_env: pytest.MonkeyPatch, base: str, spelling: str
+) -> None:
+    """Every spelling resolves to its base backend AND is readback-valid.
+
+    The expected backend is whatever ``get_key_store`` returns for the base
+    value's own spelling, so this test never restates which backends exist.
+    """
+    from bazi_engine.key_store import get_key_store
+
+    _apply(clean_contract_env, {"FUFIRE_ENV": "dev", "KEY_STORE_BACKEND": base})
+    reference = get_key_store()
+
+    env = {"FUFIRE_ENV": "dev", "KEY_STORE_BACKEND": spelling}
+    _apply(clean_contract_env, env)
+    store = get_key_store()
+    assert type(store) is type(reference), (
+        f"KEY_STORE_BACKEND={spelling!r} resolved {type(store).__name__}, "
+        f"{base!r} resolves {type(reference).__name__}"
+    )
+
+    rc, out = _readback(env)
+    payload, record = _row_record(out, "KEY_STORE_BACKEND")
+    assert record["valid"] is True, f"KEY_STORE_BACKEND={spelling!r} readback record: {record}"
+    assert payload["valid"] is True, payload["violations"]
+    assert rc == 0, out
+
+
+@pytest.mark.parametrize("spelling", _env_spellings(UNSUPPORTED_KEY_STORE_BACKENDS))
+def test_normalisation_never_admits_an_unsupported_key_store_backend(
+    clean_contract_env: pytest.MonkeyPatch, spelling: str
+) -> None:
+    """Canary: case-folding must not turn an unsupported backend into a valid one."""
+    from bazi_engine.key_store import get_key_store
+
+    env = {"FUFIRE_ENV": "dev", "KEY_STORE_BACKEND": spelling}
+    _apply(clean_contract_env, env)
+    with pytest.raises(ValueError, match="Unsupported KEY_STORE_BACKEND"):
+        get_key_store()
+
+    rc, out = _readback(env)
+    payload, record = _row_record(out, "KEY_STORE_BACKEND")
+    assert record["valid"] is False, f"KEY_STORE_BACKEND={spelling!r} accepted on readback"
+    assert record["issue"] == "invalid_value"
+    assert payload["valid"] is False
+    assert rc != 0, out
+
+
+@pytest.mark.parametrize(("base", "spelling"), _row_spellings("KEY_STORE_BACKEND"))
+def test_key_store_spelling_satisfies_the_production_key_requirement_consistently(
+    clean_contract_env: pytest.MonkeyPatch, base: str, spelling: str
+) -> None:
+    """``satisfied_by`` reads KEY_STORE_BACKEND in the row's declared form too.
+
+    A production deployment without static keys starts only when a key store is
+    configured. The readback's ``FUFIRE_API_KEYS`` requirement must reach the
+    same verdict for every spelling — accept for the memory spellings, reject
+    for the none spellings.
+    """
+    from bazi_engine.config_guard import assert_runtime_config
+    from bazi_engine.key_store import get_key_store
+
+    env = {k: v for k, v in PRODUCTION_COMPLETE_ENV.items() if k != "FUFIRE_API_KEYS"}
+    env.update(FUFIRE_ENV="production")
+
+    _apply(clean_contract_env, dict(env, KEY_STORE_BACKEND=base))
+    store_configured = get_key_store() is not None
+
+    env["KEY_STORE_BACKEND"] = spelling
+    _apply(clean_contract_env, env)
+    try:
+        assert_runtime_config()
+        started = True
+    except RuntimeError:
+        started = False
+    assert started is store_configured, (
+        f"startup verdict for KEY_STORE_BACKEND={spelling!r} differs from {base!r}"
+    )
+
+    rc, out = _readback(env)
+    payload = json.loads(out)
+    assert payload["valid"] is started, (
+        f"startup {'accepted' if started else 'rejected'} KEY_STORE_BACKEND={spelling!r} "
+        f"but readback violations are {payload['violations']}"
+    )
+    assert (rc == 0) is started, out
+
+
+# ── EPHEMERIS_MODE parity matrix ─────────────────────────────────────────────
+
+@pytest.mark.parametrize(("base", "spelling"), _row_spellings("EPHEMERIS_MODE"))
+def test_production_guard_and_readback_agree_on_every_ephemeris_spelling(
+    clean_contract_env: pytest.MonkeyPatch, base: str, spelling: str
+) -> None:
+    """Normalisation must not bypass the production-only allowlist.
+
+    Every spelling of a production-allowed mode starts and is readback-valid;
+    every spelling of any other contracted mode (MOSEPH) is refused by BOTH the
+    startup guard and the readback. The production allowlist is read from the
+    contract; the guard it is compared against is the real, independent one.
+    """
+    from bazi_engine.config_guard import assert_runtime_config
+
+    production_allowed = base in _row_values("EPHEMERIS_MODE", "production_allowed_values")
+    env = dict(PRODUCTION_COMPLETE_ENV, FUFIRE_ENV="production", EPHEMERIS_MODE=spelling)
+
+    _apply(clean_contract_env, env)
+    if production_allowed:
+        assert_runtime_config()
+    else:
+        with pytest.raises(RuntimeError, match="EPHEMERIS_MODE=SWIEPH only"):
+            assert_runtime_config()
+
+    rc, out = _readback(env)
+    payload, record = _row_record(out, "EPHEMERIS_MODE")
+    assert record["valid"] is production_allowed, (
+        f"EPHEMERIS_MODE={spelling!r} in production: guard "
+        f"{'accepted' if production_allowed else 'rejected'}, readback record {record}"
+    )
+    if not production_allowed:
+        assert record["issue"] == "invalid_value"
+    assert payload["valid"] is production_allowed, payload["violations"]
+    assert (rc == 0) is production_allowed, out
+
+
+@pytest.mark.parametrize(
+    ("base", "spelling"),
+    [
+        pytest.param(base, spelling, marks=_swieph_marks(base))
+        for base, spelling in _row_spellings("EPHEMERIS_MODE", padded=False)
+    ],
+)
+def test_ephemeris_backend_and_readback_agree_on_every_case_spelling(
+    clean_contract_env: pytest.MonkeyPatch, base: str, spelling: str
+) -> None:
+    """The calculation backend resolves each case spelling to its base mode.
+
+    Outside production both modes are legal, so the readback must accept every
+    case spelling the backend accepts.
+    """
+    from bazi_engine.ephemeris import SwissEphBackend
+
+    env = {"FUFIRE_ENV": "dev", "EPHEMERIS_MODE": spelling}
+    _apply_with_host_ephemeris(clean_contract_env, env)
+    assert SwissEphBackend().mode == base
+
+    rc, out = _readback(env)
+    payload, record = _row_record(out, "EPHEMERIS_MODE")
+    assert record["valid"] is True, f"EPHEMERIS_MODE={spelling!r} readback record: {record}"
+    assert payload["valid"] is True, payload["violations"]
+    assert rc == 0, out
+
+
+@pytest.mark.xfail(
+    strict=True,
+    raises=ValueError,
+    reason=(
+        "FINDING, pre-existing and outside FUF-159 (ephemeris semantics are frozen "
+        "for this slice): SwissEphBackend upper-cases EPHEMERIS_MODE without "
+        "stripping it, so a padded value the readback accepts — and, for a "
+        "production-allowed mode, the production guard too — raises 'Unsupported "
+        "ephemeris mode' at first use (/ready then reports ephemeris unavailable). "
+        "strict=True turns this red the moment the backend is fixed, so the marker "
+        "cannot outlive the defect."
+    ),
+)
+@pytest.mark.parametrize(("base", "spelling"), _row_spellings("EPHEMERIS_MODE", padded=True))
+def test_ephemeris_backend_accepts_the_padded_spellings_guard_and_readback_accept(
+    clean_contract_env: pytest.MonkeyPatch, base: str, spelling: str
+) -> None:
+    """The premise is asserted first, so only the backend step can be the xfail.
+
+    A premise failure raises AssertionError or RuntimeError, which
+    ``raises=ValueError`` reports as a real failure instead of the known one.
+    """
+    from bazi_engine.config_guard import assert_runtime_config
+    from bazi_engine.ephemeris import SwissEphBackend
+
+    production = base in _row_values("EPHEMERIS_MODE", "production_allowed_values")
+    env = (
+        dict(PRODUCTION_COMPLETE_ENV, FUFIRE_ENV="production", EPHEMERIS_MODE=spelling)
+        if production
+        else {"FUFIRE_ENV": "dev", "EPHEMERIS_MODE": spelling}
+    )
+    _apply_with_host_ephemeris(clean_contract_env, env)
+    if production:
+        assert_runtime_config()
+    rc, out = _readback(env)
+    _payload, record = _row_record(out, "EPHEMERIS_MODE")
+    assert record["valid"] is True, record
+    assert rc == 0, out
+
+    assert SwissEphBackend().mode == base
+
+
+@pytest.mark.parametrize("spelling", _env_spellings(UNSUPPORTED_EPHEMERIS_MODES))
+def test_normalisation_never_admits_an_unsupported_ephemeris_mode(
+    clean_contract_env: pytest.MonkeyPatch, spelling: str
+) -> None:
+    """Canary: case-folding must not turn an unknown backend into a valid one."""
+    from bazi_engine.ephemeris import SwissEphBackend
+
+    env = {"FUFIRE_ENV": "dev", "EPHEMERIS_MODE": spelling}
+    _apply(clean_contract_env, env)
+    with pytest.raises(ValueError, match="Unsupported ephemeris mode"):
+        SwissEphBackend()
+
+    rc, out = _readback(env)
+    payload, record = _row_record(out, "EPHEMERIS_MODE")
+    assert record["valid"] is False, f"EPHEMERIS_MODE={spelling!r} accepted on readback"
+    assert record["issue"] == "invalid_value"
+    assert payload["valid"] is False
+    assert rc != 0, out
+
+
+# ── Scope of the declared semantics ──────────────────────────────────────────
+
+def test_every_allowed_value_row_declares_its_comparison_form(contract) -> None:
+    """No allowed-value row may rely on the implicit default.
+
+    Whoever adds an allowed-value row must decide how its consumer compares it;
+    silently inheriting ``exact`` is how two of the three rows drifted.
+    """
+    undeclared = [
+        e["name"]
+        for e in contract["variables"]
+        if "allowed_values" in e and "value_normalization" not in e
+    ]
+    assert not undeclared, f"allowed-value rows without value_normalization: {undeclared}"
+
+
+def test_value_normalization_is_scoped_to_the_rows_that_declare_it(contract) -> None:
+    """The readback is NOT case-insensitive: undeclared rows compare exactly.
+
+    ``value_pattern`` rows and every other row keep exact comparison after the
+    existing whitespace trim, so a declared form can never widen them.
+    """
+    from bazi_engine.runtime_contract import normalise_value
+
+    for entry in contract["variables"]:
+        declared = entry.get("value_normalization")
+        if declared is None:
+            assert normalise_value(entry, " SwIePh ") == "SwIePh", entry["name"]
+        else:
+            assert "allowed_values" in entry, (
+                f"{entry['name']} declares {declared!r} without an allowed-value set"
+            )
+
+
+def test_allowed_values_are_declared_in_their_canonical_form(contract) -> None:
+    """Every declared value list is already its own comparison form.
+
+    Covers ``allowed_values``, ``production_allowed_values`` and
+    ``production_forbidden_values`` on every row, under that row's declared
+    normalisation — no hidden coercion of contract-side values.
+    """
+    from bazi_engine.runtime_contract import normalise_value
+
+    for entry in contract["variables"]:
+        for field in ("allowed_values", "production_allowed_values", "production_forbidden_values"):
+            for value in entry.get(field, []):
+                assert normalise_value(entry, value) == value, (
+                    f"{entry['name']}.{field} declares {value!r}, which is not its own "
+                    "normalised form"
+                )
+
+
+def test_production_allowed_values_stay_inside_the_allowed_set(contract) -> None:
+    for entry in contract["variables"]:
+        if "production_allowed_values" not in entry:
+            continue
+        outside = set(entry["production_allowed_values"]) - set(entry.get("allowed_values", []))
+        assert not outside, f"{entry['name']} production values outside allowed_values: {outside}"
+
+
+def test_profile_classification_uses_the_contract_declared_form(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """``normalise_fufire_env`` reads its form from the FUFIRE_ENV row.
+
+    Proven by swapping the row's declared form: a code-side ``.lower()`` would
+    ignore the swap and keep returning lower case.
+    """
+    from bazi_engine import runtime_contract
+
+    row = dict(_row("FUFIRE_ENV"), value_normalization="upper")
+    monkeypatch.setattr(
+        runtime_contract, "variable", lambda name: row if name == "FUFIRE_ENV" else None
+    )
+    assert runtime_contract.normalise_fufire_env(" Prod ") == "PROD"
+
+
+def test_satisfied_by_reads_the_alternative_in_its_declared_form(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """``satisfied_by`` compares the alternative through that row's own form.
+
+    Proven by swapping the KEY_STORE_BACKEND row to ``exact``: the packaged
+    ``lower`` form reads ``NONE`` as the null backend, ``exact`` does not. A
+    code-side ``.strip().lower()`` would answer the same under both forms.
+    """
+    from bazi_engine import runtime_contract
+
+    entry = _row("FUFIRE_API_KEYS")
+    assert entry["satisfied_by"] == ["KEY_STORE_BACKEND"]
+    source = {"KEY_STORE_BACKEND": " NONE "}
+
+    assert runtime_contract._satisfied_by_alternative(entry, source) is False
+
+    exact_row = {k: v for k, v in _row("KEY_STORE_BACKEND").items() if k != "value_normalization"}
+    monkeypatch.setattr(
+        runtime_contract,
+        "variable",
+        lambda name: exact_row if name == "KEY_STORE_BACKEND" else None,
+    )
+    assert runtime_contract._satisfied_by_alternative(entry, source) is True
+
+
+def test_contract_version_records_the_normalization_semantics(contract) -> None:
+    """Adding normative comparison metadata is a minor contract revision."""
+    major, minor, _patch = (int(part) for part in contract["contract_version"].split("."))
+    assert any("value_normalization" in e for e in contract["variables"])
+    assert (major, minor) >= (1, 1), contract["contract_version"]
+
+
+# ── Contract self-validation: malformed metadata fails closed ────────────────
+
+def _mutated_contract(mutate) -> dict[str, Any]:
+    import copy
+
+    document = copy.deepcopy(json.loads(CONTRACT_PATH.read_text(encoding="utf-8")))
+    mutate(document)
+    return document
+
+
+def _set_row(document: dict[str, Any], name: str, **fields: Any) -> None:
+    next(e for e in document["variables"] if e["name"] == name).update(fields)
+
+
+def _lowercase_every_row(document: dict[str, Any]) -> None:
+    for entry in document["variables"]:
+        entry["value_normalization"] = "lower"
+
+
+def _drop_a_vocabulary_entry_still_in_use(document: dict[str, Any]) -> None:
+    # Sets the row explicitly, so the case does not depend on which form the
+    # packaged EPHEMERIS_MODE row happens to declare.
+    _set_row(document, "EPHEMERIS_MODE", value_normalization="upper")
+    document["value_normalizations"].pop("upper")
+
+
+# case -> (mutation, the rejection message it must produce). Each mutation sets
+# every field its rule depends on, so no case can pass by tripping a DIFFERENT
+# rule because of whatever the packaged rows happen to declare.
+MALFORMED_CONTRACTS = {
+    "unknown_row_token": (
+        lambda d: _set_row(d, "KEY_STORE_BACKEND", value_normalization="casefold"),
+        "KEY_STORE_BACKEND declares unsupported value_normalization 'casefold'",
+    ),
+    "non_string_row_token": (
+        lambda d: _set_row(d, "KEY_STORE_BACKEND", value_normalization=None),
+        "KEY_STORE_BACKEND declares unsupported value_normalization None",
+    ),
+    "vocabulary_missing": (
+        lambda d: d.pop("value_normalizations"),
+        "must declare a value_normalizations vocabulary",
+    ),
+    "vocabulary_without_default": (
+        lambda d: d["value_normalizations"].pop("exact"),
+        "must declare a value_normalizations vocabulary",
+    ),
+    "vocabulary_names_unimplemented_form": (
+        lambda d: d["value_normalizations"].update(title="x"),
+        r"does not implement: \['title'\]",
+    ),
+    "row_token_outside_vocabulary": (
+        _drop_a_vocabulary_entry_still_in_use,
+        "EPHEMERIS_MODE declares unsupported value_normalization 'upper'",
+    ),
+    "non_canonical_allowed_value": (
+        lambda d: _set_row(
+            d, "EPHEMERIS_MODE", value_normalization="upper", allowed_values=["swieph", "MOSEPH"]
+        ),
+        "allowed_values value 'swieph', which is not canonical under value_normalization 'upper'",
+    ),
+    "padded_allowed_value": (
+        lambda d: _set_row(
+            d, "KEY_STORE_BACKEND", value_normalization="lower", allowed_values=[" none", "memory"]
+        ),
+        "allowed_values value ' none', which is not canonical",
+    ),
+    "non_canonical_production_allowed_value": (
+        lambda d: _set_row(
+            d,
+            "EPHEMERIS_MODE",
+            value_normalization="upper",
+            allowed_values=["SWIEPH", "MOSEPH"],
+            production_allowed_values=["swieph"],
+        ),
+        "production_allowed_values value 'swieph', which is not canonical",
+    ),
+    "production_allowed_outside_allowed": (
+        lambda d: _set_row(
+            d,
+            "EPHEMERIS_MODE",
+            allowed_values=["SWIEPH", "MOSEPH"],
+            production_allowed_values=["JPLEPH"],
+        ),
+        r"EPHEMERIS_MODE permits production values outside its allowed_values: \['JPLEPH'\]",
+    ),
+    "production_allowed_without_allowed": (
+        lambda d: _set_row(d, "PORT", production_allowed_values=["8080"]),
+        r"PORT permits production values outside its allowed_values: \['8080'\]",
+    ),
+    "normalization_without_allowed_values": (
+        lambda d: _set_row(d, "FUFIRE_REPLICA_COUNT", value_normalization="lower"),
+        "FUFIRE_REPLICA_COUNT declares value_normalization 'lower' without an allowed_values set",
+    ),
+    "every_row_lowercased": (
+        _lowercase_every_row,
+        "declares value_normalization 'lower' without an allowed_values set",
+    ),
+    "string_value_list": (
+        lambda d: _set_row(d, "KEY_STORE_BACKEND", allowed_values="nonememory"),
+        "KEY_STORE_BACKEND declares allowed_values as str, not a list",
+    ),
+    "null_value_list": (
+        lambda d: _set_row(d, "EPHEMERIS_MODE", production_allowed_values=None),
+        "EPHEMERIS_MODE declares production_allowed_values as NoneType, not a list",
+    ),
+    "nameless_row": (
+        lambda d: d["variables"].append({"owner_area": "x"}),
+        "must declare variables as a list of rows that each carry a string name",
+    ),
+    "non_object_row": (
+        lambda d: d["variables"].append("KEY_STORE_BACKEND"),
+        "must declare variables as a list of rows that each carry a string name",
+    ),
+    "satisfied_by_names_no_row": (
+        lambda d: _set_row(d, "FUFIRE_API_KEYS", satisfied_by=["KEY_STORE_BACKND"]),
+        r"FUFIRE_API_KEYS is satisfied_by \['KEY_STORE_BACKND'\], which does not name",
+    ),
+    "production_profile_value_not_canonical": (
+        lambda d: d["profiles"]["production"].update(fufire_env_values=["Production"]),
+        r"production profile values \['Production'\] are not FUFIRE_ENV allowed values",
+    ),
+    "production_profile_value_outside_allowed": (
+        lambda d: d["profiles"]["production"].update(fufire_env_values=["live"]),
+        r"production profile values \['live'\] are not FUFIRE_ENV allowed values",
+    ),
+    # An empty or non-list alias set would classify FUFIRE_ENV=production as
+    # development and skip every production check.
+    "production_profile_values_empty": (
+        lambda d: d["profiles"]["production"].update(fufire_env_values=[]),
+        "production profile must list at least one FUFIRE_ENV value",
+    ),
+    "production_profile_values_not_a_list": (
+        lambda d: d["profiles"]["production"].update(fufire_env_values="production"),
+        "production profile must list at least one FUFIRE_ENV value",
+    ),
+}
+
+
+def test_the_packaged_contract_passes_its_own_validation() -> None:
+    """Canary for the malformed cases below: the real contract is accepted."""
+    from bazi_engine.runtime_contract import validate_contract
+
+    validate_contract(_mutated_contract(lambda d: None))
+
+
+@pytest.mark.parametrize("case", sorted(MALFORMED_CONTRACTS))
+def test_malformed_normalization_metadata_is_rejected(case: str) -> None:
+    from bazi_engine.runtime_contract import validate_contract
+
+    mutate, message = MALFORMED_CONTRACTS[case]
+    with pytest.raises(RuntimeError, match=f"^runtime contract .*{message}"):
+        validate_contract(_mutated_contract(mutate))
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        "unknown_row_token",
+        "vocabulary_missing",
+        "every_row_lowercased",
+        "production_profile_values_empty",
+    ],
+)
+def test_load_contract_fails_closed_on_malformed_metadata(
+    monkeypatch: pytest.MonkeyPatch, case: str
+) -> None:
+    """The validation sits on the LOAD path, not only in a helper tests call.
+
+    ``load_contract`` backs the startup guard and the readback, so a malformed
+    contract aborts both instead of loading with a silently-defaulted form.
+    """
+    from bazi_engine import runtime_contract
+
+    mutate, message = MALFORMED_CONTRACTS[case]
+    document = _mutated_contract(mutate)
+    monkeypatch.setattr(
+        runtime_contract, "load_json_object_resource", lambda package, resource: document
+    )
+    runtime_contract.load_contract.cache_clear()
+    try:
+        with pytest.raises(RuntimeError, match=f"^runtime contract .*{message}"):
+            runtime_contract.load_contract()
+    finally:
+        runtime_contract.load_contract.cache_clear()
+
+
+def test_normalise_value_refuses_an_unsupported_form_at_use() -> None:
+    """Second line of defence for a row that bypassed load-time validation."""
+    from bazi_engine.runtime_contract import normalise_value
+
+    with pytest.raises(RuntimeError, match="value_normalization"):
+        normalise_value({"name": "X", "value_normalization": "casefold"}, "value")

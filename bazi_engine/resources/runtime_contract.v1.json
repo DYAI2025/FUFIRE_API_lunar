@@ -1,6 +1,6 @@
 {
   "schema": "fufire.runtime-config-contract.v1",
-  "contract_version": "1.0.0",
+  "contract_version": "1.1.0",
   "description": "Provider-neutral inventory of the runtime variables materially consumed at the FuFirE Engine/Uvicorn boundary. Secrets-free by construction: this file records names, ownership, required status, allowed shapes and readback policy — never a configured value. Provider-specific bindings (which platform supplies which value) live in the deployment, not here.",
   "profiles": {
     "production": {
@@ -16,6 +16,11 @@
     "value": "Non-secret and explicitly safe to echo verbatim in a readback.",
     "presence": "Only configured/valid booleans are emitted. No value, prefix, suffix or length."
   },
+  "value_normalizations": {
+    "exact": "Default for a row that declares no value_normalization. The whitespace-trimmed value is compared as-is, case-sensitively.",
+    "lower": "The whitespace-trimmed value is lower-cased before comparison. The row's value lists are declared in lower case.",
+    "upper": "The whitespace-trimmed value is upper-cased before comparison. The row's value lists are declared in upper case."
+  },
   "fail_closed_codes": {
     "startup_abort": "config_guard.assert_runtime_config() raises at import time.",
     "reject_invalid_value": "The consuming module raises on an unsupported value.",
@@ -29,6 +34,7 @@
       "secret": false,
       "required_profiles": ["production"],
       "allowed_values": ["production", "prod", "staging", "dev", "development", "test", "local"],
+      "value_normalization": "lower",
       "readback": "value",
       "fail_closed": "startup_abort",
       "description": "Declares the deployment profile. Selects the fail-closed production contract."
@@ -72,6 +78,7 @@
       "secret": false,
       "required_profiles": [],
       "allowed_values": ["none", "memory"],
+      "value_normalization": "lower",
       "readback": "value",
       "fail_closed": "reject_invalid_value",
       "description": "Selects the pluggable store for runtime-minted keys. Unsupported values raise instead of falling back."
@@ -224,6 +231,7 @@
       "required_profiles": [],
       "allowed_values": ["SWIEPH", "MOSEPH"],
       "production_allowed_values": ["SWIEPH"],
+      "value_normalization": "upper",
       "readback": "value",
       "fail_closed": "startup_abort",
       "description": "Swiss Ephemeris backend selector. Production permits SWIEPH only."

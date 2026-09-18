@@ -39,7 +39,7 @@ import secrets
 import sys
 from datetime import datetime, timezone
 from functools import lru_cache
-from typing import Any, Mapping, Optional, Sequence
+from typing import Any, Callable, Mapping, Optional, Sequence
 
 from .resource_loader import load_json_object_resource
 
@@ -76,6 +76,23 @@ PSEUDONYM_LENGTH = 32
 _TRUTHY = {"1", "true", "yes", "on"}
 _DEFAULT_PEPPER_MIN_LENGTH = 32
 
+# How a configured value is compared against a row's declared value lists is
+# contract data: a row may declare ``value_normalization``, and the contract's
+# ``value_normalizations`` block names the vocabulary. This table only
+# IMPLEMENTS that vocabulary — it names no variable — and ``validate_contract``
+# refuses a contract whose vocabulary or rows use a form missing here.
+DEFAULT_VALUE_NORMALIZATION = "exact"
+_VALUE_NORMALIZERS: dict[str, Callable[[str], str]] = {
+    "exact": lambda value: value,
+    "lower": str.lower,
+    "upper": str.upper,
+}
+_VALUE_LIST_FIELDS = (
+    "allowed_values",
+    "production_allowed_values",
+    "production_forbidden_values",
+)
+
 
 def _truthy(value: Optional[str]) -> bool:
     return (value or "").strip().lower() in _TRUTHY
@@ -88,7 +105,9 @@ def load_contract() -> dict[str, Any]:
     """Load the packaged contract, fail-closed.
 
     Reads through the Layer-0 resource boundary, so a distribution that shipped
-    without the contract raises instead of silently running unvalidated.
+    without the contract raises instead of silently running unvalidated. The
+    comparison metadata is validated on this path, so a malformed contract
+    aborts the startup guard and the readback alike.
     """
     document = load_json_object_resource(CONTRACT_PACKAGE, CONTRACT_RESOURCE)
     if document.get("schema") != CONTRACT_SCHEMA_ID:
@@ -96,7 +115,133 @@ def load_contract() -> dict[str, Any]:
             f"runtime contract declares schema {document.get('schema')!r}, "
             f"expected {CONTRACT_SCHEMA_ID!r}"
         )
+    validate_contract(document)
     return document
+
+
+def validate_contract(document: Mapping[str, Any]) -> None:
+    """Refuse a contract whose comparison metadata is malformed (fail-closed).
+
+    A contract that names an unsupported comparison form, declares a value list
+    in a spelling its own form could never match, or lets a production allowlist
+    escape its allowed set is rejected here instead of being loaded with a
+    silently-defaulted comparison.
+    """
+    vocabulary = _validated_vocabulary(document.get("value_normalizations"))
+    rows = _validated_rows(document.get("variables"))
+    names = {entry["name"] for entry in rows}
+    for entry in rows:
+        form = _validated_row_form(entry, vocabulary)
+        _validate_value_lists(entry, form)
+        _validate_satisfied_by(entry, names)
+    _validate_production_profile_values(document, rows)
+
+
+def _validated_rows(raw: object) -> list[Mapping[str, Any]]:
+    if isinstance(raw, list) and all(
+        isinstance(entry, Mapping) and isinstance(entry.get("name"), str) for entry in raw
+    ):
+        return raw
+    raise RuntimeError(
+        "runtime contract must declare variables as a list of rows that each "
+        "carry a string name"
+    )
+
+
+def _validated_vocabulary(raw: object) -> frozenset[str]:
+    if not isinstance(raw, Mapping) or DEFAULT_VALUE_NORMALIZATION not in raw:
+        raise RuntimeError(
+            "runtime contract must declare a value_normalizations vocabulary "
+            f"that includes the default {DEFAULT_VALUE_NORMALIZATION!r}"
+        )
+    unimplemented = sorted(set(raw) - set(_VALUE_NORMALIZERS))
+    if unimplemented:
+        raise RuntimeError(
+            f"runtime contract declares value normalizations this engine does not "
+            f"implement: {unimplemented}"
+        )
+    return frozenset(raw)
+
+
+def _validated_row_form(entry: Mapping[str, Any], vocabulary: frozenset[str]) -> str:
+    name = entry.get("name")
+    form = entry.get("value_normalization", DEFAULT_VALUE_NORMALIZATION)
+    if not isinstance(form, str) or form not in vocabulary:
+        raise RuntimeError(
+            f"runtime contract row {name} declares unsupported value_normalization {form!r}"
+        )
+    # A comparison form only means something for a closed value set. Allowing it
+    # elsewhere would quietly widen value_pattern rows and free-form values.
+    if form != DEFAULT_VALUE_NORMALIZATION and "allowed_values" not in entry:
+        raise RuntimeError(
+            f"runtime contract row {name} declares value_normalization {form!r} "
+            "without an allowed_values set"
+        )
+    return form
+
+
+def _validate_value_lists(entry: Mapping[str, Any], form: str) -> None:
+    name = entry["name"]
+    for field in _VALUE_LIST_FIELDS:
+        if field not in entry:
+            continue
+        values = entry[field]
+        if not isinstance(values, list):
+            raise RuntimeError(
+                f"runtime contract row {name} declares {field} as "
+                f"{type(values).__name__}, not a list"
+            )
+        for value in values:
+            if not isinstance(value, str) or _normaliser(form)(value.strip()) != value:
+                raise RuntimeError(
+                    f"runtime contract row {name} declares {field} value {value!r}, "
+                    f"which is not canonical under value_normalization {form!r}"
+                )
+    outside = sorted(
+        set(entry.get("production_allowed_values", [])) - set(entry.get("allowed_values", []))
+    )
+    if outside:
+        raise RuntimeError(
+            f"runtime contract row {name} permits production values outside its "
+            f"allowed_values: {outside}"
+        )
+
+
+def _validate_satisfied_by(entry: Mapping[str, Any], names: set[str]) -> None:
+    # satisfied_by reads the alternative in that row's declared form, so a
+    # dangling name would silently compare it exactly instead.
+    alternatives = entry.get("satisfied_by", [])
+    if not isinstance(alternatives, list) or any(
+        not isinstance(a, str) or a not in names for a in alternatives
+    ):
+        raise RuntimeError(
+            f"runtime contract row {entry['name']} is satisfied_by {alternatives!r}, "
+            "which does not name contract rows"
+        )
+
+
+def _validate_production_profile_values(
+    document: Mapping[str, Any], rows: list[Mapping[str, Any]]
+) -> None:
+    """The production profile's aliases obey the FUFIRE_ENV row they select on.
+
+    An empty alias list is refused: it would classify ``FUFIRE_ENV=production``
+    as development and skip every production check. Membership alone proves the
+    canonical form, because the row's allowed values were validated canonical.
+    """
+    profile_row = next((e for e in rows if e["name"] == ENV_PROFILE), {})
+    allowed = set(profile_row.get("allowed_values", []))
+    values = document["profiles"][PROFILE_PRODUCTION].get("fufire_env_values")
+    if not isinstance(values, list) or not values:
+        raise RuntimeError(
+            f"runtime contract production profile must list at least one {ENV_PROFILE} value"
+        )
+    outside = [v for v in values if not isinstance(v, str) or v not in allowed]
+    if outside:
+        raise RuntimeError(
+            f"runtime contract production profile values {outside!r} are not "
+            f"{ENV_PROFILE} allowed values"
+        )
 
 
 def contract_version() -> str:
@@ -118,9 +263,36 @@ def _env(env: Optional[Mapping[str, str]]) -> Mapping[str, str]:
     return os.environ if env is None else env
 
 
+def _normaliser(form: object) -> Callable[[str], str]:
+    normaliser = _VALUE_NORMALIZERS.get(form) if isinstance(form, str) else None
+    if normaliser is None:
+        raise RuntimeError(
+            f"runtime contract declares an unsupported value_normalization {form!r}; "
+            "refusing to compare (fail-closed)"
+        )
+    return normaliser
+
+
+def normalise_value(entry: Mapping[str, Any], raw: Optional[str]) -> str:
+    """Return ``raw`` in the comparison form its contract row declares.
+
+    Every value is whitespace-trimmed; the row's ``value_normalization`` then
+    picks the case form, ``exact`` when the row declares none. The readback
+    validator, ``satisfied_by`` and the profile classifier all compare through
+    this one function — none of them decides a form by variable name.
+    """
+    form = entry.get("value_normalization", DEFAULT_VALUE_NORMALIZATION)
+    return _normaliser(form)((raw or "").strip())
+
+
 def normalise_fufire_env(raw: Optional[str]) -> str:
-    """Canonical comparison form for a declared profile value."""
-    return (raw or "").strip().lower()
+    """Canonical comparison form for a declared profile value.
+
+    Read from the ``FUFIRE_ENV`` row's declared ``value_normalization`` rather
+    than restated here, so the profile classifier, the startup guard and the
+    readback compare the profile one way.
+    """
+    return normalise_value(variable(ENV_PROFILE) or {}, raw)
 
 
 def allowed_fufire_env_values() -> frozenset[str]:
@@ -347,8 +519,11 @@ def _satisfied_by_alternative(
     entry: Mapping[str, Any], source: Mapping[str, str]
 ) -> bool:
     for alternative in entry.get("satisfied_by", []):
-        value = (source.get(str(alternative)) or "").strip().lower()
-        if value and value != "none":
+        name = str(alternative)
+        row = variable(name) or {}
+        value = normalise_value(row, source.get(name))
+        # The null backend is compared in the row's declared form as well.
+        if value and value != normalise_value(row, "none"):
             return True
     return False
 
@@ -376,28 +551,15 @@ def _variable_issue(
 
     if not configured:
         return None
-    value = _comparison_value(name, str(raw).strip())
+    # The row's declared form, never a variable-name branch: a row compares
+    # case-insensitively only when the contract says its consumer does.
+    value = normalise_value(entry, raw)
     return _configured_value_issue(entry, value, production)
 
 
-def _comparison_value(name: str, value: str) -> str:
-    """Return the form of ``value`` the contract's rules are written against.
-
-    Deliberately NOT a blanket case-fold. ``EPHEMERIS_MODE`` ("SWIEPH"),
-    ``KEY_STORE_BACKEND`` ("none") and every ``value_pattern`` row declare their
-    shapes in a specific case, and widening all of them at once would weaken
-    rules this function exists to enforce.
-
-    ``FUFIRE_ENV`` is the one row with an authoritative normaliser, and reusing
-    it here is what keeps the readback's verdict identical to
-    ``classify_runtime_profile``'s. Without it ``FUFIRE_ENV=Production`` was a
-    production deployment to the startup guard and an ``invalid_value`` to the
-    readback — one contract row answering the same question two ways. The alias
-    list itself stays in the contract; this only picks the comparison form.
-    """
-    if name == ENV_PROFILE:
-        return normalise_fufire_env(value)
-    return value
+def _declared_values(entry: Mapping[str, Any], field: str) -> set[str]:
+    """A declared value list in the same comparison form as the configured value."""
+    return {normalise_value(entry, str(v)) for v in entry.get(field, [])}
 
 
 def _configured_value_issue(
@@ -405,15 +567,14 @@ def _configured_value_issue(
 ) -> Optional[tuple[str, str]]:
     name = entry["name"]
 
-    if production and value in {str(v).strip() for v in entry.get("production_forbidden_values", [])}:
+    if production and value in _declared_values(entry, "production_forbidden_values"):
         return ("forbidden_value", f"{name} holds a value forbidden in the production profile")
 
-    allowed = entry.get("allowed_values")
-    if allowed is not None and value not in {str(v) for v in allowed}:
+    if entry.get("allowed_values") is not None and value not in _declared_values(entry, "allowed_values"):
         return ("invalid_value", f"{name} is outside its allowed value set")
 
-    production_allowed = entry.get("production_allowed_values")
-    if production and production_allowed is not None and value not in {str(v) for v in production_allowed}:
+    production_allowed = entry.get("production_allowed_values") is not None
+    if production and production_allowed and value not in _declared_values(entry, "production_allowed_values"):
         return ("invalid_value", f"{name} is outside the production-allowed value set")
 
     pattern = entry.get("value_pattern")
