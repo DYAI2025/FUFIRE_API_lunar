@@ -135,13 +135,17 @@ def stub_astronomy(monkeypatch: pytest.MonkeyPatch) -> None:
                 "h_raw": 0.68,
                 "interpretation_band": "Test band",
             },
-            "cosmic_state": "stub_state",
+            # FUF-166: producer-realistic types. compute_fusion_analysis()
+            # returns a rounded float here and a narrative string below; the
+            # earlier stub encoded the BROKEN response model instead, which
+            # made these 200s false-green over a real HTTP 500.
+            "cosmic_state": 0.6816,
             "wu_xing_vectors": {
                 "western_planets": {"Holz": 1.0, "Feuer": 0.0},
                 "bazi_pillars": {"Metall": 1.0, "Wasser": 0.0},
             },
             "elemental_comparison": {"delta": 0.0},
-            "fusion_interpretation": {"text": "stub"},
+            "fusion_interpretation": "Kalibrierte Kohärenz: 42.00% (Test band)",
         }
 
     monkeypatch.setattr(wh, "compute_western_chart", fake_western)

@@ -69,13 +69,16 @@ class WebhookFusionSection(BaseModel):
     harmonyIndex: float
     harmonyIndexRaw: Optional[float] = None
     harmonyInterpretation: str
-    cosmicState: str
+    # FUF-166: the producer types. compute_fusion_analysis() returns
+    # cosmic_state as a rounded float and fusion_interpretation as the
+    # narrative string; the router maps both straight through.
+    cosmicState: float
     westernDominantElement: str
     baziDominantElement: str
     wuXingWestern: Dict[str, float]
     wuXingBazi: Dict[str, float]
     elementalComparison: Dict[str, Any]
-    interpretation: Dict[str, Any]
+    interpretation: str
 
 
 class WebhookSummary(BaseModel):
