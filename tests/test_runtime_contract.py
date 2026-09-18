@@ -372,3 +372,200 @@ def test_readback_accepts_a_contracted_development_value() -> None:
 
     assert by_name["FUFIRE_ENV"]["valid"] is True
     assert payload["profile"] == "development"
+
+
+# ── FUF-159: ONE normalisation for startup AND readback ──────────────────────
+#
+# ``classify_runtime_profile`` compares FUFIRE_ENV through
+# ``normalise_fufire_env`` (strip + case-fold). The generic readback validator
+# compared the raw, merely-stripped value against ``allowed_values``, so
+# ``FUFIRE_ENV=Production`` was a production deployment to the startup guard and
+# an ``invalid_value`` to the readback: two answers derived from one contract
+# row, which is the divergence this contract exists to make impossible.
+#
+# The spellings below are DERIVED from the packaged contract. Restating the
+# contracted values here would create a second normative alias list — the defect
+# class this slice removes.
+
+# Every row the contract marks ``required_profiles: ["production"]`` except
+# FUFIRE_ENV itself, so a production spelling is graded against a COMPLETE
+# deployment and the only variable under test is how the profile is spelled.
+# Necessarily literal: the contract is secrets-free by construction and carries
+# no values to derive these from.
+PRODUCTION_COMPLETE_ENV: dict[str, str] = {
+    "FUFIRE_REQUIRE_API_KEYS": "true",
+    "FUFIRE_API_KEYS": "ff_pro_runtime-contract-agreement",
+    "CORS_ALLOWED_ORIGINS": "https://bazodiac.space",
+    "FUFIRE_REPLICA_COUNT": "1",
+    "EPHEMERIS_MODE": "SWIEPH",
+}
+
+UNCONTRACTED_ENV_VALUES = ("prodcution", "stage", "productionn", "foo")
+
+
+def _contract_allowed_env_values() -> list[str]:
+    from bazi_engine.runtime_contract import allowed_fufire_env_values
+
+    return sorted(allowed_fufire_env_values())
+
+
+def _spellings(value: str) -> tuple[str, ...]:
+    """Case/whitespace spellings of ONE value — never a different word.
+
+    The letters are fixed; only their case and the surrounding whitespace move,
+    so a spelling can never smuggle in a value the contract does not declare.
+    """
+    alternating = "".join(
+        char.upper() if index % 2 == 0 else char for index, char in enumerate(value)
+    )
+    return (
+        value,
+        value.upper(),
+        value.capitalize(),
+        f" {value.upper()} ",
+        f"\t{alternating}\n",
+    )
+
+
+def _env_spellings(values: tuple[str, ...] | list[str]) -> list[str]:
+    return [spelling for value in values for spelling in _spellings(value)]
+
+
+def _apply(monkeypatch: pytest.MonkeyPatch, env: dict[str, str]) -> None:
+    """Put ``env`` into the real process environment for the startup guard."""
+    for name, value in env.items():
+        monkeypatch.setenv(name, value)
+    from bazi_engine.auth import _load_keys
+    from bazi_engine.key_store import get_key_store
+
+    _load_keys.cache_clear()
+    get_key_store.cache_clear()
+
+
+@pytest.fixture
+def clean_contract_env(monkeypatch: pytest.MonkeyPatch):
+    """Drop every contracted variable so the host env cannot mask a result.
+
+    Derived from the contract itself, so a row added tomorrow is cleared too.
+    """
+    for name in _contract_variable_names():
+        monkeypatch.delenv(name, raising=False)
+    from bazi_engine.auth import _load_keys
+    from bazi_engine.key_store import get_key_store
+
+    _load_keys.cache_clear()
+    get_key_store.cache_clear()
+    yield monkeypatch
+    _load_keys.cache_clear()
+    get_key_store.cache_clear()
+
+
+def test_a_mixed_case_production_value_agrees_across_startup_and_readback(
+    clean_contract_env: pytest.MonkeyPatch,
+) -> None:
+    """FUF-159 regression: ``FUFIRE_ENV=Production`` had two contradictory answers.
+
+    Startup classified it production and ran the full production policy, while
+    the readback marked that very row ``invalid_value`` and exited non-zero.
+    All three surfaces are asserted in ONE test because the defect is precisely
+    that they disagreed — splitting them would let the mismatch pass again.
+    """
+    from bazi_engine.config_guard import assert_runtime_config
+    from bazi_engine.runtime_contract import (
+        PROFILE_PRODUCTION,
+        classify_runtime_profile,
+    )
+
+    env = dict(PRODUCTION_COMPLETE_ENV, FUFIRE_ENV="Production")
+
+    # 1. startup classification
+    assert classify_runtime_profile(env) == PROFILE_PRODUCTION
+
+    # 2. startup validation accepts it and runs the production policy
+    _apply(clean_contract_env, env)
+    assert_runtime_config()
+
+    # 3. readback, through the packaged CLI in a fresh process
+    rc, out = _readback(env)
+    payload = json.loads(out)
+    record = {r["name"]: r for r in payload["variables"]}["FUFIRE_ENV"]
+
+    assert payload["profile"] == PROFILE_PRODUCTION
+    assert record["valid"] is True, f"readback rejected what startup accepted: {record}"
+    assert "issue" not in record, record
+    assert rc == 0, out
+
+
+@pytest.mark.parametrize("spelling", _env_spellings(_contract_allowed_env_values()))
+def test_startup_and_readback_agree_on_every_contracted_spelling(
+    clean_contract_env: pytest.MonkeyPatch, spelling: str
+) -> None:
+    """Classification, startup validation, readback profile and row validity agree.
+
+    Contract-driven: the base values come from the packaged contract's own
+    ``FUFIRE_ENV`` row, so this file never becomes a second place that decides
+    which profile names are legal.
+    """
+    from bazi_engine.config_guard import assert_runtime_config
+    from bazi_engine.runtime_contract import PROFILE_INVALID, classify_runtime_profile
+
+    env = dict(PRODUCTION_COMPLETE_ENV, FUFIRE_ENV=spelling)
+
+    classification = classify_runtime_profile(env)
+    assert classification != PROFILE_INVALID, (
+        f"a contracted value spelled {spelling!r} classified invalid"
+    )
+
+    _apply(clean_contract_env, env)
+    assert_runtime_config()
+
+    rc, out = _readback(env)
+    payload = json.loads(out)
+    record = {r["name"]: r for r in payload["variables"]}["FUFIRE_ENV"]
+
+    assert payload["profile"] == classification, (
+        f"startup says {classification!r} but readback says {payload['profile']!r} "
+        f"for FUFIRE_ENV={spelling!r}"
+    )
+    assert record["valid"] is True, f"FUFIRE_ENV={spelling!r} readback record: {record}"
+    assert payload["valid"] is True, payload["violations"]
+    assert rc == 0, out
+
+
+@pytest.mark.parametrize("spelling", _env_spellings(UNCONTRACTED_ENV_VALUES))
+def test_normalisation_never_rescues_an_uncontracted_value_on_readback(
+    spelling: str,
+) -> None:
+    """Trimming and case-folding must not become a way in for a typo.
+
+    The canary for the agreement test above: if normalisation had been widened
+    into "accept anything that looks close", these would turn green.
+    """
+    from bazi_engine.runtime_contract import PROFILE_INVALID, classify_runtime_profile
+
+    env = dict(PRODUCTION_COMPLETE_ENV, FUFIRE_ENV=spelling)
+    assert classify_runtime_profile(env) == PROFILE_INVALID
+
+    rc, out = _readback(env)
+    payload = json.loads(out)
+    record = {r["name"]: r for r in payload["variables"]}["FUFIRE_ENV"]
+
+    assert record["valid"] is False, f"FUFIRE_ENV={spelling!r} accepted on readback"
+    assert record["issue"] == "invalid_value"
+    assert payload["valid"] is False
+    assert rc != 0, out
+
+
+def test_readback_normalisation_is_scoped_to_the_profile_row() -> None:
+    """Only FUFIRE_ENV is normalised; the validator is NOT case-insensitive.
+
+    Other contracted rows declare their allowed values in a specific case and
+    ``value_pattern`` rows are case-sensitive by construction. A blanket
+    case-fold in the validator would quietly widen every one of those sets.
+    The input is already ``.strip()``ed by the caller.
+    """
+    from bazi_engine.runtime_contract import ENV_PROFILE, _comparison_value
+
+    assert _comparison_value(ENV_PROFILE, "Production") == "production"
+    for name in ("EPHEMERIS_MODE", "KEY_STORE_BACKEND", "FUFIRE_REPLICA_COUNT"):
+        assert _comparison_value(name, "SwIePh") == "SwIePh", name

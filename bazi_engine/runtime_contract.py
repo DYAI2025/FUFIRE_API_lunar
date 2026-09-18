@@ -376,7 +376,28 @@ def _variable_issue(
 
     if not configured:
         return None
-    return _configured_value_issue(entry, str(raw).strip(), production)
+    value = _comparison_value(name, str(raw).strip())
+    return _configured_value_issue(entry, value, production)
+
+
+def _comparison_value(name: str, value: str) -> str:
+    """Return the form of ``value`` the contract's rules are written against.
+
+    Deliberately NOT a blanket case-fold. ``EPHEMERIS_MODE`` ("SWIEPH"),
+    ``KEY_STORE_BACKEND`` ("none") and every ``value_pattern`` row declare their
+    shapes in a specific case, and widening all of them at once would weaken
+    rules this function exists to enforce.
+
+    ``FUFIRE_ENV`` is the one row with an authoritative normaliser, and reusing
+    it here is what keeps the readback's verdict identical to
+    ``classify_runtime_profile``'s. Without it ``FUFIRE_ENV=Production`` was a
+    production deployment to the startup guard and an ``invalid_value`` to the
+    readback — one contract row answering the same question two ways. The alias
+    list itself stays in the contract; this only picks the comparison form.
+    """
+    if name == ENV_PROFILE:
+        return normalise_fufire_env(value)
+    return value
 
 
 def _configured_value_issue(
