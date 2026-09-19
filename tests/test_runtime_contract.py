@@ -2709,9 +2709,12 @@ def test_malformed_parity_metadata_is_rejected(monkeypatch: pytest.MonkeyPatch, 
 
     mutate, message = MALFORMED_PARITY_CONTRACTS[case]
     document = _mutated_contract(mutate)
-    monkeypatch.setattr(os, "environ", _EnvironmentTrap())
-    with pytest.raises(RuntimeError, match=f"^runtime contract .*{message}"):
-        validate_contract(document)
+    # Scoped to the one call: pytest itself reads os.environ (terminal width,
+    # colour) while it reports the call phase, before fixture teardown.
+    with monkeypatch.context() as scoped:
+        scoped.setattr(os, "environ", _EnvironmentTrap())
+        with pytest.raises(RuntimeError, match=f"^runtime contract .*{message}"):
+            validate_contract(document)
 
 
 @pytest.mark.parametrize(
