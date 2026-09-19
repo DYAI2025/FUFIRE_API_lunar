@@ -39,7 +39,7 @@ import secrets
 import sys
 from datetime import datetime, timezone
 from functools import lru_cache
-from typing import Any, Callable, Iterable, Mapping, Optional, Sequence
+from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, TypeGuard
 
 from .resource_loader import load_json_object_resource
 
@@ -95,17 +95,28 @@ _VALUE_LIST_FIELDS = (
 
 # Presence is contract data in the same way. A row may declare
 # ``presence_semantics`` (how its consumer decides the variable is configured at
-# all), ``production_blank_policy`` (whether a set-but-blank value is refused
-# instead of read as absent) and a conditional requirement on a truthy flag row.
-# The contract's ``presence_semantics`` and ``blank_policies`` blocks name the
-# vocabulary; these tables only IMPLEMENT it and name no variable.
+# all), a blank policy (whether a set-but-blank value is refused instead of read
+# as absent), list item rules, and a conditional requirement. The contract's
+# ``presence_semantics``, ``blank_policies``, ``conditional_requirements`` and
+# ``requirement_conditions`` blocks name the vocabulary; these tables only
+# IMPLEMENT it and name no variable.
 DEFAULT_PRESENCE_SEMANTICS = "non_blank"
+
+
+def _list_items(raw: str) -> list[str]:
+    """A list row's items as its consumers parse them: comma-split, trimmed, blanks dropped."""
+    return [item.strip() for item in raw.split(",") if item.strip()]
+
+
 _PRESENCE_TESTS: dict[str, Callable[[str], bool]] = {
     "non_blank": lambda raw: raw.strip() != "",
-    "comma_separated_non_empty_items": lambda raw: any(item.strip() for item in raw.split(",")),
+    "comma_separated_non_empty_items": lambda raw: bool(_list_items(raw)),
 }
 # Presence forms that read the value as a list of items rather than one value.
 _LIST_PRESENCE_SEMANTICS = frozenset({"comma_separated_non_empty_items"})
+# Rules that read a list row's parsed items one at a time, in the production
+# profile only. Legal only on a row whose presence form reads a list.
+_LIST_ITEM_RULES = ("production_forbidden_items", "production_forbidden_item_substrings")
 # Rules that compare the WHOLE value as a single scalar. Read against a list
 # they would refuse a valid multi-item value, so a list row may not declare
 # them. ``production_forbidden_values`` stays legal on a list row: a whole-value
@@ -120,13 +131,31 @@ _SCALAR_VALUE_RULES = (
 DEFAULT_BLANK_POLICY = "unset"
 BLANK_POLICY_INVALID = "invalid"
 _BLANK_POLICIES = frozenset({DEFAULT_BLANK_POLICY, BLANK_POLICY_INVALID})
+# Blank-policy fields and the one profile each is scoped to (None: every
+# profile). Both take a value from the contract's ``blank_policies`` block.
+_BLANK_POLICY_FIELDS: dict[str, Optional[str]] = {
+    "blank_policy": None,
+    "production_blank_policy": PROFILE_PRODUCTION,
+}
 # Conditional-requirement fields and the one profile each is scoped to (None:
-# every profile). The field's value names the flag row whose truthiness makes
-# the declaring row required.
+# every profile). A ``*_truthy`` field names the flag row whose truthiness makes
+# the declaring row required; a field in ``_CONDITION_LIST_FIELDS`` instead
+# lists condition terms and makes the row required while ANY of them holds.
 _CONDITIONAL_REQUIREMENT_FIELDS: dict[str, Optional[str]] = {
     "required_when_truthy": None,
     "production_required_when_truthy": PROFILE_PRODUCTION,
+    "production_required_when_any": PROFILE_PRODUCTION,
 }
+_CONDITION_LIST_FIELDS = frozenset({"production_required_when_any"})
+# The condition terms a list field may combine. The contract's
+# ``requirement_conditions`` block must name exactly these.
+_REQUIREMENT_CONDITIONS = ("truthy", "integer_gt")
+# A value_pattern that admits unsigned decimal integers only: anchored, and
+# built from ASCII-digit atoms with plain quantifiers. Only a row declaring one
+# can be the target of an integer comparison.
+_UNSIGNED_INTEGER_PATTERN = re.compile(
+    r"\^(?:(?:\[[0-9](?:-[0-9])?\]|[0-9])(?:[*+?]|\{[0-9]+(?:,[0-9]*)?\})?)+\$"
+)
 # Every field a variable row may carry. A misspelt field would otherwise be
 # silently ignored — and with it the rule it was meant to declare.
 _KNOWN_ROW_FIELDS = frozenset(
@@ -147,7 +176,8 @@ _KNOWN_ROW_FIELDS = frozenset(
         "value_pattern",
         "value_normalization",
         "presence_semantics",
-        "production_blank_policy",
+        *_BLANK_POLICY_FIELDS,
+        *_LIST_ITEM_RULES,
         *_VALUE_LIST_FIELDS,
         *_SCALAR_VALUE_RULES,
         *_CONDITIONAL_REQUIREMENT_FIELDS,
@@ -186,9 +216,10 @@ def validate_contract(document: Mapping[str, Any]) -> None:
     A contract that names an unsupported comparison or presence form, declares a
     value list in a spelling its own form could never match, lets a production
     allowlist escape its allowed set, conditions a requirement on a missing,
-    secret or list-valued row, or carries a duplicate row or a field this engine
-    does not know is rejected here instead of being loaded with a
-    silently-defaulted rule (fail-closed).
+    secret, list-valued or (for an integer comparison) non-numeric row, declares
+    an item rule on a row that is not read as a list, or carries a duplicate row
+    or a field this engine does not know is rejected here instead of being
+    loaded with a silently-defaulted rule (fail-closed).
     """
     normalizations = _validated_vocabulary(
         document, "value_normalizations", DEFAULT_VALUE_NORMALIZATION, _VALUE_NORMALIZERS,
@@ -201,7 +232,12 @@ def validate_contract(document: Mapping[str, Any]) -> None:
     blank_policies = _validated_vocabulary(
         document, "blank_policies", DEFAULT_BLANK_POLICY, _BLANK_POLICIES, "blank policies"
     )
-    _validate_conditional_vocabulary(document.get("conditional_requirements"))
+    _validate_exact_vocabulary(
+        document, "conditional_requirements", _CONDITIONAL_REQUIREMENT_FIELDS, "fields"
+    )
+    _validate_exact_vocabulary(
+        document, "requirement_conditions", _REQUIREMENT_CONDITIONS, "conditions"
+    )
     rows = _validated_rows(document.get("variables"))
     by_name = {entry["name"]: entry for entry in rows}
     for entry in rows:
@@ -256,14 +292,17 @@ def _validated_vocabulary(
     return frozenset(raw)
 
 
-def _validate_conditional_vocabulary(raw: object) -> None:
-    """The conditional-requirement block names exactly the fields implemented here."""
-    implemented = set(_CONDITIONAL_REQUIREMENT_FIELDS)
-    if not isinstance(raw, Mapping) or set(raw) != implemented:
+def _validate_exact_vocabulary(
+    document: Mapping[str, Any], block: str, implemented: Iterable[str], noun: str
+) -> None:
+    """A vocabulary block with no default: it names exactly what is implemented here."""
+    raw = document.get(block)
+    expected = set(implemented)
+    if not isinstance(raw, Mapping) or set(raw) != expected:
         declared = sorted(raw) if isinstance(raw, Mapping) else raw
         raise RuntimeError(
-            "runtime contract must declare a conditional_requirements vocabulary naming "
-            f"exactly the implemented fields {sorted(implemented)}, not {declared!r}"
+            f"runtime contract must declare a {block} vocabulary naming "
+            f"exactly the implemented {noun} {sorted(expected)}, not {declared!r}"
         )
 
 
@@ -344,7 +383,9 @@ def _validate_presence(
     entry: Mapping[str, Any], presence: frozenset[str], blank_policies: frozenset[str]
 ) -> None:
     form = _validated_row_token(entry, "presence_semantics", DEFAULT_PRESENCE_SEMANTICS, presence)
-    _validated_row_token(entry, "production_blank_policy", DEFAULT_BLANK_POLICY, blank_policies)
+    for field in _BLANK_POLICY_FIELDS:
+        _validated_row_token(entry, field, DEFAULT_BLANK_POLICY, blank_policies)
+    _validate_list_item_rules(entry, form)
     if form not in _LIST_PRESENCE_SEMANTICS:
         return
     clash = [field for field in _SCALAR_VALUE_RULES if field in entry]
@@ -355,36 +396,124 @@ def _validate_presence(
         )
 
 
+def _validate_list_item_rules(entry: Mapping[str, Any], form: str) -> None:
+    """An item rule needs a list row and item values a parsed item could equal.
+
+    Items are trimmed and never contain a comma, so a blank, padded or
+    comma-bearing rule value could never fire — it would be a silently dead rule.
+    """
+    declared = [field for field in _LIST_ITEM_RULES if field in entry]
+    if declared and form not in _LIST_PRESENCE_SEMANTICS:
+        raise RuntimeError(
+            f"runtime contract row {entry['name']} declares {declared[0]}, which reads "
+            f"list items, but its presence_semantics {form!r} does not read a list"
+        )
+    for field in declared:
+        if not _is_item_rule(entry[field]):
+            raise RuntimeError(
+                f"runtime contract row {entry['name']} declares {field} {entry[field]!r}; "
+                "expected a non-empty list of trimmed, non-blank strings without commas"
+            )
+
+
+def _is_item_rule(values: object) -> bool:
+    """A value list a parsed (trimmed, comma-free, non-blank) item can match."""
+    return (
+        isinstance(values, list)
+        and bool(values)
+        and all(isinstance(v, str) and v and v == v.strip() and "," not in v for v in values)
+    )
+
+
+def _conditions(entry: Mapping[str, Any], field: str) -> list[tuple[str, Any]]:
+    """The ``(term, argument)`` pairs a conditional-requirement field declares.
+
+    A ``*_truthy`` field is one ``truthy`` term on the row it names. A list
+    field must be a non-empty list of single-key terms from the implemented
+    vocabulary; any other shape raises rather than being skipped.
+    """
+    value = entry[field]
+    if field not in _CONDITION_LIST_FIELDS:
+        return [("truthy", value)]
+    terms = value if isinstance(value, list) else []
+    parsed = [
+        next(iter(term.items())) for term in terms if isinstance(term, Mapping) and len(term) == 1
+    ]
+    if not terms or len(parsed) != len(terms) or any(
+        kind not in _REQUIREMENT_CONDITIONS for kind, _ in parsed
+    ):
+        raise RuntimeError(
+            f"runtime contract row {entry['name']} declares a malformed {field} {value!r}; "
+            f"expected a non-empty list of single-key terms from {list(_REQUIREMENT_CONDITIONS)}"
+        )
+    return parsed
+
+
+def _is_integer_comparison(argument: object) -> TypeGuard[Mapping[str, Any]]:
+    """``{"variable": <row name>, "value": <int>}`` — a bool is not an integer here."""
+    return (
+        isinstance(argument, Mapping)
+        and set(argument) == {"variable", "value"}
+        and isinstance(argument["variable"], str)
+        and isinstance(argument["value"], int)
+        and not isinstance(argument["value"], bool)
+    )
+
+
 def _validate_conditional_requirements(
     entry: Mapping[str, Any], by_name: Mapping[str, Mapping[str, Any]]
 ) -> None:
-    """A conditional requirement must name ANOTHER row, neither secret nor a list.
+    """Every condition must read ANOTHER row that is neither secret nor a list.
 
-    The flag row is read with the engine's truthy set, which is only meaningful
-    for a scalar switch: credential material or a list-valued row can never be
-    the switch that makes another row required.
+    A flag is read with the engine's truthy set and an integer comparison with
+    ``int()``, both only meaningful for a scalar switch: credential material or
+    a list-valued row can never be what makes another row required. An integer
+    comparison additionally needs a row whose declared form is an integer.
     """
     name = entry["name"]
     for field in _CONDITIONAL_REQUIREMENT_FIELDS:
         if field not in entry:
             continue
-        flag = entry[field]
-        if not isinstance(flag, str) or flag == name or flag not in by_name:
-            raise RuntimeError(
-                f"runtime contract row {name} is {field} {flag!r}, which does not name "
-                "another contract row"
-            )
-        flag_row = by_name[flag]
-        if flag_row.get("secret") is not False:
-            raise RuntimeError(
-                f"runtime contract row {name} is {field} {flag!r}, a secret row; "
-                "credential material is never a switch"
-            )
-        if flag_row.get("presence_semantics", DEFAULT_PRESENCE_SEMANTICS) in _LIST_PRESENCE_SEMANTICS:
-            raise RuntimeError(
-                f"runtime contract row {name} is {field} {flag!r}, a list-valued row; "
-                "only a scalar flag can be truthy"
-            )
+        for kind, argument in _conditions(entry, field):
+            term = f"{kind} " if field in _CONDITION_LIST_FIELDS else ""
+            label = f"{field} {term}{argument!r}"
+            if kind == "truthy":
+                _validate_switch_row(name, label, argument, by_name)
+                continue
+            if not _is_integer_comparison(argument):
+                raise RuntimeError(
+                    f"runtime contract row {name} is {label}, which is not "
+                    '{"variable": <row name>, "value": <integer>}'
+                )
+            target = _validate_switch_row(name, label, argument["variable"], by_name)
+            pattern = target.get("value_pattern")
+            if not isinstance(pattern, str) or not _UNSIGNED_INTEGER_PATTERN.fullmatch(pattern):
+                raise RuntimeError(
+                    f"runtime contract row {name} is {label}, a row without an unsigned-integer "
+                    "value_pattern; only a numeric row can be compared as an integer"
+                )
+
+
+def _validate_switch_row(
+    name: str, label: str, switch: object, by_name: Mapping[str, Mapping[str, Any]]
+) -> Mapping[str, Any]:
+    """The row a condition reads: another, non-secret, scalar contract row."""
+    if not isinstance(switch, str) or switch == name or switch not in by_name:
+        raise RuntimeError(
+            f"runtime contract row {name} is {label}, which does not name another contract row"
+        )
+    row = by_name[switch]
+    if row.get("secret") is not False:
+        raise RuntimeError(
+            f"runtime contract row {name} is {label}, a secret row; "
+            "credential material is never a switch"
+        )
+    if row.get("presence_semantics", DEFAULT_PRESENCE_SEMANTICS) in _LIST_PRESENCE_SEMANTICS:
+        raise RuntimeError(
+            f"runtime contract row {name} is {label}, a list-valued row; "
+            "only a scalar row can be a switch"
+        )
+    return row
 
 
 def _validate_production_profile_values(
@@ -697,7 +826,7 @@ def _requirement(
     """Why the row is required in this deployment, or None when it is not.
 
     A row is required by its ``required_profiles``, or by a conditional
-    requirement whose flag row is truthy in a profile the field is scoped to.
+    requirement with a condition that holds in a profile the field is scoped to.
     """
     name = entry["name"]
     if profile in entry.get("required_profiles", []):
@@ -705,16 +834,36 @@ def _requirement(
     for field, scope in _CONDITIONAL_REQUIREMENT_FIELDS.items():
         if field not in entry or scope not in (None, profile):
             continue
-        flag = entry[field]
-        if not isinstance(flag, str) or not flag:
-            raise RuntimeError(
-                f"runtime contract row {name} declares a malformed {field} {flag!r}; "
-                "refusing to evaluate its requirement (fail-closed)"
-            )
-        if _truthy(source.get(flag)):
-            where = "" if scope is None else f" in the {profile} profile"
-            return f"{name} is required because {flag} is enabled{where}"
+        for kind, argument in _conditions(entry, field):
+            reason = _condition_reason(entry, field, kind, argument, source)
+            if reason is not None:
+                where = "" if scope is None else f" in the {profile} profile"
+                return f"{name} is required because {reason}{where}"
     return None
+
+
+def _condition_reason(
+    entry: Mapping[str, Any], field: str, kind: str, argument: object, source: Mapping[str, str]
+) -> Optional[str]:
+    """Why one condition term holds in ``source``, or None when it does not.
+
+    The integer comparison parses exactly as the consumer does (``int()`` of the
+    trimmed value). An unparseable value never holds; startup refuses such a
+    value earlier, in that row's own check, before it reaches the dependent one.
+    """
+    if kind == "truthy" and isinstance(argument, str) and argument:
+        return f"{argument} is enabled" if _truthy(source.get(argument)) else None
+    if kind == "integer_gt" and _is_integer_comparison(argument):
+        variable_name, threshold = argument["variable"], argument["value"]
+        try:
+            current = int((source.get(variable_name) or "").strip())
+        except ValueError:
+            return None
+        return f"{variable_name} is greater than {threshold}" if current > threshold else None
+    raise RuntimeError(
+        f"runtime contract row {entry['name']} declares a malformed {field} {entry[field]!r}; "
+        "refusing to evaluate its requirement (fail-closed)"
+    )
 
 
 def _satisfied_by_alternative(
@@ -733,22 +882,30 @@ def _satisfied_by_alternative(
 def _blank_issue(
     entry: Mapping[str, Any], raw: Optional[str], profile: str
 ) -> Optional[tuple[str, str]]:
-    """A set-but-blank value on a row whose consumer refuses blank, else None."""
-    policy = entry.get("production_blank_policy", DEFAULT_BLANK_POLICY)
-    if not isinstance(policy, str) or policy not in _BLANK_POLICIES:
-        raise RuntimeError(
-            f"runtime contract declares an unsupported production_blank_policy {policy!r}; "
-            "refusing to evaluate blank values (fail-closed)"
-        )
-    if policy != BLANK_POLICY_INVALID or profile != PROFILE_PRODUCTION:
-        return None
+    """A set-but-blank value on a row whose consumer refuses blank, else None.
+
+    ``blank_policy`` applies in every profile, ``production_blank_policy`` in
+    the production profile only — each mirrors where its consumer runs.
+    """
+    policies = {field: entry.get(field, DEFAULT_BLANK_POLICY) for field in _BLANK_POLICY_FIELDS}
+    for field, policy in policies.items():
+        if not isinstance(policy, str) or policy not in _BLANK_POLICIES:
+            raise RuntimeError(
+                f"runtime contract declares an unsupported {field} {policy!r}; "
+                "refusing to evaluate blank values (fail-closed)"
+            )
     if raw is None or raw.strip():
         return None
-    return (
-        "blank_value",
-        f"{entry['name']} is set but blank; in the {profile} profile its consumer "
-        "applies the default only when the variable is absent",
-    )
+    for field, scope in _BLANK_POLICY_FIELDS.items():
+        if policies[field] != BLANK_POLICY_INVALID or scope not in (None, profile):
+            continue
+        where = "" if scope is None else f"in the {profile} profile "
+        return (
+            "blank_value",
+            f"{entry['name']} is set but blank; {where}its consumer "
+            "applies the default only when the variable is absent",
+        )
+    return None
 
 
 def _variable_issue(
@@ -809,6 +966,31 @@ def _configured_value_issue(
     if pattern is not None and not re.fullmatch(str(pattern), value):
         return ("invalid_value", f"{name} does not match its required form")
 
+    return _forbidden_item_issue(entry, value, production)
+
+
+def _forbidden_item_issue(
+    entry: Mapping[str, Any], value: str, production: bool
+) -> Optional[tuple[str, str]]:
+    """A production list item the row's item rules forbid, else None.
+
+    Items are parsed exactly as the consumer parses them and compared exactly
+    (case-sensitively), so the readback refuses what the consumer refuses and
+    nothing more. The offending item is not echoed.
+    """
+    declared = [field for field in _LIST_ITEM_RULES if field in entry]
+    if not production or not declared:
+        return None
+    forbidden = entry.get("production_forbidden_items", [])
+    substrings = entry.get("production_forbidden_item_substrings", [])
+    if not all(_is_item_rule(entry[field]) for field in declared):
+        raise RuntimeError(
+            f"runtime contract row {entry['name']} declares malformed list item rules; "
+            "refusing to evaluate its items (fail-closed)"
+        )
+    for item in _list_items(value):
+        if item in forbidden or any(part in item for part in substrings):
+            return ("forbidden_value", f"{entry['name']} holds an item forbidden in the production profile")
     return None
 
 

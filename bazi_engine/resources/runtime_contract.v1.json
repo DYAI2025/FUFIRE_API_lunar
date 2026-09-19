@@ -1,6 +1,6 @@
 {
   "schema": "fufire.runtime-config-contract.v1",
-  "contract_version": "1.2.0",
+  "contract_version": "1.3.0",
   "description": "Provider-neutral inventory of the runtime variables materially consumed at the FuFirE Engine/Uvicorn boundary. Secrets-free by construction: this file records names, ownership, required status, allowed shapes and readback policy — never a configured value. Provider-specific bindings (which platform supplies which value) live in the deployment, not here.",
   "profiles": {
     "production": {
@@ -23,15 +23,20 @@
   },
   "presence_semantics": {
     "non_blank": "Default for a row that declares no presence_semantics. The variable counts as configured when its whitespace-trimmed value is non-empty.",
-    "comma_separated_non_empty_items": "The consumer splits the value on commas and drops whitespace-only items. The variable counts as configured only when at least one item survives, so a value made of commas and whitespace is NOT configured. Rules that compare the whole value as one scalar (allowed_values, production_allowed_values, value_pattern, truthiness) cannot be declared on such a row."
+    "comma_separated_non_empty_items": "The consumer splits the value on commas and drops whitespace-only items. The variable counts as configured only when at least one item survives, so a value made of commas and whitespace is NOT configured. Rules that compare the whole value as one scalar (allowed_values, production_allowed_values, value_pattern, truthiness) cannot be declared on such a row. Only such a row may declare item rules: in the production profile, production_forbidden_items refuses any surviving item equal to a listed string, and production_forbidden_item_substrings refuses any surviving item containing a listed string, both compared case-sensitively."
   },
   "blank_policies": {
-    "unset": "Default for a row that declares no production_blank_policy. The row's own presence check reads a set-but-blank value exactly like an absent one; cross-variable policies such as the pepper rule are evaluated separately.",
-    "invalid": "In the production profile a set-but-blank value is refused: the consumer applies its default only when the variable is absent, and rejects the blank value it reads otherwise."
+    "unset": "Default for a row that declares no blank_policy or production_blank_policy. The row's own presence check reads a set-but-blank value exactly like an absent one; cross-variable policies such as the pepper rule are evaluated separately.",
+    "invalid": "A set-but-blank value is refused: the consumer applies its default only when the variable is absent, and rejects the blank value it reads otherwise. Declared as blank_policy it applies in every profile; declared as production_blank_policy, in the production profile only."
   },
   "conditional_requirements": {
     "required_when_truthy": "Names another row that is neither secret nor list-valued. In every profile, the declaring row is required while that flag row holds a truthy value (1, true, yes or on, trimmed and case-insensitive).",
-    "production_required_when_truthy": "Names another row that is neither secret nor list-valued. In the production profile only, the declaring row is required while that flag row holds a truthy value (1, true, yes or on, trimmed and case-insensitive)."
+    "production_required_when_truthy": "Names another row that is neither secret nor list-valued. In the production profile only, the declaring row is required while that flag row holds a truthy value (1, true, yes or on, trimmed and case-insensitive).",
+    "production_required_when_any": "A non-empty list of single-key terms from requirement_conditions. In the production profile only, the declaring row is required while ANY term holds; a satisfied_by alternative still satisfies it."
+  },
+  "requirement_conditions": {
+    "truthy": "Names another row that is neither secret nor list-valued; holds while that row's value is truthy (1, true, yes or on, trimmed and case-insensitive).",
+    "integer_gt": "An object {\"variable\": <row>, \"value\": <integer>} naming another non-secret, scalar row whose value_pattern admits unsigned integers only; holds while that row's trimmed value parses as a base-10 integer greater than value. An unparseable value never holds."
   },
   "fail_closed_codes": {
     "startup_abort": "config_guard.assert_runtime_config() raises at import time.",
@@ -155,9 +160,11 @@
       "required_profiles": ["production"],
       "presence_semantics": "comma_separated_non_empty_items",
       "production_forbidden_values": ["*"],
+      "production_forbidden_items": ["*"],
+      "production_forbidden_item_substrings": ["localhost", "127.0.0.1"],
       "readback": "value",
       "fail_closed": "startup_abort",
-      "description": "Explicit origin allowlist. A value of only commas and whitespace is an empty allowlist. Production rejects a wildcard and any local origin."
+      "description": "Explicit origin allowlist. A value of only commas and whitespace is an empty allowlist. Production rejects the whole allowlist when any origin is a wildcard or contains localhost or 127.0.0.1."
     },
     {
       "name": "FUFIRE_REPLICA_COUNT",
@@ -186,9 +193,14 @@
       "consumer": "engine",
       "secret": true,
       "required_profiles": [],
+      "production_required_when_any": [
+        {"truthy": "FUFIRE_REQUIRE_REDIS"},
+        {"integer_gt": {"variable": "FUFIRE_REPLICA_COUNT", "value": 1}}
+      ],
+      "satisfied_by": ["REDIS_PRIVATE_URL"],
       "readback": "presence",
       "fail_closed": "startup_abort",
-      "description": "Primary limiter storage connection URI. Carries credentials, so it is never echoed."
+      "description": "Primary limiter storage connection URI. Carries credentials, so it is never echoed. Production requires it, or REDIS_PRIVATE_URL in its place, while FUFIRE_REQUIRE_REDIS is truthy or more than one replica is declared."
     },
     {
       "name": "REDIS_PRIVATE_URL",
@@ -198,7 +210,7 @@
       "required_profiles": [],
       "readback": "presence",
       "fail_closed": "startup_abort",
-      "description": "Secondary limiter storage connection URI, resolved after REDIS_URL. Carries credentials."
+      "description": "Secondary limiter storage connection URI, resolved after REDIS_URL. Satisfies the production Redis requirement in place of REDIS_URL. Carries credentials."
     },
     {
       "name": "FUFIRE_RL_PEPPER",
@@ -333,9 +345,10 @@
       "secret": false,
       "required_profiles": [],
       "value_pattern": "^[1-9][0-9]{0,4}$",
+      "blank_policy": "invalid",
       "readback": "value",
       "fail_closed": "none",
-      "description": "Listening port for the ASGI server entry point."
+      "description": "Listening port for the ASGI server entry points, which apply the 8080 default only when the variable is absent. A set-but-blank value makes their int() conversion fail, in every profile."
     },
     {
       "name": "BUILD_VERSION",

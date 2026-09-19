@@ -1635,9 +1635,11 @@ def contract_document(monkeypatch: pytest.MonkeyPatch):
     runtime_contract.load_contract.cache_clear()
 
 
-def _drop_field(name: str, field: str):
+def _drop_field(name: str, *fields: str):
     def mutate(document: dict[str, Any]) -> None:
-        next(e for e in document["variables"] if e["name"] == name).pop(field)
+        row = next(e for e in document["variables"] if e["name"] == name)
+        for field in fields:
+            row.pop(field)
 
     return mutate
 
@@ -1670,9 +1672,11 @@ PRESENCE_METADATA_CASES = {
         "production_required_when_truthy",
         _production(FUFIRE_ENABLE_ZWDS="true"),
     ),
+    # The item rules read the list presence, so the contract refuses them
+    # without it: they are dropped together.
     "cors_list": (
         "CORS_ALLOWED_ORIGINS",
-        "presence_semantics",
+        ("presence_semantics", "production_forbidden_items", "production_forbidden_item_substrings"),
         _production(CORS_ALLOWED_ORIGINS=","),
     ),
 }
@@ -1680,14 +1684,15 @@ PRESENCE_METADATA_CASES = {
 
 @pytest.mark.parametrize("case", sorted(PRESENCE_METADATA_CASES))
 def test_the_verdict_comes_from_the_row_metadata(contract_document, case: str) -> None:
-    row, field, env = PRESENCE_METADATA_CASES[case]
+    row, fields, env = PRESENCE_METADATA_CASES[case]
+    fields = (fields,) if isinstance(fields, str) else fields
 
     violations = _evaluate(env)["violations"]
     assert [v["variable"] for v in violations] == [row], violations
 
-    contract_document(_drop_field(row, field))
+    contract_document(_drop_field(row, *fields))
     assert _evaluate(env)["valid"] is True, (
-        f"removing {row}.{field} did not change the verdict — the rule is not "
+        f"removing {row}.{fields} did not change the verdict — the rule is not "
         "carried by the contract"
     )
 
@@ -1703,24 +1708,40 @@ def test_list_presence_moves_with_the_metadata(contract_document) -> None:
         row = next(e for e in document["variables"] if e["name"] == "FUFIRE_REPLICA_COUNT")
         row.pop("value_pattern")
         row["presence_semantics"] = "comma_separated_non_empty_items"
+        # REDIS_URL compares this row as an integer; a list row cannot be one,
+        # so the contract refuses the mutation unless that condition goes too.
+        _drop_field("REDIS_URL", "production_required_when_any")(document)
 
     contract_document(mutate)
     codes = {(v["variable"], v["code"]) for v in _evaluate(env)["violations"]}
     assert ("FUFIRE_REPLICA_COUNT", "missing_required") in codes, codes
 
 
-def test_blank_policy_moves_with_the_metadata(contract_document) -> None:
-    env = {"FUFIRE_ENV": "production", "PORT": ""}
-    assert "PORT" not in {v["variable"] for v in _evaluate(env)["violations"]}
+# field -> {profile env: is a blank value refused?}
+BLANK_FIELD_SCOPES = {
+    "blank_policy": {"dev": True, "production": True},
+    "production_blank_policy": {"dev": False, "production": True},
+}
 
-    contract_document(lambda d: _set_row(d, "PORT", production_blank_policy="invalid"))
-    codes = {(v["variable"], v["code"]) for v in _evaluate(env)["violations"]}
-    assert ("PORT", "blank_value") in codes, codes
 
-    # ...and it stays production-scoped wherever it is declared.
-    assert "PORT" not in {
-        v["variable"] for v in _evaluate({"FUFIRE_ENV": "dev", "PORT": ""})["violations"]
-    }
+@pytest.mark.parametrize("field", sorted(BLANK_FIELD_SCOPES))
+def test_blank_policy_moves_with_the_metadata(contract_document, field: str) -> None:
+    """Each blank-policy field, moved onto an unrelated row, carries its rule
+    and its profile scope with it."""
+    bases = {"dev": {"FUFIRE_ENV": "dev"}, "production": _production()}
+    for base in bases.values():
+        assert _evaluate(dict(base, BUILD_VERSION=""))["valid"] is True
+
+    contract_document(lambda d: _set_row(d, "BUILD_VERSION", **{field: "invalid"}))
+    for profile, refused in BLANK_FIELD_SCOPES[field].items():
+        codes = {
+            (v["variable"], v["code"])
+            for v in _evaluate(dict(bases[profile], BUILD_VERSION=""))["violations"]
+        }
+        expected = {("BUILD_VERSION", "blank_value")} if refused else set()
+        assert codes == expected, f"{field} in {profile}: {codes}"
+        # Absent is never blank, in any profile.
+        assert _evaluate(bases[profile])["valid"] is True
 
 
 # field -> {profile env: required while the flag is truthy?}
@@ -1894,7 +1915,8 @@ MALFORMED_PRESENCE_CONTRACTS = {
     ),
     "conditional_vocabulary_drops_an_implemented_field": (
         lambda d: d["conditional_requirements"].pop("production_required_when_truthy"),
-        r"must declare a conditional_requirements vocabulary .*not \['required_when_truthy'\]",
+        r"must declare a conditional_requirements vocabulary .*"
+        r"not \['production_required_when_any', 'required_when_truthy'\]",
     ),
     # A misspelt field would silently drop the rule it was meant to declare.
     "misspelt_blank_policy_field": (
@@ -1918,7 +1940,9 @@ def test_the_packaged_contract_declares_every_presence_vocabulary() -> None:
     assert set(document["conditional_requirements"]) == {
         "required_when_truthy",
         "production_required_when_truthy",
+        "production_required_when_any",
     }
+    assert set(document["requirement_conditions"]) == {"truthy", "integer_gt"}
     validate_contract(document)
 
 
@@ -1969,3 +1993,772 @@ def test_presence_metadata_is_refused_at_use_when_it_bypassed_validation(
 
     with pytest.raises(RuntimeError, match=match):
         _variable_issue(row, "", PROFILE_PRODUCTION, {"FLAG": "true"})
+
+
+# ── FUF-159 final parity: Redis requirement, CORS items, blank PORT ──────────
+#
+# The differential sweep of startup against readback left three false-green
+# classes after contract 1.2.0. Each was a deployment the real consumer refuses
+# while the readback reported it valid:
+#
+#   R1/R2  REDIS_URL / REDIS_PRIVATE_URL  config_guard requires one of them in
+#          production whenever FUFIRE_REQUIRE_REDIS is truthy OR more than one
+#          replica is declared. The contract encoded neither trigger.
+#   R3-R5  CORS_ALLOWED_ORIGINS  config_guard refuses a production allowlist in
+#          which ANY item is "*" or contains "localhost" / "127.0.0.1". The
+#          contract only compared the WHOLE value against "*".
+#   R6     PORT  the ASGI entry points run ``int(os.getenv("PORT", "8080"))``:
+#          the default applies only to an ABSENT variable, and a set-but-blank
+#          value raises. The readback read blank as unset, in every profile.
+#
+# As above, every test asserts the real consumer's verdict FIRST, so agreement
+# in the wrong direction cannot pass.
+
+# Synthetic, long enough for the contract minimum: a shared-counter deployment
+# needs a pepper, and without one the pepper rule would mask the Redis verdict.
+SWEEP_PEPPER = "runtime-contract-parity-pepper-0f1e2d3c4b5a69788796"
+PRIVATE_REDIS_URL_SENTINEL = "redis://sentineluser:SENTINELPRIVATEREDISPW93c1@redis-private.invalid:6379/0"
+REDIS_URL_SENTINEL = SECRET_SENTINELS["REDIS_URL"]
+
+
+def _shared_production(**overrides: str | None) -> dict[str, str]:
+    """A complete production deployment that also carries a usable pepper."""
+    return _production(**dict({"FUFIRE_RL_PEPPER": SWEEP_PEPPER}, **overrides))
+
+
+def _assert_no_redis_url_leak(payload: dict[str, Any]) -> None:
+    serialized = json.dumps(payload)
+    for sentinel in (REDIS_URL_SENTINEL, PRIVATE_REDIS_URL_SENTINEL):
+        assert sentinel not in serialized, "the readback echoed a Redis connection URI"
+        assert sentinel[:16] not in serialized and sentinel[-12:] not in serialized
+
+
+# ── R1 / R2 — Redis requirement ──────────────────────────────────────────────
+
+REDIS_REPLICA_TRIGGERS = ("2", " 2 ", "10")
+UNSET_OR_EMPTY = (None, "")
+
+
+@pytest.mark.parametrize("private_url", UNSET_OR_EMPTY)
+@pytest.mark.parametrize("url", UNSET_OR_EMPTY)
+@pytest.mark.parametrize("require_redis", (None, "", "false", "0"))
+@pytest.mark.parametrize("replicas", REDIS_REPLICA_TRIGGERS)
+def test_multi_replica_production_without_redis_agrees_across_startup_and_readback(
+    clean_contract_env: pytest.MonkeyPatch,
+    replicas: str,
+    require_redis: str | None,
+    url: str | None,
+    private_url: str | None,
+) -> None:
+    """R1 (FUF-159): more than one replica makes Redis mandatory in production."""
+    env = _shared_production(
+        FUFIRE_REPLICA_COUNT=replicas,
+        FUFIRE_REQUIRE_REDIS=require_redis,
+        REDIS_URL=url,
+        REDIS_PRIVATE_URL=private_url,
+    )
+
+    started, reason = _startup_verdict(clean_contract_env, env)
+    assert started is False
+    assert "requires Redis" in reason
+
+    payload = _assert_readback_agrees(started, reason, env)
+    record = _record(payload, "REDIS_URL")
+    assert record["issue"] == "missing_required", record
+    assert record["requiredHere"] is True, record
+
+
+@pytest.mark.parametrize("private_url", UNSET_OR_EMPTY)
+@pytest.mark.parametrize("url", UNSET_OR_EMPTY)
+@pytest.mark.parametrize("flag", TRUTHY_FLAG_SPELLINGS)
+def test_explicitly_required_redis_without_a_url_agrees_across_startup_and_readback(
+    clean_contract_env: pytest.MonkeyPatch, flag: str, url: str | None, private_url: str | None
+) -> None:
+    """R2 (FUF-159): FUFIRE_REQUIRE_REDIS alone makes Redis mandatory in production."""
+    env = _shared_production(
+        FUFIRE_REPLICA_COUNT="1",
+        FUFIRE_REQUIRE_REDIS=flag,
+        REDIS_URL=url,
+        REDIS_PRIVATE_URL=private_url,
+    )
+
+    started, reason = _startup_verdict(clean_contract_env, env)
+    assert started is False
+    assert "requires Redis" in reason
+
+    payload = _assert_readback_agrees(started, reason, env)
+    record = _record(payload, "REDIS_URL")
+    assert record["issue"] == "missing_required", record
+    assert record["requiredHere"] is True, record
+
+
+REDIS_TRIGGERS = {
+    "replicas": {"FUFIRE_REPLICA_COUNT": "2"},
+    "explicit": {"FUFIRE_REPLICA_COUNT": "1", "FUFIRE_REQUIRE_REDIS": "true"},
+    "both": {"FUFIRE_REPLICA_COUNT": "3", "FUFIRE_REQUIRE_REDIS": "on"},
+}
+REDIS_SOURCES = {
+    "primary": {"REDIS_URL": REDIS_URL_SENTINEL},
+    "private": {"REDIS_PRIVATE_URL": PRIVATE_REDIS_URL_SENTINEL},
+    "both": {"REDIS_URL": REDIS_URL_SENTINEL, "REDIS_PRIVATE_URL": PRIVATE_REDIS_URL_SENTINEL},
+}
+
+
+@pytest.mark.parametrize("source", sorted(REDIS_SOURCES))
+@pytest.mark.parametrize("trigger", sorted(REDIS_TRIGGERS))
+def test_either_redis_url_satisfies_the_requirement_without_being_echoed(
+    clean_contract_env: pytest.MonkeyPatch, trigger: str, source: str
+) -> None:
+    env = _shared_production(**REDIS_TRIGGERS[trigger], **REDIS_SOURCES[source])
+
+    started, reason = _startup_verdict(clean_contract_env, env)
+    assert started is True, reason
+
+    payload = _assert_readback_agrees(started, reason, env)
+    assert _record(payload, "REDIS_URL")["requiredHere"] is True
+    for name in ("REDIS_URL", "REDIS_PRIVATE_URL"):
+        assert "value" not in _record(payload, name)
+    _assert_no_redis_url_leak(payload)
+
+
+@pytest.mark.parametrize(
+    "env",
+    [
+        pytest.param(_production(), id="single-replica"),
+        pytest.param(_production(FUFIRE_REQUIRE_REDIS="false"), id="single-replica-explicit-off"),
+        pytest.param(
+            {"FUFIRE_ENV": "dev", "FUFIRE_REPLICA_COUNT": "2", "FUFIRE_REQUIRE_REDIS": "true"},
+            id="dev-multi-replica",
+        ),
+    ],
+)
+def test_redis_requirement_stays_scoped_to_its_production_triggers(
+    clean_contract_env: pytest.MonkeyPatch, env: dict[str, str]
+) -> None:
+    """Canary: no trigger, or no production profile, never requires Redis."""
+    started, reason = _startup_verdict(clean_contract_env, env)
+    assert started is True, reason
+
+    payload = _assert_readback_agrees(started, reason, env)
+    assert _record(payload, "REDIS_URL")["requiredHere"] is False
+
+
+# ── R3-R5 — CORS allowlist items ─────────────────────────────────────────────
+
+PRODUCTION_REFUSED_ORIGINS = (
+    "*",
+    " * ",
+    "*,",
+    "https://api.example.com,*",
+    "https://a.example,*",
+    "https://a.example, *",
+    "http://localhost:3000",
+    "https://api.example.com,http://localhost:3000",
+    "https://a.example,http://localhost:3000",
+    "localhost",
+    "http://127.0.0.1:8080",
+    "https://api.example.com,http://127.0.0.1",
+    "https://a.example,http://127.0.0.1:8080",
+    # startup's rule is a plain substring test, so this is refused too
+    "https://127.0.0.1.example.com",
+)
+PRODUCTION_ACCEPTED_ORIGINS = (
+    "https://example.com",
+    "https://a.example.com,https://b.example.com",
+    " https://a.example.com , https://b.example.com ",
+    # Parity, not policy: startup's substring test is case-sensitive, so the
+    # readback must not refuse what startup accepts (do not broaden).
+    "http://LOCALHOST:3000",
+)
+
+
+@pytest.mark.parametrize("origins", PRODUCTION_REFUSED_ORIGINS)
+def test_every_forbidden_cors_item_agrees_across_startup_and_readback(
+    clean_contract_env: pytest.MonkeyPatch, origins: str
+) -> None:
+    """R3/R4/R5 (FUF-159): one wildcard or local item poisons the whole allowlist."""
+    env = _production(CORS_ALLOWED_ORIGINS=origins)
+
+    started, reason = _startup_verdict(clean_contract_env, env)
+    assert started is False
+    assert "explicit non-local origins" in reason
+
+    payload = _assert_readback_agrees(started, reason, env)
+    record = _record(payload, "CORS_ALLOWED_ORIGINS")
+    assert record["valid"] is False, record
+    assert record["issue"] == "forbidden_value", record
+
+
+@pytest.mark.parametrize("origins", PRODUCTION_ACCEPTED_ORIGINS)
+def test_explicit_non_local_cors_items_stay_valid(
+    clean_contract_env: pytest.MonkeyPatch, origins: str
+) -> None:
+    env = _production(CORS_ALLOWED_ORIGINS=origins)
+
+    started, reason = _startup_verdict(clean_contract_env, env)
+    assert started is True, reason
+    _assert_readback_agrees(started, reason, env)
+
+
+@pytest.mark.parametrize("origins", ("*", "https://a.example,*", "http://localhost:3000"))
+def test_cors_item_rules_stay_scoped_to_production(
+    clean_contract_env: pytest.MonkeyPatch, origins: str
+) -> None:
+    """Outside production no startup check reads the allowlist's items."""
+    env = {"FUFIRE_ENV": "dev", "CORS_ALLOWED_ORIGINS": origins}
+
+    started, reason = _startup_verdict(clean_contract_env, env)
+    assert started is True, reason
+    _assert_readback_agrees(started, reason, env)
+
+
+# ── R6 — blank PORT at the ASGI entry points ─────────────────────────────────
+
+# Replaces the server call so an entry point runs its REAL port conversion and
+# then stops, instead of binding a socket.
+_ENTRYPOINT_STUB = (
+    "import uvicorn\n"
+    "uvicorn.run = lambda app, **kw: print('ENTRYPOINT_PORT=%r' % (kw['port'],))\n"
+)
+
+
+def _entrypoint_programs() -> dict[str, str]:
+    """Every shipped entry point that converts PORT, as runnable Python source.
+
+    ``start.py`` is the image's CMD; railway.toml's startCommand overrides it
+    with an inline equivalent. Both are exercised, so neither can drift from the
+    contract unseen.
+    """
+    start = ROOT / "start.py"
+    programs = {
+        "start.py": (
+            f"exec(compile(open({str(start)!r}).read(), {str(start)!r}, 'exec'), "
+            "{'__name__': '__main__'})\n"
+        )
+    }
+    railway = (ROOT / "railway.toml").read_text(encoding="utf-8")
+    if "startCommand" in railway:
+        import shlex
+
+        match = re.search(r'^startCommand\s*=\s*"((?:[^"\\]|\\.)*)"\s*$', railway, re.MULTILINE)
+        assert match, "railway.toml declares a startCommand this test cannot read"
+        argv = shlex.split(match.group(1).replace('\\"', '"'))
+        assert argv[:2] == ["python", "-c"], argv
+        programs["railway.toml startCommand"] = argv[2] + "\n"
+    return programs
+
+
+def _entrypoint_verdict(program: str, port: str | None) -> tuple[bool, str]:
+    env = dict(os.environ)
+    env.pop("PORT", None)
+    if port is not None:
+        env["PORT"] = port
+    env["PYTHONPATH"] = str(ROOT)
+    proc = subprocess.run(
+        [sys.executable, "-c", _ENTRYPOINT_STUB + program],
+        capture_output=True,
+        text=True,
+        env=env,
+        cwd=str(ROOT),
+    )
+    started = proc.returncode == 0 and "ENTRYPOINT_PORT=" in proc.stdout
+    return started, (proc.stdout + proc.stderr).strip()[-400:]
+
+
+BLANK_PORTS = ("", " ", "\t")
+PORT_PROFILES = {
+    "production": _production(),
+    "dev": {"FUFIRE_ENV": "dev"},
+    "unset": {},
+}
+
+
+@pytest.mark.parametrize("profile", sorted(PORT_PROFILES))
+@pytest.mark.parametrize("port", BLANK_PORTS)
+@pytest.mark.parametrize("entrypoint", sorted(_entrypoint_programs()))
+def test_blank_port_agrees_across_the_entry_points_and_readback(
+    entrypoint: str, port: str, profile: str
+) -> None:
+    """R6 (FUF-159): a set-but-blank PORT kills every entry point, in every profile."""
+    started, output = _entrypoint_verdict(_entrypoint_programs()[entrypoint], port)
+    assert started is False, f"{entrypoint} started with PORT={port!r}: {output}"
+    assert "ValueError" in output, output
+
+    rc, out = _readback(dict(PORT_PROFILES[profile], PORT=port))
+    payload, record = _row_record(out, "PORT")
+    assert record["valid"] is False, (
+        f"{entrypoint} cannot start with PORT={port!r} but the {profile} readback "
+        f"reports it valid: {record}"
+    )
+    assert record["issue"] == "blank_value", record
+    assert payload["valid"] is False and rc != 0, out
+
+
+@pytest.mark.parametrize(
+    ("port", "expected"),
+    [(None, "8080"), ("8080", "8080"), (" 8080 ", "8080"), ("9000", "9000")],
+)
+@pytest.mark.parametrize("profile", sorted(PORT_PROFILES))
+@pytest.mark.parametrize("entrypoint", sorted(_entrypoint_programs()))
+def test_absent_or_numeric_port_stays_valid(
+    entrypoint: str, profile: str, port: str | None, expected: str
+) -> None:
+    """Canary: ABSENT keeps the 8080 default and a real port keeps working."""
+    started, output = _entrypoint_verdict(_entrypoint_programs()[entrypoint], port)
+    assert started is True, output
+    assert f"ENTRYPOINT_PORT={int(expected)!r}" in output, output
+
+    env = dict(PORT_PROFILES[profile])
+    if port is not None:
+        env["PORT"] = port
+    rc, out = _readback(env)
+    _payload, record = _row_record(out, "PORT")
+    assert record["valid"] is True, record
+    assert rc == 0, out
+
+
+# ── Review nit: a semantically blank KEY_STORE_BACKEND is no KeyStore ────────
+
+@pytest.mark.parametrize("backend", BLANK_SPELLINGS)
+@pytest.mark.parametrize("keys", (None, ","))
+def test_a_blank_key_store_backend_never_satisfies_the_production_key_requirement(
+    clean_contract_env: pytest.MonkeyPatch, keys: str | None, backend: str
+) -> None:
+    """``satisfied_by`` reads a blank alternative exactly as get_key_store does."""
+    from bazi_engine.key_store import get_key_store
+
+    env = _production(FUFIRE_API_KEYS=keys, KEY_STORE_BACKEND=backend)
+
+    started, reason = _startup_verdict(clean_contract_env, env)
+    assert get_key_store() is None
+    assert started is False
+    assert "auth disabled" in reason
+
+    payload = _assert_readback_agrees(started, reason, env)
+    assert _record(payload, "FUFIRE_API_KEYS")["issue"] == "missing_required"
+
+
+# ── Whitespace-only Redis URL under the production Redis requirement ────────
+#
+# config_guard counts a Redis URL as configured with ``bool(raw)``, so " " is
+# "configured" to it. The URL's real consumer disagrees: the limiter hands the
+# unstripped value to ``limits`` as a storage URI and the process dies at import
+# ("unknown storage scheme"). When Redis is REQUIRED and no other URL is set,
+# the readback reads the row with its declared ``non_blank`` presence and
+# refuses — and that deployment genuinely cannot start.
+#
+# Scope, stated precisely: the readback does not model URL usability. A set but
+# unusable URL (" ", "none", no scheme) while Redis is NOT required, or next to
+# a usable REDIS_PRIVATE_URL, still reads valid and still kills the limiter —
+# a URL-validity gap outside this slice. The guard's weaker check is pinned
+# below as a strict xfail (config_guard.py is outside this slice too).
+
+@pytest.mark.parametrize("name", ("REDIS_URL", "REDIS_PRIVATE_URL"))
+def test_a_whitespace_only_redis_url_is_refused_like_its_limiter_refuses_it(name: str) -> None:
+    env = _shared_production(FUFIRE_REPLICA_COUNT="2", **{name: " "})
+
+    limiter_env = {k: v for k, v in os.environ.items() if k not in _contract_variable_names()}
+    limiter_env.update({name: " ", "PYTHONPATH": str(ROOT)})
+    proc = subprocess.run(
+        [sys.executable, "-c", "import bazi_engine.limiter"],
+        capture_output=True,
+        text=True,
+        env=limiter_env,
+        cwd=str(ROOT),
+    )
+    assert proc.returncode != 0, "the limiter started with a whitespace-only Redis URL"
+    assert "unknown storage scheme" in proc.stderr, proc.stderr[-400:]
+
+    rc, out = _readback(env)
+    payload, record = _row_record(out, "REDIS_URL")
+    assert record["issue"] == "missing_required", record
+    assert payload["valid"] is False and rc != 0, out
+
+
+@pytest.mark.xfail(
+    strict=True,
+    raises=AssertionError,
+    reason=(
+        "FINDING, outside this slice (config_guard.py is not in scope): the startup "
+        "guard counts a Redis URL as configured with bool(raw), so a whitespace-only "
+        "URL passes it while the limiter dies on it at import and the readback refuses "
+        "it. strict=True turns this red once the guard trims the value."
+    ),
+)
+@pytest.mark.parametrize("name", ("REDIS_URL", "REDIS_PRIVATE_URL"))
+def test_startup_guard_refuses_a_whitespace_only_redis_url(
+    clean_contract_env: pytest.MonkeyPatch, name: str
+) -> None:
+    env = _shared_production(FUFIRE_REPLICA_COUNT="2", **{name: " "})
+    started, reason = _startup_verdict(clean_contract_env, env)
+    assert started is False, "the guard accepted a whitespace-only Redis URL"
+    # Pinned to the Redis refusal: an unrelated refusal must not XPASS this.
+    assert "requires Redis" in reason, reason
+    _assert_readback_agrees(started, reason, env)
+
+
+# ── The parity verdicts follow the contract metadata, not variable names ─────
+
+PARITY_METADATA_CASES = {
+    # case: (row, fields to drop, env the packaged contract refuses)
+    "redis_requirement": (
+        "REDIS_URL",
+        ("production_required_when_any",),
+        _shared_production(FUFIRE_REPLICA_COUNT="2"),
+    ),
+    "cors_forbidden_item": (
+        "CORS_ALLOWED_ORIGINS",
+        ("production_forbidden_items",),
+        _production(CORS_ALLOWED_ORIGINS="https://a.example,*"),
+    ),
+    "cors_forbidden_substring": (
+        "CORS_ALLOWED_ORIGINS",
+        ("production_forbidden_item_substrings",),
+        _production(CORS_ALLOWED_ORIGINS="https://a.example,http://localhost:3000"),
+    ),
+    "port_blank": ("PORT", ("blank_policy",), _production(PORT="")),
+}
+
+
+@pytest.mark.parametrize("case", sorted(PARITY_METADATA_CASES))
+def test_the_parity_verdict_comes_from_the_row_metadata(contract_document, case: str) -> None:
+    row, fields, env = PARITY_METADATA_CASES[case]
+
+    violations = _evaluate(env)["violations"]
+    assert [v["variable"] for v in violations] == [row], violations
+
+    contract_document(_drop_field(row, *fields))
+    assert _evaluate(env)["valid"] is True, (
+        f"removing {row}.{fields} did not change the verdict — the rule is not "
+        "carried by the contract"
+    )
+
+
+def test_a_condition_list_moves_with_the_metadata(contract_document) -> None:
+    """Both condition terms, moved onto an unrelated row and unrelated switches,
+    carry their rule and their production scope with them."""
+    conditions = [
+        {"integer_gt": {"variable": "PORT", "value": 9000}},
+        {"truthy": "WEBHOOK_HMAC_ONLY"},
+    ]
+    probes = [
+        # (profile env, required?)
+        (_production(PORT="9001"), True),
+        (_production(PORT=" 9001 "), True),
+        (_production(WEBHOOK_HMAC_ONLY="yes"), True),
+        (_production(PORT="9000"), False),
+        (_production(PORT="8080", WEBHOOK_HMAC_ONLY="false"), False),
+        ({"FUFIRE_ENV": "dev", "PORT": "9001", "WEBHOOK_HMAC_ONLY": "true"}, False),
+    ]
+    for env, _required in probes:
+        assert _evaluate(env)["valid"] is True, env
+
+    contract_document(
+        lambda d: _set_row(d, "ELEVENLABS_TOOL_SECRET", production_required_when_any=conditions)
+    )
+    for env, required in probes:
+        payload = _evaluate(env)
+        codes = {(v["variable"], v["code"]) for v in payload["violations"]}
+        expected = {("ELEVENLABS_TOOL_SECRET", "missing_required")} if required else set()
+        assert codes == expected, f"{env}: {codes}"
+        assert _record(payload, "ELEVENLABS_TOOL_SECRET")["requiredHere"] is required
+    # Configured, it satisfies the requirement like any other required row.
+    assert _evaluate(_production(PORT="9001", ELEVENLABS_TOOL_SECRET="s"))["valid"] is True
+
+
+def test_the_redis_requirement_names_its_trigger_without_a_value(clean_contract_env) -> None:
+    by_trigger = {
+        "FUFIRE_REPLICA_COUNT is greater than 1": _shared_production(FUFIRE_REPLICA_COUNT="4"),
+        "FUFIRE_REQUIRE_REDIS is enabled": _shared_production(FUFIRE_REQUIRE_REDIS="on"),
+    }
+    for reason, env in by_trigger.items():
+        messages = [v["message"] for v in _evaluate(env)["violations"]]
+        assert messages == [f"REDIS_URL is required because {reason} in the production profile"]
+
+
+def test_item_rules_move_with_the_metadata_and_never_echo_the_item(contract_document) -> None:
+    """On another list row — a secret one — the item rules still read its items."""
+    keys = "ff_pro_itemrule_ok, ff_pro_itemrule_banned"
+    assert _evaluate(_production(FUFIRE_API_KEYS=keys))["valid"] is True
+
+    for field, rule in (
+        ("production_forbidden_items", ["ff_pro_itemrule_banned"]),
+        ("production_forbidden_item_substrings", ["_banned"]),
+    ):
+        contract_document(lambda d, f=field, r=rule: _set_row(d, "FUFIRE_API_KEYS", **{f: r}))
+        payload = _evaluate(_production(FUFIRE_API_KEYS=keys))
+        codes = {(v["variable"], v["code"]) for v in payload["violations"]}
+        assert codes == {("FUFIRE_API_KEYS", "forbidden_value")}, (field, codes)
+        assert "itemrule" not in json.dumps(payload), "an item rule echoed a secret item"
+        # Production only, like every production_* rule.
+        dev = _evaluate({"FUFIRE_ENV": "dev", "FUFIRE_API_KEYS": keys})
+        assert dev["valid"] is True, (field, dev["violations"])
+
+
+def test_contract_version_records_the_parity_semantics(contract) -> None:
+    """Item rules, condition lists and the every-profile blank policy are a
+    further compatible expansion of the normative metadata: a minor revision."""
+    major, minor, _patch = (int(part) for part in contract["contract_version"].split("."))
+    rows = contract["variables"]
+    assert any("production_required_when_any" in e for e in rows)
+    assert any("production_forbidden_items" in e for e in rows)
+    assert any("blank_policy" in e for e in rows)
+    assert (major, minor) >= (1, 3), contract["contract_version"]
+
+
+# ── Contract self-validation for the parity metadata ─────────────────────────
+
+def _redis_conditions(*terms: Any):
+    return lambda d: _set_row(d, "REDIS_URL", production_required_when_any=list(terms))
+
+
+def _integer_condition(argument: Any):
+    return _redis_conditions({"integer_gt": argument})
+
+
+MALFORMED_PARITY_CONTRACTS = {
+    "condition_vocabulary_missing": (
+        lambda d: d.pop("requirement_conditions"),
+        "must declare a requirement_conditions vocabulary naming exactly the implemented conditions",
+    ),
+    "condition_vocabulary_names_unimplemented_term": (
+        lambda d: d["requirement_conditions"].update(integer_lt="x"),
+        r"must declare a requirement_conditions vocabulary .*'integer_lt'",
+    ),
+    "condition_vocabulary_drops_an_implemented_term": (
+        lambda d: d["requirement_conditions"].pop("integer_gt"),
+        r"must declare a requirement_conditions vocabulary .*not \['truthy'\]",
+    ),
+    "condition_list_as_an_object": (
+        lambda d: _set_row(d, "REDIS_URL", production_required_when_any={"truthy": "FUFIRE_REQUIRE_REDIS"}),
+        "REDIS_URL declares a malformed production_required_when_any",
+    ),
+    "condition_list_empty": (
+        _redis_conditions(),
+        r"REDIS_URL declares a malformed production_required_when_any \[\]",
+    ),
+    "condition_term_not_an_object": (
+        _redis_conditions("FUFIRE_REQUIRE_REDIS"),
+        "REDIS_URL declares a malformed production_required_when_any",
+    ),
+    "condition_term_with_two_keys": (
+        _redis_conditions(
+            {"truthy": "FUFIRE_REQUIRE_REDIS", "integer_gt": {"variable": "FUFIRE_REPLICA_COUNT", "value": 1}}
+        ),
+        "REDIS_URL declares a malformed production_required_when_any",
+    ),
+    "condition_term_unimplemented": (
+        _redis_conditions({"integer_lt": {"variable": "FUFIRE_REPLICA_COUNT", "value": 1}}),
+        "REDIS_URL declares a malformed production_required_when_any",
+    ),
+    "truthy_term_names_no_row": (
+        _redis_conditions({"truthy": "FUFIRE_REQUIRE_REDDIS"}),
+        "REDIS_URL is production_required_when_any truthy 'FUFIRE_REQUIRE_REDDIS', which does not name another contract row",
+    ),
+    "truthy_term_names_itself": (
+        _redis_conditions({"truthy": "REDIS_URL"}),
+        "REDIS_URL is production_required_when_any truthy 'REDIS_URL', which does not name another contract row",
+    ),
+    "truthy_term_on_a_secret": (
+        _redis_conditions({"truthy": "FUFIRE_ADMIN_TOKEN"}),
+        "REDIS_URL is production_required_when_any truthy 'FUFIRE_ADMIN_TOKEN', a secret row",
+    ),
+    "truthy_term_on_a_list_row": (
+        _redis_conditions({"truthy": "CORS_ALLOWED_ORIGINS"}),
+        "REDIS_URL is production_required_when_any truthy 'CORS_ALLOWED_ORIGINS', a list-valued row",
+    ),
+    "integer_term_not_an_object": (
+        _integer_condition(1),
+        r"REDIS_URL is production_required_when_any integer_gt 1, which is not \{",
+    ),
+    "integer_term_without_threshold": (
+        _integer_condition({"variable": "FUFIRE_REPLICA_COUNT"}),
+        "integer_gt .*, which is not",
+    ),
+    "integer_term_with_an_extra_key": (
+        _integer_condition({"variable": "FUFIRE_REPLICA_COUNT", "value": 1, "op": ">"}),
+        "integer_gt .*, which is not",
+    ),
+    "integer_threshold_string": (
+        _integer_condition({"variable": "FUFIRE_REPLICA_COUNT", "value": "1"}),
+        "integer_gt .*, which is not",
+    ),
+    "integer_threshold_bool": (
+        _integer_condition({"variable": "FUFIRE_REPLICA_COUNT", "value": True}),
+        "integer_gt .*, which is not",
+    ),
+    "integer_threshold_float": (
+        _integer_condition({"variable": "FUFIRE_REPLICA_COUNT", "value": 1.0}),
+        "integer_gt .*, which is not",
+    ),
+    "integer_target_names_no_row": (
+        _integer_condition({"variable": "FUFIRE_REPLICA_CONT", "value": 1}),
+        "integer_gt .*'FUFIRE_REPLICA_CONT'.*, which does not name another contract row",
+    ),
+    "integer_target_is_a_secret": (
+        _integer_condition({"variable": "FUFIRE_RL_PEPPER", "value": 1}),
+        "integer_gt .*'FUFIRE_RL_PEPPER'.*, a secret row",
+    ),
+    "integer_target_is_a_list_row": (
+        _integer_condition({"variable": "CORS_ALLOWED_ORIGINS", "value": 1}),
+        "integer_gt .*'CORS_ALLOWED_ORIGINS'.*, a list-valued row",
+    ),
+    "integer_target_without_a_pattern": (
+        _integer_condition({"variable": "FUFIRE_ENV", "value": 1}),
+        "integer_gt .*'FUFIRE_ENV'.*, a row without an unsigned-integer value_pattern",
+    ),
+    "integer_target_with_a_hex_pattern": (
+        lambda d: (
+            _set_row(d, "BUILD_VERSION", value_pattern="^[0-9a-f]+$"),
+            _integer_condition({"variable": "BUILD_VERSION", "value": 1})(d),
+        ),
+        "integer_gt .*'BUILD_VERSION'.*, a row without an unsigned-integer value_pattern",
+    ),
+    "integer_target_with_a_signed_pattern": (
+        lambda d: (
+            _set_row(d, "BUILD_VERSION", value_pattern="^-?[0-9]+$"),
+            _integer_condition({"variable": "BUILD_VERSION", "value": 1})(d),
+        ),
+        "integer_gt .*'BUILD_VERSION'.*, a row without an unsigned-integer value_pattern",
+    ),
+    "integer_target_with_an_unanchored_pattern": (
+        lambda d: (
+            _set_row(d, "BUILD_VERSION", value_pattern="[0-9]+"),
+            _integer_condition({"variable": "BUILD_VERSION", "value": 1})(d),
+        ),
+        "integer_gt .*'BUILD_VERSION'.*, a row without an unsigned-integer value_pattern",
+    ),
+    "item_rule_on_a_scalar_row": (
+        lambda d: _set_row(d, "PORT", production_forbidden_items=["0"]),
+        "PORT declares production_forbidden_items, which reads list items, but its "
+        "presence_semantics 'non_blank' does not read a list",
+    ),
+    "substring_rule_on_a_scalar_row": (
+        lambda d: _set_row(d, "BUILD_VERSION", production_forbidden_item_substrings=["x"]),
+        "BUILD_VERSION declares production_forbidden_item_substrings, which reads list items",
+    ),
+    "item_rule_as_a_string": (
+        lambda d: _set_row(d, "CORS_ALLOWED_ORIGINS", production_forbidden_items="*"),
+        r"CORS_ALLOWED_ORIGINS declares production_forbidden_items '\*'; expected",
+    ),
+    "item_rule_empty": (
+        lambda d: _set_row(d, "CORS_ALLOWED_ORIGINS", production_forbidden_items=[]),
+        r"CORS_ALLOWED_ORIGINS declares production_forbidden_items \[\]; expected",
+    ),
+    "item_rule_non_string": (
+        lambda d: _set_row(d, "CORS_ALLOWED_ORIGINS", production_forbidden_items=[1]),
+        r"CORS_ALLOWED_ORIGINS declares production_forbidden_items \[1\]; expected",
+    ),
+    "item_rule_blank": (
+        lambda d: _set_row(d, "CORS_ALLOWED_ORIGINS", production_forbidden_items=["*", ""]),
+        "CORS_ALLOWED_ORIGINS declares production_forbidden_items .*; expected",
+    ),
+    "item_rule_padded": (
+        lambda d: _set_row(d, "CORS_ALLOWED_ORIGINS", production_forbidden_items=[" *"]),
+        "CORS_ALLOWED_ORIGINS declares production_forbidden_items .*; expected",
+    ),
+    "item_rule_with_a_comma": (
+        lambda d: _set_row(d, "CORS_ALLOWED_ORIGINS", production_forbidden_items=["*,x"]),
+        "CORS_ALLOWED_ORIGINS declares production_forbidden_items .*; expected",
+    ),
+    "substring_rule_blank": (
+        lambda d: _set_row(d, "CORS_ALLOWED_ORIGINS", production_forbidden_item_substrings=[""]),
+        "CORS_ALLOWED_ORIGINS declares production_forbidden_item_substrings .*; expected",
+    ),
+    "misspelt_item_rule_field": (
+        lambda d: _set_row(d, "CORS_ALLOWED_ORIGINS", production_forbidden_item=["*"]),
+        r"CORS_ALLOWED_ORIGINS declares unknown fields \['production_forbidden_item'\]",
+    ),
+    "misspelt_condition_list_field": (
+        lambda d: _set_row(d, "REDIS_URL", production_required_when_anyy=[]),
+        r"REDIS_URL declares unknown fields \['production_required_when_anyy'\]",
+    ),
+    "misspelt_every_profile_blank_policy_field": (
+        lambda d: _set_row(d, "PORT", blank_polcy="invalid"),
+        r"PORT declares unknown fields \['blank_polcy'\]",
+    ),
+    "unknown_every_profile_blank_policy": (
+        lambda d: _set_row(d, "PORT", blank_policy="reject"),
+        "PORT declares unsupported blank_policy 'reject'",
+    ),
+    "non_string_every_profile_blank_policy": (
+        lambda d: _set_row(d, "PORT", blank_policy=True),
+        "PORT declares unsupported blank_policy True",
+    ),
+}
+
+
+class _EnvironmentTrap(dict):
+    """An ``os.environ`` stand-in that fails the test on any read."""
+
+    def _trap(self, *_args: Any, **_kwargs: Any) -> Any:
+        raise AssertionError("contract validation read the process environment")
+
+    __getitem__ = __contains__ = __iter__ = get = keys = items = values = copy = _trap
+
+
+@pytest.mark.parametrize("case", sorted(MALFORMED_PARITY_CONTRACTS))
+def test_malformed_parity_metadata_is_rejected(monkeypatch: pytest.MonkeyPatch, case: str) -> None:
+    """Refused at validation, without reading the environment.
+
+    Validation sees contract metadata only, so no configured value — a Redis URL
+    included — can reach its error text. The trap makes that structural claim a
+    checked one instead of a scan that could never fail.
+    """
+    from bazi_engine.runtime_contract import validate_contract
+
+    mutate, message = MALFORMED_PARITY_CONTRACTS[case]
+    document = _mutated_contract(mutate)
+    monkeypatch.setattr(os, "environ", _EnvironmentTrap())
+    with pytest.raises(RuntimeError, match=f"^runtime contract .*{message}"):
+        validate_contract(document)
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        "condition_vocabulary_missing",
+        "condition_term_unimplemented",
+        "integer_target_without_a_pattern",
+        "item_rule_on_a_scalar_row",
+        "unknown_every_profile_blank_policy",
+    ],
+)
+def test_load_contract_fails_closed_on_malformed_parity_metadata(
+    contract_document, case: str
+) -> None:
+    """On the LOAD path, so the startup guard and the readback both abort."""
+    from bazi_engine import runtime_contract
+
+    mutate, message = MALFORMED_PARITY_CONTRACTS[case]
+    contract_document(mutate)
+    with pytest.raises(RuntimeError, match=f"^runtime contract .*{message}"):
+        runtime_contract.load_contract()
+
+
+@pytest.mark.parametrize(
+    ("row", "raw", "match"),
+    [
+        ({"name": "X", "production_required_when_any": "FLAG"}, "", "malformed production_required_when_any"),
+        ({"name": "X", "production_required_when_any": [{"integer_lt": 1}]}, "", "malformed production_required_when_any"),
+        (
+            {"name": "X", "production_required_when_any": [{"integer_gt": {"variable": "N", "value": "1"}}]},
+            "",
+            "malformed production_required_when_any",
+        ),
+        ({"name": "X", "blank_policy": "reject"}, "", "unsupported blank_policy"),
+        ({"name": "X", "production_forbidden_items": "*"}, "a", "malformed list item rules"),
+        ({"name": "X", "production_forbidden_items": []}, "a,*", "malformed list item rules"),
+        ({"name": "X", "production_forbidden_items": [" *"]}, "a,*", "malformed list item rules"),
+        ({"name": "X", "production_forbidden_items": ["a,*"]}, "a,*", "malformed list item rules"),
+        ({"name": "X", "production_forbidden_item_substrings": [""]}, "a", "malformed list item rules"),
+    ],
+)
+def test_parity_metadata_is_refused_at_use_when_it_bypassed_validation(
+    row: dict[str, Any], raw: str, match: str
+) -> None:
+    """Second line of defence for a row that bypassed load-time validation."""
+    from bazi_engine.runtime_contract import PROFILE_PRODUCTION, _variable_issue
+
+    with pytest.raises(RuntimeError, match=match):
+        _variable_issue(row, raw, PROFILE_PRODUCTION, {"FLAG": "true", "N": "5"})
