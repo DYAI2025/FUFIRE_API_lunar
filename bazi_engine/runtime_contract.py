@@ -39,7 +39,7 @@ import secrets
 import sys
 from datetime import datetime, timezone
 from functools import lru_cache
-from typing import Any, Callable, Mapping, Optional, Sequence
+from typing import Any, Callable, Iterable, Mapping, Optional, Sequence
 
 from .resource_loader import load_json_object_resource
 
@@ -93,6 +93,67 @@ _VALUE_LIST_FIELDS = (
     "production_forbidden_values",
 )
 
+# Presence is contract data in the same way. A row may declare
+# ``presence_semantics`` (how its consumer decides the variable is configured at
+# all), ``production_blank_policy`` (whether a set-but-blank value is refused
+# instead of read as absent) and a conditional requirement on a truthy flag row.
+# The contract's ``presence_semantics`` and ``blank_policies`` blocks name the
+# vocabulary; these tables only IMPLEMENT it and name no variable.
+DEFAULT_PRESENCE_SEMANTICS = "non_blank"
+_PRESENCE_TESTS: dict[str, Callable[[str], bool]] = {
+    "non_blank": lambda raw: raw.strip() != "",
+    "comma_separated_non_empty_items": lambda raw: any(item.strip() for item in raw.split(",")),
+}
+# Presence forms that read the value as a list of items rather than one value.
+_LIST_PRESENCE_SEMANTICS = frozenset({"comma_separated_non_empty_items"})
+# Rules that compare the WHOLE value as a single scalar. Read against a list
+# they would refuse a valid multi-item value, so a list row may not declare
+# them. ``production_forbidden_values`` stays legal on a list row: a whole-value
+# match implies the list consists of exactly that item.
+_SCALAR_VALUE_RULES = (
+    "allowed_values",
+    "production_allowed_values",
+    "value_pattern",
+    "production_required_truthy",
+    "production_forbidden_truthy",
+)
+DEFAULT_BLANK_POLICY = "unset"
+BLANK_POLICY_INVALID = "invalid"
+_BLANK_POLICIES = frozenset({DEFAULT_BLANK_POLICY, BLANK_POLICY_INVALID})
+# Conditional-requirement fields and the one profile each is scoped to (None:
+# every profile). The field's value names the flag row whose truthiness makes
+# the declaring row required.
+_CONDITIONAL_REQUIREMENT_FIELDS: dict[str, Optional[str]] = {
+    "required_when_truthy": None,
+    "production_required_when_truthy": PROFILE_PRODUCTION,
+}
+# Every field a variable row may carry. A misspelt field would otherwise be
+# silently ignored — and with it the rule it was meant to declare.
+_KNOWN_ROW_FIELDS = frozenset(
+    {
+        "name",
+        "owner_area",
+        "consumer",
+        "secret",
+        "required_profiles",
+        "readback",
+        "fail_closed",
+        "description",
+        "constraints",
+        "required_when",
+        "satisfied_by",
+        "safe_default_values",
+        "evidence_variable",
+        "value_pattern",
+        "value_normalization",
+        "presence_semantics",
+        "production_blank_policy",
+        *_VALUE_LIST_FIELDS,
+        *_SCALAR_VALUE_RULES,
+        *_CONDITIONAL_REQUIREMENT_FIELDS,
+    }
+)
+
 
 def _truthy(value: Optional[str]) -> bool:
     return (value or "").strip().lower() in _TRUTHY
@@ -120,56 +181,115 @@ def load_contract() -> dict[str, Any]:
 
 
 def validate_contract(document: Mapping[str, Any]) -> None:
-    """Refuse a contract whose comparison metadata is malformed (fail-closed).
+    """Refuse a contract whose comparison or presence metadata is malformed.
 
-    A contract that names an unsupported comparison form, declares a value list
-    in a spelling its own form could never match, or lets a production allowlist
-    escape its allowed set is rejected here instead of being loaded with a
-    silently-defaulted comparison.
+    A contract that names an unsupported comparison or presence form, declares a
+    value list in a spelling its own form could never match, lets a production
+    allowlist escape its allowed set, conditions a requirement on a missing,
+    secret or list-valued row, or carries a duplicate row or a field this engine
+    does not know is rejected here instead of being loaded with a
+    silently-defaulted rule (fail-closed).
     """
-    vocabulary = _validated_vocabulary(document.get("value_normalizations"))
+    normalizations = _validated_vocabulary(
+        document, "value_normalizations", DEFAULT_VALUE_NORMALIZATION, _VALUE_NORMALIZERS,
+        "value normalizations",
+    )
+    presence = _validated_vocabulary(
+        document, "presence_semantics", DEFAULT_PRESENCE_SEMANTICS, _PRESENCE_TESTS,
+        "presence semantics",
+    )
+    blank_policies = _validated_vocabulary(
+        document, "blank_policies", DEFAULT_BLANK_POLICY, _BLANK_POLICIES, "blank policies"
+    )
+    _validate_conditional_vocabulary(document.get("conditional_requirements"))
     rows = _validated_rows(document.get("variables"))
-    names = {entry["name"] for entry in rows}
+    by_name = {entry["name"]: entry for entry in rows}
     for entry in rows:
-        form = _validated_row_form(entry, vocabulary)
+        _validate_known_fields(entry)
+        form = _validated_row_form(entry, normalizations)
         _validate_value_lists(entry, form)
-        _validate_satisfied_by(entry, names)
+        _validate_presence(entry, presence, blank_policies)
+    # Cross-row rules read OTHER rows' metadata, so they run only once every
+    # row's own tokens are known to be well-formed.
+    for entry in rows:
+        _validate_satisfied_by(entry, set(by_name))
+        _validate_conditional_requirements(entry, by_name)
     _validate_production_profile_values(document, rows)
 
 
 def _validated_rows(raw: object) -> list[Mapping[str, Any]]:
-    if isinstance(raw, list) and all(
+    if not isinstance(raw, list) or not all(
         isinstance(entry, Mapping) and isinstance(entry.get("name"), str) for entry in raw
     ):
-        return raw
-    raise RuntimeError(
-        "runtime contract must declare variables as a list of rows that each "
-        "carry a string name"
-    )
-
-
-def _validated_vocabulary(raw: object) -> frozenset[str]:
-    if not isinstance(raw, Mapping) or DEFAULT_VALUE_NORMALIZATION not in raw:
         raise RuntimeError(
-            "runtime contract must declare a value_normalizations vocabulary "
-            f"that includes the default {DEFAULT_VALUE_NORMALIZATION!r}"
+            "runtime contract must declare variables as a list of rows that each "
+            "carry a string name"
         )
-    unimplemented = sorted(set(raw) - set(_VALUE_NORMALIZERS))
+    # Lookups by name resolve to one row; a duplicate would silently shadow the
+    # rules of the other.
+    names = [entry["name"] for entry in raw]
+    duplicates = sorted({name for name in names if names.count(name) > 1})
+    if duplicates:
+        raise RuntimeError(f"runtime contract declares duplicate variable rows {duplicates}")
+    return raw
+
+
+def _validated_vocabulary(
+    document: Mapping[str, Any],
+    block: str,
+    default: str,
+    implemented: Iterable[str],
+    noun: str,
+) -> frozenset[str]:
+    """A contract vocabulary block: must name its default and nothing unimplemented."""
+    raw = document.get(block)
+    if not isinstance(raw, Mapping) or default not in raw:
+        raise RuntimeError(
+            f"runtime contract must declare a {block} vocabulary "
+            f"that includes the default {default!r}"
+        )
+    unimplemented = sorted(set(raw) - set(implemented))
     if unimplemented:
         raise RuntimeError(
-            f"runtime contract declares value normalizations this engine does not "
-            f"implement: {unimplemented}"
+            f"runtime contract declares {noun} this engine does not implement: {unimplemented}"
         )
     return frozenset(raw)
 
 
+def _validate_conditional_vocabulary(raw: object) -> None:
+    """The conditional-requirement block names exactly the fields implemented here."""
+    implemented = set(_CONDITIONAL_REQUIREMENT_FIELDS)
+    if not isinstance(raw, Mapping) or set(raw) != implemented:
+        declared = sorted(raw) if isinstance(raw, Mapping) else raw
+        raise RuntimeError(
+            "runtime contract must declare a conditional_requirements vocabulary naming "
+            f"exactly the implemented fields {sorted(implemented)}, not {declared!r}"
+        )
+
+
+def _validated_row_token(
+    entry: Mapping[str, Any], field: str, default: str, vocabulary: frozenset[str]
+) -> str:
+    token = entry.get(field, default)
+    if not isinstance(token, str) or token not in vocabulary:
+        raise RuntimeError(
+            f"runtime contract row {entry.get('name')} declares unsupported {field} {token!r}"
+        )
+    return token
+
+
+def _validate_known_fields(entry: Mapping[str, Any]) -> None:
+    unknown = sorted(set(entry) - _KNOWN_ROW_FIELDS)
+    if unknown:
+        raise RuntimeError(
+            f"runtime contract row {entry['name']} declares unknown fields {unknown}; "
+            "an unrecognised field would be silently ignored"
+        )
+
+
 def _validated_row_form(entry: Mapping[str, Any], vocabulary: frozenset[str]) -> str:
     name = entry.get("name")
-    form = entry.get("value_normalization", DEFAULT_VALUE_NORMALIZATION)
-    if not isinstance(form, str) or form not in vocabulary:
-        raise RuntimeError(
-            f"runtime contract row {name} declares unsupported value_normalization {form!r}"
-        )
+    form = _validated_row_token(entry, "value_normalization", DEFAULT_VALUE_NORMALIZATION, vocabulary)
     # A comparison form only means something for a closed value set. Allowing it
     # elsewhere would quietly widen value_pattern rows and free-form values.
     if form != DEFAULT_VALUE_NORMALIZATION and "allowed_values" not in entry:
@@ -218,6 +338,53 @@ def _validate_satisfied_by(entry: Mapping[str, Any], names: set[str]) -> None:
             f"runtime contract row {entry['name']} is satisfied_by {alternatives!r}, "
             "which does not name contract rows"
         )
+
+
+def _validate_presence(
+    entry: Mapping[str, Any], presence: frozenset[str], blank_policies: frozenset[str]
+) -> None:
+    form = _validated_row_token(entry, "presence_semantics", DEFAULT_PRESENCE_SEMANTICS, presence)
+    _validated_row_token(entry, "production_blank_policy", DEFAULT_BLANK_POLICY, blank_policies)
+    if form not in _LIST_PRESENCE_SEMANTICS:
+        return
+    clash = [field for field in _SCALAR_VALUE_RULES if field in entry]
+    if clash:
+        raise RuntimeError(
+            f"runtime contract row {entry['name']} reads its value as a list but also "
+            f"declares {clash[0]}, which compares the whole value as one scalar"
+        )
+
+
+def _validate_conditional_requirements(
+    entry: Mapping[str, Any], by_name: Mapping[str, Mapping[str, Any]]
+) -> None:
+    """A conditional requirement must name ANOTHER row, neither secret nor a list.
+
+    The flag row is read with the engine's truthy set, which is only meaningful
+    for a scalar switch: credential material or a list-valued row can never be
+    the switch that makes another row required.
+    """
+    name = entry["name"]
+    for field in _CONDITIONAL_REQUIREMENT_FIELDS:
+        if field not in entry:
+            continue
+        flag = entry[field]
+        if not isinstance(flag, str) or flag == name or flag not in by_name:
+            raise RuntimeError(
+                f"runtime contract row {name} is {field} {flag!r}, which does not name "
+                "another contract row"
+            )
+        flag_row = by_name[flag]
+        if flag_row.get("secret") is not False:
+            raise RuntimeError(
+                f"runtime contract row {name} is {field} {flag!r}, a secret row; "
+                "credential material is never a switch"
+            )
+        if flag_row.get("presence_semantics", DEFAULT_PRESENCE_SEMANTICS) in _LIST_PRESENCE_SEMANTICS:
+            raise RuntimeError(
+                f"runtime contract row {name} is {field} {flag!r}, a list-valued row; "
+                "only a scalar flag can be truthy"
+            )
 
 
 def _validate_production_profile_values(
@@ -507,12 +674,47 @@ def proxy_trust_violation(env: Optional[Mapping[str, str]] = None) -> Optional[s
 
 # ── Readback evaluation ──────────────────────────────────────────────────────
 
-def _is_configured(raw: Optional[str]) -> bool:
-    return raw is not None and raw.strip() != ""
+def is_configured(entry: Mapping[str, Any], raw: Optional[str]) -> bool:
+    """True when ``raw`` counts as configured under the row's presence semantics.
+
+    The row's declared ``presence_semantics`` decides — ``non_blank`` when it
+    declares none — so a comma-only key list is unconfigured exactly where its
+    consumer parses zero items, without the evaluator knowing which row that is.
+    """
+    form = entry.get("presence_semantics", DEFAULT_PRESENCE_SEMANTICS)
+    test = _PRESENCE_TESTS.get(form) if isinstance(form, str) else None
+    if test is None:
+        raise RuntimeError(
+            f"runtime contract declares an unsupported presence_semantics {form!r}; "
+            "refusing to evaluate presence (fail-closed)"
+        )
+    return raw is not None and test(raw)
 
 
-def _required_here(entry: Mapping[str, Any], profile: str) -> bool:
-    return profile in entry.get("required_profiles", [])
+def _requirement(
+    entry: Mapping[str, Any], profile: str, source: Mapping[str, str]
+) -> Optional[str]:
+    """Why the row is required in this deployment, or None when it is not.
+
+    A row is required by its ``required_profiles``, or by a conditional
+    requirement whose flag row is truthy in a profile the field is scoped to.
+    """
+    name = entry["name"]
+    if profile in entry.get("required_profiles", []):
+        return f"{name} is required in the {profile} profile"
+    for field, scope in _CONDITIONAL_REQUIREMENT_FIELDS.items():
+        if field not in entry or scope not in (None, profile):
+            continue
+        flag = entry[field]
+        if not isinstance(flag, str) or not flag:
+            raise RuntimeError(
+                f"runtime contract row {name} declares a malformed {field} {flag!r}; "
+                "refusing to evaluate its requirement (fail-closed)"
+            )
+        if _truthy(source.get(flag)):
+            where = "" if scope is None else f" in the {profile} profile"
+            return f"{name} is required because {flag} is enabled{where}"
+    return None
 
 
 def _satisfied_by_alternative(
@@ -521,11 +723,32 @@ def _satisfied_by_alternative(
     for alternative in entry.get("satisfied_by", []):
         name = str(alternative)
         row = variable(name) or {}
-        value = normalise_value(row, source.get(name))
-        # The null backend is compared in the row's declared form as well.
-        if value and value != normalise_value(row, "none"):
+        raw = source.get(name)
+        # Presence and the null backend are both read in the row's declared form.
+        if is_configured(row, raw) and normalise_value(row, raw) != normalise_value(row, "none"):
             return True
     return False
+
+
+def _blank_issue(
+    entry: Mapping[str, Any], raw: Optional[str], profile: str
+) -> Optional[tuple[str, str]]:
+    """A set-but-blank value on a row whose consumer refuses blank, else None."""
+    policy = entry.get("production_blank_policy", DEFAULT_BLANK_POLICY)
+    if not isinstance(policy, str) or policy not in _BLANK_POLICIES:
+        raise RuntimeError(
+            f"runtime contract declares an unsupported production_blank_policy {policy!r}; "
+            "refusing to evaluate blank values (fail-closed)"
+        )
+    if policy != BLANK_POLICY_INVALID or profile != PROFILE_PRODUCTION:
+        return None
+    if raw is None or raw.strip():
+        return None
+    return (
+        "blank_value",
+        f"{entry['name']} is set but blank; in the {profile} profile its consumer "
+        "applies the default only when the variable is absent",
+    )
 
 
 def _variable_issue(
@@ -536,12 +759,17 @@ def _variable_issue(
 ) -> Optional[tuple[str, str]]:
     """Return ``(code, message)`` for the first violated rule, else None."""
     name = entry["name"]
-    configured = _is_configured(raw)
+    configured = is_configured(entry, raw)
     production = profile == PROFILE_PRODUCTION
 
-    if _required_here(entry, profile) and not configured:
+    requirement = _requirement(entry, profile, source)
+    if requirement is not None and not configured:
         if not _satisfied_by_alternative(entry, source):
-            return ("missing_required", f"{name} is required in the {profile} profile")
+            return ("missing_required", requirement)
+
+    blank = _blank_issue(entry, raw, profile)
+    if blank is not None:
+        return blank
 
     if production and entry.get("production_required_truthy") and not _truthy(raw):
         return ("must_be_enabled", f"{name} must be enabled in the {profile} profile")
@@ -588,9 +816,10 @@ def _variable_record(
     entry: Mapping[str, Any],
     raw: Optional[str],
     profile: str,
+    source: Mapping[str, str],
     issue: Optional[tuple[str, str]],
 ) -> dict[str, Any]:
-    configured = _is_configured(raw)
+    configured = is_configured(entry, raw)
     record: dict[str, Any] = {
         "name": entry["name"],
         "ownerArea": entry["owner_area"],
@@ -599,7 +828,7 @@ def _variable_record(
         "configured": configured,
         "valid": issue is None,
         "sourceClass": "env" if configured else "unset",
-        "requiredHere": _required_here(entry, profile),
+        "requiredHere": _requirement(entry, profile, source) is not None,
         "readback": entry["readback"],
         "failClosed": entry["fail_closed"],
     }
@@ -647,7 +876,7 @@ def evaluate(env: Optional[Mapping[str, str]] = None) -> dict[str, Any]:
     for entry in variables():
         raw = source.get(entry["name"])
         issue = _variable_issue(entry, raw, profile, source)
-        records.append(_variable_record(entry, raw, profile, issue))
+        records.append(_variable_record(entry, raw, profile, source, issue))
         if issue is not None:
             violations.append(
                 {"variable": entry["name"], "code": issue[0], "message": issue[1]}

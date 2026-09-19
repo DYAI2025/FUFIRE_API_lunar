@@ -1208,3 +1208,764 @@ def test_normalise_value_refuses_an_unsupported_form_at_use() -> None:
 
     with pytest.raises(RuntimeError, match="value_normalization"):
         normalise_value({"name": "X", "value_normalization": "casefold"}, "value")
+
+
+# ── FUF-159: presence semantics are declared by the contract, per row ───────
+#
+# The readback used ONE notion of "configured" for every row: a value that is
+# non-blank after trimming. Three consumers read presence differently, and each
+# difference let the readback go green on a deployment the real startup refuses:
+#
+#   R1  FUFIRE_ENV       required whenever FUFIRE_REQUIRE_EXPLICIT_ENV is truthy,
+#                        in EVERY profile — the readback only knew "required in
+#                        production", so an unset profile was a valid development
+#                        deployment to the readback and a startup abort to the guard.
+#   R2  FUFIRE_API_KEYS  auth._load_keys splits on commas and drops blank items, so
+#                        "," is ZERO keys and production refuses to start; the
+#                        readback saw a non-blank string and called it configured.
+#   R3  EPHEMERIS_MODE   the production guard's SWIEPH default applies only when the
+#                        variable is ABSENT; a set-but-blank value reaches the guard
+#                        as "" and is refused. The readback read blank as unset.
+#
+# The same measurement (a differential sweep of startup against readback) found
+# two more rows in this exact class, fixed with the same vocabulary:
+#
+#   FUFIRE_ZWDS_SIGNOFF_ID  required in production whenever FUFIRE_ENABLE_ZWDS is truthy
+#   CORS_ALLOWED_ORIGINS    parsed as a comma list; "," is an empty allowlist
+#
+# Every test below pits the REAL consumer against the packaged readback CLI in a
+# fresh process, and asserts the consumer's verdict FIRST: agreement in the
+# wrong direction (both accepting a broken deployment) cannot pass.
+
+
+def _startup_verdict(monkeypatch: pytest.MonkeyPatch, env: dict[str, str]) -> tuple[bool, str]:
+    """Run the real startup guard against ``env``. Returns (started, reason)."""
+    from bazi_engine.config_guard import assert_runtime_config
+
+    _apply(monkeypatch, env)
+    try:
+        assert_runtime_config()
+    except RuntimeError as exc:
+        return False, str(exc)
+    return True, ""
+
+
+def _assert_readback_agrees(started: bool, reason: str, env: dict[str, str]) -> dict[str, Any]:
+    rc, out = _readback(env)
+    payload = json.loads(out)
+    assert payload["valid"] is started, (
+        f"startup {'accepted' if started else f'refused ({reason})'} this deployment but "
+        f"the readback reports valid={payload['valid']} with violations {payload['violations']}"
+    )
+    assert (rc == 0) is started, out
+    return payload
+
+
+def _record(payload: dict[str, Any], name: str) -> dict[str, Any]:
+    return {r["name"]: r for r in payload["variables"]}[name]
+
+
+def _production(**overrides: str | None) -> dict[str, str]:
+    """A complete production deployment; ``None`` removes a variable."""
+    env = dict(PRODUCTION_COMPLETE_ENV, FUFIRE_ENV="production")
+    for name, value in overrides.items():
+        if value is None:
+            env.pop(name, None)
+        else:
+            env[name] = value
+    return env
+
+
+TRUTHY_FLAG_SPELLINGS = ("1", "true", "TRUE", " yes ", "on")
+FALSY_FLAG_SPELLINGS = (None, "", "  ", "0", "false", "off")
+ABSENT_OR_BLANK = (None, "", "   ")
+
+
+# ── R1 — explicit environment requirement ────────────────────────────────────
+
+def test_explicit_env_requirement_agrees_across_startup_and_readback(
+    clean_contract_env: pytest.MonkeyPatch,
+) -> None:
+    """R1 (FUF-159): FUFIRE_REQUIRE_EXPLICIT_ENV=true without FUFIRE_ENV.
+
+    Every container image bakes the flag, so this is exactly the deployment
+    that forgot to declare its profile. Startup refuses it; the readback must.
+    """
+    env = {"FUFIRE_REQUIRE_EXPLICIT_ENV": "true"}
+
+    started, reason = _startup_verdict(clean_contract_env, env)
+    assert started is False
+    assert "FUFIRE_ENV must be set explicitly" in reason
+
+    payload = _assert_readback_agrees(started, reason, env)
+    record = _record(payload, "FUFIRE_ENV")
+    assert record["valid"] is False, record
+    assert record["issue"] == "missing_required", record
+    assert record["requiredHere"] is True, record
+
+
+@pytest.mark.parametrize("profile", ABSENT_OR_BLANK)
+@pytest.mark.parametrize("flag", TRUTHY_FLAG_SPELLINGS)
+def test_every_truthy_explicit_env_flag_requires_a_declared_profile(
+    clean_contract_env: pytest.MonkeyPatch, flag: str, profile: str | None
+) -> None:
+    env = {"FUFIRE_REQUIRE_EXPLICIT_ENV": flag}
+    if profile is not None:
+        env["FUFIRE_ENV"] = profile
+
+    started, reason = _startup_verdict(clean_contract_env, env)
+    assert started is False, f"flag={flag!r} profile={profile!r} started"
+
+    payload = _assert_readback_agrees(started, reason, env)
+    assert _record(payload, "FUFIRE_ENV")["issue"] == "missing_required"
+
+
+@pytest.mark.parametrize("flag", FALSY_FLAG_SPELLINGS)
+def test_local_development_without_the_explicit_env_flag_stays_valid(
+    clean_contract_env: pytest.MonkeyPatch, flag: str | None
+) -> None:
+    """Canary: the permissive local case must not become a violation."""
+    env = {} if flag is None else {"FUFIRE_REQUIRE_EXPLICIT_ENV": flag}
+
+    started, reason = _startup_verdict(clean_contract_env, env)
+    assert started is True, reason
+
+    payload = _assert_readback_agrees(started, reason, env)
+    record = _record(payload, "FUFIRE_ENV")
+    assert record["valid"] is True, record
+    assert record["requiredHere"] is False, record
+
+
+@pytest.mark.parametrize(
+    "env",
+    [
+        pytest.param({"FUFIRE_REQUIRE_EXPLICIT_ENV": "true", "FUFIRE_ENV": "dev"}, id="dev"),
+        pytest.param(
+            {"FUFIRE_REQUIRE_EXPLICIT_ENV": "true", "FUFIRE_ENV": "Local"}, id="local-mixed-case"
+        ),
+        pytest.param(dict(_production(), FUFIRE_REQUIRE_EXPLICIT_ENV="1"), id="production"),
+    ],
+)
+def test_an_explicitly_declared_profile_satisfies_the_explicit_env_flag(
+    clean_contract_env: pytest.MonkeyPatch, env: dict[str, str]
+) -> None:
+    started, reason = _startup_verdict(clean_contract_env, env)
+    assert started is True, reason
+    _assert_readback_agrees(started, reason, env)
+
+
+def test_explicit_env_flag_does_not_rescue_an_uncontracted_profile(
+    clean_contract_env: pytest.MonkeyPatch,
+) -> None:
+    """Present is not enough: the declared profile must also be a contracted one."""
+    env = {"FUFIRE_REQUIRE_EXPLICIT_ENV": "true", "FUFIRE_ENV": "prodcution"}
+
+    started, reason = _startup_verdict(clean_contract_env, env)
+    assert started is False
+
+    payload = _assert_readback_agrees(started, reason, env)
+    assert _record(payload, "FUFIRE_ENV")["issue"] == "invalid_value"
+
+
+# ── R2 — semantically empty API-key lists ────────────────────────────────────
+
+SEMANTICALLY_EMPTY_KEY_LISTS = ("", " ", ",", ",,", " , , ")
+CONFIGURED_KEY_LISTS = ("ff_free_abc", "ff_free_abc,", ",ff_free_abc", "ff_free_abc,ff_pro_xyz")
+
+
+def test_comma_only_api_keys_agree_across_auth_loader_startup_and_readback(
+    clean_contract_env: pytest.MonkeyPatch,
+) -> None:
+    """R2 (FUF-159): FUFIRE_API_KEYS="," is zero keys to the auth loader."""
+    from bazi_engine.auth import _load_keys
+
+    env = _production(FUFIRE_API_KEYS=",", KEY_STORE_BACKEND="none")
+
+    started, reason = _startup_verdict(clean_contract_env, env)
+    assert _load_keys() == frozenset()
+    assert started is False
+    assert "auth disabled" in reason
+
+    payload = _assert_readback_agrees(started, reason, env)
+    record = _record(payload, "FUFIRE_API_KEYS")
+    assert record["configured"] is False, record
+    assert record["issue"] == "missing_required", record
+
+
+@pytest.mark.parametrize("keys", SEMANTICALLY_EMPTY_KEY_LISTS)
+def test_no_semantically_empty_key_list_satisfies_production(
+    clean_contract_env: pytest.MonkeyPatch, keys: str
+) -> None:
+    from bazi_engine.auth import _load_keys
+
+    env = _production(FUFIRE_API_KEYS=keys, KEY_STORE_BACKEND="none")
+
+    started, reason = _startup_verdict(clean_contract_env, env)
+    assert _load_keys() == frozenset(), f"FUFIRE_API_KEYS={keys!r} loaded keys"
+    assert started is False
+
+    payload = _assert_readback_agrees(started, reason, env)
+    record = _record(payload, "FUFIRE_API_KEYS")
+    assert record["configured"] is False, record
+    assert record["issue"] == "missing_required", record
+
+
+@pytest.mark.parametrize("keys", CONFIGURED_KEY_LISTS)
+def test_a_real_key_list_satisfies_production_without_being_echoed(
+    clean_contract_env: pytest.MonkeyPatch, keys: str
+) -> None:
+    from bazi_engine.auth import _load_keys
+
+    env = _production(FUFIRE_API_KEYS=keys, KEY_STORE_BACKEND="none")
+
+    started, reason = _startup_verdict(clean_contract_env, env)
+    assert _load_keys(), f"FUFIRE_API_KEYS={keys!r} loaded no keys"
+    assert started is True, reason
+
+    payload = _assert_readback_agrees(started, reason, env)
+    record = _record(payload, "FUFIRE_API_KEYS")
+    assert record["configured"] is True, record
+    assert "value" not in record, record
+    serialized = json.dumps(payload)
+    for key in (k.strip() for k in keys.split(",") if k.strip()):
+        assert key not in serialized, "the readback echoed a configured API key"
+
+
+@pytest.mark.parametrize("keys", (None, *SEMANTICALLY_EMPTY_KEY_LISTS))
+def test_a_configured_key_store_still_satisfies_production(
+    clean_contract_env: pytest.MonkeyPatch, keys: str | None
+) -> None:
+    """The KeyStore alternative is unchanged by the key-list presence rule."""
+    env = _production(FUFIRE_API_KEYS=keys, KEY_STORE_BACKEND="memory")
+
+    started, reason = _startup_verdict(clean_contract_env, env)
+    assert started is True, reason
+    _assert_readback_agrees(started, reason, env)
+
+
+# ── R3 — blank ephemeris mode ────────────────────────────────────────────────
+
+BLANK_SPELLINGS = ("", " ", "\t")
+
+
+def test_blank_ephemeris_mode_agrees_across_production_guard_and_readback(
+    clean_contract_env: pytest.MonkeyPatch,
+) -> None:
+    """R3 (FUF-159): the guard's SWIEPH default applies to an ABSENT value only."""
+    env = _production(EPHEMERIS_MODE="")
+
+    started, reason = _startup_verdict(clean_contract_env, env)
+    assert started is False
+    assert "EPHEMERIS_MODE=SWIEPH only" in reason
+
+    payload = _assert_readback_agrees(started, reason, env)
+    record = _record(payload, "EPHEMERIS_MODE")
+    assert record["valid"] is False, record
+    assert record["issue"] == "blank_value", record
+
+
+@pytest.mark.parametrize("blank", BLANK_SPELLINGS)
+def test_every_blank_ephemeris_spelling_is_refused_in_production(
+    clean_contract_env: pytest.MonkeyPatch, blank: str
+) -> None:
+    env = _production(EPHEMERIS_MODE=blank)
+
+    started, reason = _startup_verdict(clean_contract_env, env)
+    assert started is False, f"EPHEMERIS_MODE={blank!r} started in production"
+
+    payload = _assert_readback_agrees(started, reason, env)
+    assert _record(payload, "EPHEMERIS_MODE")["issue"] == "blank_value"
+
+
+def test_unset_ephemeris_mode_follows_the_production_default(
+    clean_contract_env: pytest.MonkeyPatch,
+) -> None:
+    """Canary: ABSENT keeps the guard's SWIEPH default — valid to both."""
+    env = _production(EPHEMERIS_MODE=None)
+
+    started, reason = _startup_verdict(clean_contract_env, env)
+    assert started is True, reason
+
+    payload = _assert_readback_agrees(started, reason, env)
+    assert _record(payload, "EPHEMERIS_MODE")["valid"] is True
+
+
+def test_blank_ephemeris_mode_outside_production_keeps_its_current_verdict(
+    clean_contract_env: pytest.MonkeyPatch,
+) -> None:
+    """The blank rule is production-scoped because the refusing consumer is.
+
+    Outside production no startup check reads EPHEMERIS_MODE, so the readback
+    must not invent one.
+    """
+    env = {"FUFIRE_ENV": "dev", "EPHEMERIS_MODE": ""}
+
+    started, reason = _startup_verdict(clean_contract_env, env)
+    assert started is True, reason
+    _assert_readback_agrees(started, reason, env)
+
+
+@pytest.mark.swieph
+def test_the_backend_reads_an_empty_ephemeris_mode_as_its_default(
+    clean_contract_env: pytest.MonkeyPatch,
+) -> None:
+    """Evidence for the scope above: the calculation backend accepts ``""``."""
+    from bazi_engine.ephemeris import SwissEphBackend
+
+    _apply_with_host_ephemeris(clean_contract_env, {"FUFIRE_ENV": "dev", "EPHEMERIS_MODE": ""})
+    assert SwissEphBackend().mode == "SWIEPH"
+
+
+@pytest.mark.xfail(
+    strict=True,
+    raises=ValueError,
+    reason=(
+        "FINDING, same root cause as the padded-spelling xfail above and outside this "
+        "slice (ephemeris.py is frozen): outside production a whitespace-only "
+        "EPHEMERIS_MODE is valid to startup and readback alike — no startup check reads "
+        "it there — but SwissEphBackend does not strip it and raises 'Unsupported "
+        "ephemeris mode' at first use. strict=True turns this red once the backend strips."
+    ),
+)
+@pytest.mark.swieph
+@pytest.mark.parametrize("blank", [b for b in BLANK_SPELLINGS if b])
+def test_the_backend_reads_a_whitespace_only_ephemeris_mode_as_its_default(
+    clean_contract_env: pytest.MonkeyPatch, blank: str
+) -> None:
+    """The premise is asserted first, so only the backend step can be the xfail."""
+    from bazi_engine.ephemeris import SwissEphBackend
+
+    env = {"FUFIRE_ENV": "dev", "EPHEMERIS_MODE": blank}
+    started, reason = _startup_verdict(clean_contract_env, env)
+    assert started is True, reason
+    _assert_readback_agrees(started, reason, env)
+
+    _apply_with_host_ephemeris(clean_contract_env, env)
+    assert SwissEphBackend().mode == "SWIEPH"
+
+
+# ── Same class, found by the sweep: ZWDS sign-off and the CORS allowlist ─────
+
+@pytest.mark.parametrize("signoff", ABSENT_OR_BLANK)
+@pytest.mark.parametrize("flag", TRUTHY_FLAG_SPELLINGS)
+def test_production_zwds_without_a_sign_off_agrees_across_startup_and_readback(
+    clean_contract_env: pytest.MonkeyPatch, flag: str, signoff: str | None
+) -> None:
+    env = _production(FUFIRE_ENABLE_ZWDS=flag, FUFIRE_ZWDS_SIGNOFF_ID=signoff)
+
+    started, reason = _startup_verdict(clean_contract_env, env)
+    assert started is False
+    assert "FUFIRE_ZWDS_SIGNOFF_ID" in reason
+
+    payload = _assert_readback_agrees(started, reason, env)
+    record = _record(payload, "FUFIRE_ZWDS_SIGNOFF_ID")
+    assert record["issue"] == "missing_required", record
+    assert record["requiredHere"] is True, record
+
+
+@pytest.mark.parametrize(
+    ("env", "required_here"),
+    [
+        pytest.param(
+            _production(FUFIRE_ENABLE_ZWDS="true", FUFIRE_ZWDS_SIGNOFF_ID="REL-42"),
+            True,
+            id="production-signed-off",
+        ),
+        pytest.param(_production(FUFIRE_ENABLE_ZWDS="false"), False, id="production-disabled"),
+        pytest.param({"FUFIRE_ENV": "dev", "FUFIRE_ENABLE_ZWDS": "true"}, False, id="dev-unsigned"),
+    ],
+)
+def test_zwds_sign_off_rule_stays_scoped_to_enabled_production(
+    clean_contract_env: pytest.MonkeyPatch, env: dict[str, str], required_here: bool
+) -> None:
+    started, reason = _startup_verdict(clean_contract_env, env)
+    assert started is True, reason
+    payload = _assert_readback_agrees(started, reason, env)
+    assert _record(payload, "FUFIRE_ZWDS_SIGNOFF_ID")["requiredHere"] is required_here
+
+
+@pytest.mark.parametrize("origins", (",", ",,", " , , "))
+def test_comma_only_cors_allowlist_agrees_across_startup_and_readback(
+    clean_contract_env: pytest.MonkeyPatch, origins: str
+) -> None:
+    env = _production(CORS_ALLOWED_ORIGINS=origins)
+
+    started, reason = _startup_verdict(clean_contract_env, env)
+    assert started is False
+    assert "explicit CORS_ALLOWED_ORIGINS allowlist" in reason
+
+    payload = _assert_readback_agrees(started, reason, env)
+    record = _record(payload, "CORS_ALLOWED_ORIGINS")
+    assert record["configured"] is False, record
+    assert record["issue"] == "missing_required", record
+
+
+@pytest.mark.parametrize("origins", ("https://bazodiac.space,", ",https://bazodiac.space"))
+def test_a_cors_allowlist_with_stray_commas_stays_valid(
+    clean_contract_env: pytest.MonkeyPatch, origins: str
+) -> None:
+    env = _production(CORS_ALLOWED_ORIGINS=origins)
+
+    started, reason = _startup_verdict(clean_contract_env, env)
+    assert started is True, reason
+    _assert_readback_agrees(started, reason, env)
+
+
+# ── The verdicts follow the contract metadata, not variable names ────────────
+#
+# In-process, against a contract document swapped in on the load path. Removing
+# a row's metadata must flip the verdict back (so the packaged verdict comes
+# from the metadata), and moving it onto an unrelated row must move the rule
+# with it (so the evaluator implements a vocabulary, not a name map).
+
+
+@pytest.fixture
+def contract_document(monkeypatch: pytest.MonkeyPatch):
+    """Yield a function that swaps a mutated contract onto the load path."""
+    from bazi_engine import runtime_contract
+
+    def install(mutate) -> None:
+        document = _mutated_contract(mutate)
+        monkeypatch.setattr(
+            runtime_contract, "load_json_object_resource", lambda package, resource: document
+        )
+        runtime_contract.load_contract.cache_clear()
+
+    yield install
+    runtime_contract.load_contract.cache_clear()
+
+
+def _drop_field(name: str, field: str):
+    def mutate(document: dict[str, Any]) -> None:
+        next(e for e in document["variables"] if e["name"] == name).pop(field)
+
+    return mutate
+
+
+def _evaluate(env: dict[str, str]) -> dict[str, Any]:
+    from bazi_engine.runtime_contract import evaluate
+
+    return evaluate(env)
+
+
+PRESENCE_METADATA_CASES = {
+    # case: (row, field, env the packaged contract refuses)
+    "explicit_env": (
+        "FUFIRE_ENV",
+        "required_when_truthy",
+        {"FUFIRE_REQUIRE_EXPLICIT_ENV": "true"},
+    ),
+    "api_key_list": (
+        "FUFIRE_API_KEYS",
+        "presence_semantics",
+        _production(FUFIRE_API_KEYS=",", KEY_STORE_BACKEND="none"),
+    ),
+    "blank_ephemeris": (
+        "EPHEMERIS_MODE",
+        "production_blank_policy",
+        _production(EPHEMERIS_MODE=""),
+    ),
+    "zwds_sign_off": (
+        "FUFIRE_ZWDS_SIGNOFF_ID",
+        "production_required_when_truthy",
+        _production(FUFIRE_ENABLE_ZWDS="true"),
+    ),
+    "cors_list": (
+        "CORS_ALLOWED_ORIGINS",
+        "presence_semantics",
+        _production(CORS_ALLOWED_ORIGINS=","),
+    ),
+}
+
+
+@pytest.mark.parametrize("case", sorted(PRESENCE_METADATA_CASES))
+def test_the_verdict_comes_from_the_row_metadata(contract_document, case: str) -> None:
+    row, field, env = PRESENCE_METADATA_CASES[case]
+
+    violations = _evaluate(env)["violations"]
+    assert [v["variable"] for v in violations] == [row], violations
+
+    contract_document(_drop_field(row, field))
+    assert _evaluate(env)["valid"] is True, (
+        f"removing {row}.{field} did not change the verdict — the rule is not "
+        "carried by the contract"
+    )
+
+
+def test_list_presence_moves_with_the_metadata(contract_document) -> None:
+    """``presence_semantics`` on an unrelated required row governs that row."""
+    env = {"FUFIRE_ENV": "production", "FUFIRE_REPLICA_COUNT": ","}
+    assert "FUFIRE_REPLICA_COUNT" in {
+        v["variable"] for v in _evaluate(env)["violations"] if v["code"] == "invalid_value"
+    }
+
+    def mutate(document: dict[str, Any]) -> None:
+        row = next(e for e in document["variables"] if e["name"] == "FUFIRE_REPLICA_COUNT")
+        row.pop("value_pattern")
+        row["presence_semantics"] = "comma_separated_non_empty_items"
+
+    contract_document(mutate)
+    codes = {(v["variable"], v["code"]) for v in _evaluate(env)["violations"]}
+    assert ("FUFIRE_REPLICA_COUNT", "missing_required") in codes, codes
+
+
+def test_blank_policy_moves_with_the_metadata(contract_document) -> None:
+    env = {"FUFIRE_ENV": "production", "PORT": ""}
+    assert "PORT" not in {v["variable"] for v in _evaluate(env)["violations"]}
+
+    contract_document(lambda d: _set_row(d, "PORT", production_blank_policy="invalid"))
+    codes = {(v["variable"], v["code"]) for v in _evaluate(env)["violations"]}
+    assert ("PORT", "blank_value") in codes, codes
+
+    # ...and it stays production-scoped wherever it is declared.
+    assert "PORT" not in {
+        v["variable"] for v in _evaluate({"FUFIRE_ENV": "dev", "PORT": ""})["violations"]
+    }
+
+
+# field -> {profile env: required while the flag is truthy?}
+CONDITIONAL_FIELD_SCOPES = {
+    "required_when_truthy": {"dev": True, "production": True},
+    "production_required_when_truthy": {"dev": False, "production": True},
+}
+
+
+@pytest.mark.parametrize("field", sorted(CONDITIONAL_FIELD_SCOPES))
+def test_conditional_requirement_moves_with_the_metadata(contract_document, field: str) -> None:
+    """Each conditional field, moved onto an unrelated row and flag, carries its
+    rule and its profile scope with it — a hard-coded flag name cannot pass."""
+    bases = {"dev": {"FUFIRE_ENV": "dev"}, "production": _production()}
+    for base in bases.values():
+        assert _evaluate(dict(base, WEBHOOK_HMAC_ONLY="true"))["valid"] is True
+
+    contract_document(
+        lambda d: _set_row(d, "ELEVENLABS_TOOL_SECRET", **{field: "WEBHOOK_HMAC_ONLY"})
+    )
+    for profile, required in CONDITIONAL_FIELD_SCOPES[field].items():
+        payload = _evaluate(dict(bases[profile], WEBHOOK_HMAC_ONLY="true"))
+        codes = {(v["variable"], v["code"]) for v in payload["violations"]}
+        expected = {("ELEVENLABS_TOOL_SECRET", "missing_required")} if required else set()
+        assert codes == expected, f"{field} in {profile}: {codes}"
+        assert _record(payload, "ELEVENLABS_TOOL_SECRET")["requiredHere"] is required
+        # A falsy flag never requires the row, in any profile.
+        falsy = _evaluate(dict(bases[profile], WEBHOOK_HMAC_ONLY="false"))
+        assert falsy["valid"] is True, f"{field} in {profile}: {falsy['violations']}"
+
+
+def test_contract_version_records_the_presence_semantics(contract) -> None:
+    """Adding normative presence metadata is another minor contract revision."""
+    major, minor, _patch = (int(part) for part in contract["contract_version"].split("."))
+    assert any("presence_semantics" in e for e in contract["variables"])
+    assert (major, minor) >= (1, 2), contract["contract_version"]
+
+
+# ── Contract self-validation for the presence vocabulary ─────────────────────
+
+MALFORMED_PRESENCE_CONTRACTS = {
+    "presence_vocabulary_missing": (
+        lambda d: d.pop("presence_semantics"),
+        "must declare a presence_semantics vocabulary",
+    ),
+    "presence_vocabulary_without_default": (
+        lambda d: d["presence_semantics"].pop("non_blank"),
+        "must declare a presence_semantics vocabulary",
+    ),
+    "presence_vocabulary_names_unimplemented_form": (
+        lambda d: d["presence_semantics"].update(json_array="x"),
+        r"presence semantics this engine does not implement: \['json_array'\]",
+    ),
+    "unknown_presence_token": (
+        lambda d: _set_row(d, "FUFIRE_API_KEYS", presence_semantics="semicolon_list"),
+        "FUFIRE_API_KEYS declares unsupported presence_semantics 'semicolon_list'",
+    ),
+    "non_string_presence_token": (
+        lambda d: _set_row(d, "FUFIRE_API_KEYS", presence_semantics=["comma"]),
+        r"FUFIRE_API_KEYS declares unsupported presence_semantics \['comma'\]",
+    ),
+    "list_presence_on_a_closed_value_set": (
+        lambda d: _set_row(d, "KEY_STORE_BACKEND", presence_semantics="comma_separated_non_empty_items"),
+        "KEY_STORE_BACKEND reads its value as a list but also declares allowed_values",
+    ),
+    "list_presence_on_a_value_pattern": (
+        lambda d: _set_row(d, "PORT", presence_semantics="comma_separated_non_empty_items"),
+        "PORT reads its value as a list but also declares value_pattern",
+    ),
+    "list_presence_on_a_flag": (
+        lambda d: _set_row(
+            d, "FUFIRE_REQUIRE_API_KEYS", presence_semantics="comma_separated_non_empty_items"
+        ),
+        "FUFIRE_REQUIRE_API_KEYS reads its value as a list but also declares production_required_truthy",
+    ),
+    "list_presence_on_a_forbidden_flag": (
+        lambda d: _set_row(
+            d, "FUFIRE_ENABLE_KEY_ISSUANCE", presence_semantics="comma_separated_non_empty_items"
+        ),
+        "FUFIRE_ENABLE_KEY_ISSUANCE reads its value as a list but also declares production_forbidden_truthy",
+    ),
+    # Reachable without allowed_values: an empty production list passes the
+    # subset rule, so only the clash rule can refuse it.
+    "list_presence_on_a_production_allowlist": (
+        lambda d: _set_row(
+            d,
+            "BUILD_VERSION",
+            presence_semantics="comma_separated_non_empty_items",
+            production_allowed_values=[],
+        ),
+        "BUILD_VERSION reads its value as a list but also declares production_allowed_values",
+    ),
+    "blank_vocabulary_missing": (
+        lambda d: d.pop("blank_policies"),
+        "must declare a blank_policies vocabulary",
+    ),
+    "blank_vocabulary_without_default": (
+        lambda d: d["blank_policies"].pop("unset"),
+        "must declare a blank_policies vocabulary",
+    ),
+    "blank_vocabulary_names_unimplemented_policy": (
+        lambda d: d["blank_policies"].update(warn="x"),
+        r"blank policies this engine does not implement: \['warn'\]",
+    ),
+    "unknown_blank_policy": (
+        lambda d: _set_row(d, "EPHEMERIS_MODE", production_blank_policy="reject"),
+        "EPHEMERIS_MODE declares unsupported production_blank_policy 'reject'",
+    ),
+    "non_string_blank_policy": (
+        lambda d: _set_row(d, "EPHEMERIS_MODE", production_blank_policy=True),
+        "EPHEMERIS_MODE declares unsupported production_blank_policy True",
+    ),
+    "conditional_requirement_names_no_row": (
+        lambda d: _set_row(d, "FUFIRE_ENV", required_when_truthy="FUFIRE_REQUIRE_EXPLICT_ENV"),
+        "FUFIRE_ENV is required_when_truthy 'FUFIRE_REQUIRE_EXPLICT_ENV', which does not name another contract row",
+    ),
+    "production_conditional_requirement_names_no_row": (
+        lambda d: _set_row(
+            d, "FUFIRE_ZWDS_SIGNOFF_ID", production_required_when_truthy="FUFIRE_ENABLE_ZWD"
+        ),
+        "FUFIRE_ZWDS_SIGNOFF_ID is production_required_when_truthy 'FUFIRE_ENABLE_ZWD', which does not name",
+    ),
+    "conditional_requirement_as_a_list": (
+        lambda d: _set_row(d, "FUFIRE_ENV", required_when_truthy=["FUFIRE_REQUIRE_EXPLICIT_ENV"]),
+        r"FUFIRE_ENV is required_when_truthy \['FUFIRE_REQUIRE_EXPLICIT_ENV'\], which does not name",
+    ),
+    "conditional_requirement_as_null": (
+        lambda d: _set_row(d, "FUFIRE_ENV", required_when_truthy=None),
+        "FUFIRE_ENV is required_when_truthy None, which does not name",
+    ),
+    "conditional_requirement_as_empty_string": (
+        lambda d: _set_row(d, "FUFIRE_ENV", required_when_truthy=""),
+        "FUFIRE_ENV is required_when_truthy '', which does not name",
+    ),
+    "conditional_requirement_on_itself": (
+        lambda d: _set_row(d, "FUFIRE_ENV", required_when_truthy="FUFIRE_ENV"),
+        "FUFIRE_ENV is required_when_truthy 'FUFIRE_ENV', which does not name another contract row",
+    ),
+    # A scalar secret, so the secret rule is exercised on its own and not via
+    # the list-row rule (FUFIRE_API_KEYS would trip both).
+    "conditional_requirement_on_a_secret": (
+        lambda d: _set_row(d, "ELEVENLABS_TOOL_SECRET", required_when_truthy="FUFIRE_ADMIN_TOKEN"),
+        "ELEVENLABS_TOOL_SECRET is required_when_truthy 'FUFIRE_ADMIN_TOKEN', a secret row",
+    ),
+    # The referencing row comes BEFORE its flag row, whose own token is malformed:
+    # the flag row's error must surface, not a TypeError from the cross-row check.
+    "conditional_requirement_on_a_row_with_a_malformed_token": (
+        lambda d: (
+            _set_row(d, "FUFIRE_ENV", required_when_truthy="FUFIRE_ENABLE_ZWDS"),
+            _set_row(d, "FUFIRE_ENABLE_ZWDS", presence_semantics=["list"]),
+        ),
+        r"FUFIRE_ENABLE_ZWDS declares unsupported presence_semantics \['list'\]",
+    ),
+    "duplicate_row_name": (
+        lambda d: d["variables"].append(
+            dict(next(e for e in d["variables"] if e["name"] == "KEY_STORE_BACKEND"))
+        ),
+        r"declares duplicate variable rows \['KEY_STORE_BACKEND'\]",
+    ),
+    "conditional_requirement_on_a_list_row": (
+        lambda d: _set_row(d, "FUFIRE_ZWDS_SIGNOFF_ID", required_when_truthy="CORS_ALLOWED_ORIGINS"),
+        "FUFIRE_ZWDS_SIGNOFF_ID is required_when_truthy 'CORS_ALLOWED_ORIGINS', a list-valued row",
+    ),
+    "conditional_vocabulary_missing": (
+        lambda d: d.pop("conditional_requirements"),
+        "must declare a conditional_requirements vocabulary naming exactly the implemented fields",
+    ),
+    "conditional_vocabulary_names_unimplemented_field": (
+        lambda d: d["conditional_requirements"].update(staging_required_when_truthy="x"),
+        r"must declare a conditional_requirements vocabulary .*'staging_required_when_truthy'",
+    ),
+    "conditional_vocabulary_drops_an_implemented_field": (
+        lambda d: d["conditional_requirements"].pop("production_required_when_truthy"),
+        r"must declare a conditional_requirements vocabulary .*not \['required_when_truthy'\]",
+    ),
+    # A misspelt field would silently drop the rule it was meant to declare.
+    "misspelt_blank_policy_field": (
+        lambda d: _set_row(d, "EPHEMERIS_MODE", production_blank_polcy="invalid"),
+        r"EPHEMERIS_MODE declares unknown fields \['production_blank_polcy'\]",
+    ),
+    "misspelt_conditional_requirement_field": (
+        lambda d: _set_row(d, "FUFIRE_ENV", required_when_truthyy="FUFIRE_REQUIRE_EXPLICIT_ENV"),
+        r"FUFIRE_ENV declares unknown fields \['required_when_truthyy'\]",
+    ),
+}
+
+
+def test_the_packaged_contract_declares_every_presence_vocabulary() -> None:
+    """Canary for the malformed cases below: the real contract is accepted."""
+    from bazi_engine.runtime_contract import validate_contract
+
+    document = _mutated_contract(lambda d: None)
+    assert "non_blank" in document["presence_semantics"]
+    assert "unset" in document["blank_policies"]
+    assert set(document["conditional_requirements"]) == {
+        "required_when_truthy",
+        "production_required_when_truthy",
+    }
+    validate_contract(document)
+
+
+@pytest.mark.parametrize("case", sorted(MALFORMED_PRESENCE_CONTRACTS))
+def test_malformed_presence_metadata_is_rejected(case: str) -> None:
+    from bazi_engine.runtime_contract import validate_contract
+
+    mutate, message = MALFORMED_PRESENCE_CONTRACTS[case]
+    with pytest.raises(RuntimeError, match=f"^runtime contract .*{message}"):
+        validate_contract(_mutated_contract(mutate))
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        "unknown_presence_token",
+        "unknown_blank_policy",
+        "conditional_requirement_names_no_row",
+        "misspelt_blank_policy_field",
+    ],
+)
+def test_load_contract_fails_closed_on_malformed_presence_metadata(
+    contract_document, case: str
+) -> None:
+    """On the LOAD path, so the startup guard and the readback both abort."""
+    from bazi_engine import runtime_contract
+
+    mutate, message = MALFORMED_PRESENCE_CONTRACTS[case]
+    contract_document(mutate)
+    with pytest.raises(RuntimeError, match=f"^runtime contract .*{message}"):
+        runtime_contract.load_contract()
+
+
+@pytest.mark.parametrize(
+    ("row", "match"),
+    [
+        ({"name": "X", "presence_semantics": "semicolon_list"}, "unsupported presence_semantics"),
+        ({"name": "X", "production_blank_policy": "reject"}, "unsupported production_blank_policy"),
+        ({"name": "X", "required_when_truthy": ["FLAG"]}, "malformed required_when_truthy"),
+        ({"name": "X", "production_required_when_truthy": ""}, "malformed production_required_when_truthy"),
+    ],
+)
+def test_presence_metadata_is_refused_at_use_when_it_bypassed_validation(
+    row: dict[str, Any], match: str
+) -> None:
+    """Second line of defence for a row that bypassed load-time validation."""
+    from bazi_engine.runtime_contract import PROFILE_PRODUCTION, _variable_issue
+
+    with pytest.raises(RuntimeError, match=match):
+        _variable_issue(row, "", PROFILE_PRODUCTION, {"FLAG": "true"})

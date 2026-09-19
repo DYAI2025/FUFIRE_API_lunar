@@ -1,6 +1,6 @@
 {
   "schema": "fufire.runtime-config-contract.v1",
-  "contract_version": "1.1.0",
+  "contract_version": "1.2.0",
   "description": "Provider-neutral inventory of the runtime variables materially consumed at the FuFirE Engine/Uvicorn boundary. Secrets-free by construction: this file records names, ownership, required status, allowed shapes and readback policy — never a configured value. Provider-specific bindings (which platform supplies which value) live in the deployment, not here.",
   "profiles": {
     "production": {
@@ -21,6 +21,18 @@
     "lower": "The whitespace-trimmed value is lower-cased before comparison. The row's value lists are declared in lower case.",
     "upper": "The whitespace-trimmed value is upper-cased before comparison. The row's value lists are declared in upper case."
   },
+  "presence_semantics": {
+    "non_blank": "Default for a row that declares no presence_semantics. The variable counts as configured when its whitespace-trimmed value is non-empty.",
+    "comma_separated_non_empty_items": "The consumer splits the value on commas and drops whitespace-only items. The variable counts as configured only when at least one item survives, so a value made of commas and whitespace is NOT configured. Rules that compare the whole value as one scalar (allowed_values, production_allowed_values, value_pattern, truthiness) cannot be declared on such a row."
+  },
+  "blank_policies": {
+    "unset": "Default for a row that declares no production_blank_policy. The row's own presence check reads a set-but-blank value exactly like an absent one; cross-variable policies such as the pepper rule are evaluated separately.",
+    "invalid": "In the production profile a set-but-blank value is refused: the consumer applies its default only when the variable is absent, and rejects the blank value it reads otherwise."
+  },
+  "conditional_requirements": {
+    "required_when_truthy": "Names another row that is neither secret nor list-valued. In every profile, the declaring row is required while that flag row holds a truthy value (1, true, yes or on, trimmed and case-insensitive).",
+    "production_required_when_truthy": "Names another row that is neither secret nor list-valued. In the production profile only, the declaring row is required while that flag row holds a truthy value (1, true, yes or on, trimmed and case-insensitive)."
+  },
   "fail_closed_codes": {
     "startup_abort": "config_guard.assert_runtime_config() raises at import time.",
     "reject_invalid_value": "The consuming module raises on an unsupported value.",
@@ -33,11 +45,12 @@
       "consumer": "engine",
       "secret": false,
       "required_profiles": ["production"],
+      "required_when_truthy": "FUFIRE_REQUIRE_EXPLICIT_ENV",
       "allowed_values": ["production", "prod", "staging", "dev", "development", "test", "local"],
       "value_normalization": "lower",
       "readback": "value",
       "fail_closed": "startup_abort",
-      "description": "Declares the deployment profile. Selects the fail-closed production contract."
+      "description": "Declares the deployment profile. Selects the fail-closed production contract. Required in every profile while FUFIRE_REQUIRE_EXPLICIT_ENV is truthy."
     },
     {
       "name": "FUFIRE_REQUIRE_EXPLICIT_ENV",
@@ -67,9 +80,10 @@
       "secret": true,
       "required_profiles": ["production"],
       "satisfied_by": ["KEY_STORE_BACKEND"],
+      "presence_semantics": "comma_separated_non_empty_items",
       "readback": "presence",
       "fail_closed": "startup_abort",
-      "description": "Comma-separated static API keys. Credential material: never echoed. A configured KeyStore backend satisfies the production requirement instead."
+      "description": "Comma-separated static API keys. Credential material: never echoed. A value of only commas and whitespace loads zero keys and does not count as configured. A configured KeyStore backend satisfies the production requirement instead."
     },
     {
       "name": "KEY_STORE_BACKEND",
@@ -139,10 +153,11 @@
       "consumer": "engine",
       "secret": false,
       "required_profiles": ["production"],
+      "presence_semantics": "comma_separated_non_empty_items",
       "production_forbidden_values": ["*"],
       "readback": "value",
       "fail_closed": "startup_abort",
-      "description": "Explicit origin allowlist. Production rejects a wildcard and any local origin."
+      "description": "Explicit origin allowlist. A value of only commas and whitespace is an empty allowlist. Production rejects a wildcard and any local origin."
     },
     {
       "name": "FUFIRE_REPLICA_COUNT",
@@ -232,9 +247,10 @@
       "allowed_values": ["SWIEPH", "MOSEPH"],
       "production_allowed_values": ["SWIEPH"],
       "value_normalization": "upper",
+      "production_blank_policy": "invalid",
       "readback": "value",
       "fail_closed": "startup_abort",
-      "description": "Swiss Ephemeris backend selector. Production permits SWIEPH only."
+      "description": "Swiss Ephemeris backend selector. Production permits SWIEPH only; the SWIEPH default applies when the variable is absent, and a set-but-blank value is refused."
     },
     {
       "name": "SE_EPHE_PATH",
@@ -283,6 +299,7 @@
       "consumer": "engine",
       "secret": false,
       "required_profiles": [],
+      "production_required_when_truthy": "FUFIRE_ENABLE_ZWDS",
       "readback": "value",
       "fail_closed": "startup_abort",
       "description": "Release sign-off reference required before ZWDS may be enabled in production."
