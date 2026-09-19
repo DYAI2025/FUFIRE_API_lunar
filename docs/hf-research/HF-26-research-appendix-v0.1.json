@@ -1,0 +1,2148 @@
+{
+  "research_id": "HF-26",
+  "artifact": "HF-26 Deep Research: Distributed Systems Correctness & External Effect Semantics for Enterprise Agent Harnesses — Research Synthesis v0.1",
+  "date": "2026-09-19",
+  "artifact_type": "RESEARCH_SYNTHESIS_NOT_ARCHITECTURE_AUTHORIZATION",
+  "contract": {
+    "version": "0.2.2",
+    "digest": "92b8f0b8c4942c8986a21033b8dcfb0ce9f6d8ff9c4b4979ed19d4de95343fe2",
+    "binding_check": "NOT_TRIGGERED",
+    "contract_version_changed": null,
+    "note": "No project material referencing a different contract version/digest was found in the research workspace; CONTRACT_VERSION_CHANGED not triggered. Referenced artifacts (05, 05.1, 05.2, 08, Jira HF-26) were NOT present in the workspace; reconciliation against them is REVALIDATION_REQUIRED."
+  },
+  "final_status": "PARTIAL_PROMOTION_EXPERIMENT_REQUIRED",
+  "research_scope": {
+    "primary_question": "Smallest evidence-supported distributed-systems correctness model for enterprise AI agent harnesses performing reads, writes and consequential side effects on mutable external systems.",
+    "domains": [
+      "A_delivery_execution_semantics",
+      "B_idempotency",
+      "C_optimistic_concurrency_conditional_mutation",
+      "D_locks_leases_fencing",
+      "E_unknown_outcome",
+      "F_partial_failure",
+      "G_sagas_compensation",
+      "H_event_sourcing",
+      "I_durable_workflow_systems",
+      "J_source_native_vs_harness_owned"
+    ],
+    "method": "Live web research 2026-09-19; ~30 targeted searches; source priority: foundational papers > RFCs/formal specs > official platform semantics > engineering analyses > secondary.",
+    "limitations": [
+      "Foundational lease/OCC/Saga papers accessed via reputable summaries/excerpts, not full-text re-derivation.",
+      "IETF Idempotency-Key draft expired without becoming an RFC (proposed semantics only).",
+      "Referenced HF knowledge artifacts absent from workspace; cross-artifact challenge/reconciliation not performed (REVALIDATION_REQUIRED)."
+    ]
+  },
+  "sources": [
+    {
+      "id": "S1",
+      "title": "How to do distributed locking",
+      "author": "Martin Kleppmann",
+      "url": "https://martin.kleppmann.com/2016/02/08/how-to-do-distributed-locking.html",
+      "evidence_class": "FOUNDATIONAL_SYSTEMS_RESULT"
+    },
+    {
+      "id": "S2",
+      "title": "Is Redlock safe? (reply to Redlock analysis)",
+      "author": "Salvatore Sanfilippo (antirez)",
+      "url": "http://antirez.com/news/101",
+      "evidence_class": "ENGINEERING_PRACTICE",
+      "note": "incl. Hacker News thread news.ycombinator.com/item?id=11059738"
+    },
+    {
+      "id": "S3",
+      "title": "Leases: An Efficient Fault-Tolerant Mechanism for Distributed File Cache Consistency (SOSP 1989)",
+      "author": "C. Gray & D. Cheriton",
+      "url": "https://dl.acm.org/doi/10.1145/112600.112601",
+      "evidence_class": "PEER_REVIEWED_RESULT",
+      "note": "accessed via archival summaries"
+    },
+    {
+      "id": "S4",
+      "title": "Life beyond Distributed Transactions: an Apostate's Opinion",
+      "author": "Pat Helland",
+      "url": "https://www.researchgate.net/publication/220988217",
+      "evidence_class": "FOUNDATIONAL_SYSTEMS_RESULT"
+    },
+    {
+      "id": "S5",
+      "title": "Sagas (SIGMOD 1987)",
+      "author": "H. Garcia-Molina & K. Salem",
+      "url": "https://arxiv.org/html/2503.11951v2",
+      "evidence_class": "PEER_REVIEWED_RESULT",
+      "note": "original via derivatives/summaries"
+    },
+    {
+      "id": "S6",
+      "title": "Consensus on Transaction Commit (Gray & Lamport, MSR 2004) + Gray, Notes on Data Base Operating Systems (1978)",
+      "author": "J. Gray, L. Lamport",
+      "url": "https://www.microsoft.com/en-us/research/wp-content/uploads/2004/01/twophase-revised.pdf",
+      "evidence_class": "FOUNDATIONAL_SYSTEMS_RESULT"
+    },
+    {
+      "id": "S7a",
+      "title": "On Optimistic Methods for Concurrency Control (ACM TODS 1981)",
+      "author": "H.T. Kung & J.T. Robinson",
+      "url": "https://www.eecs.harvard.edu/~htk/publication/1981-tods-kung-robinson.pdf",
+      "evidence_class": "PEER_REVIEWED_RESULT"
+    },
+    {
+      "id": "S8",
+      "title": "Two Generals Problem (Huber 1975; named by Gray 1978) — formal treatments",
+      "author": "multiple",
+      "url": "https://mwhittaker.github.io/blog/two_generals_and_time_machines/",
+      "evidence_class": "FORMAL_MODEL"
+    },
+    {
+      "id": "S9",
+      "title": "RFC 9110 HTTP Semantics (idempotent methods; conditional requests); RFC 7232 text; http.dev analyses",
+      "author": "IETF",
+      "url": "https://www.rfc-editor.org/rfc/rfc7232",
+      "evidence_class": "STANDARD"
+    },
+    {
+      "id": "S10",
+      "title": "IETF draft-ietf-httpapi-idempotency-key-header (expired WG draft)",
+      "author": "A. Jena, S. Dalal et al.",
+      "url": "https://www.greenbytes.de/tech/webdav/draft-ietf-httpapi-idempotency-key-header-03.txt",
+      "evidence_class": "STANDARD",
+      "note": "standard-TRACK only; never became an RFC"
+    },
+    {
+      "id": "S11",
+      "title": "Stripe API docs — idempotent requests; advanced error handling",
+      "author": "Stripe",
+      "url": "https://docs.stripe.com/error-low-level",
+      "evidence_class": "VENDOR_DOCUMENTED_SEMANTICS"
+    },
+    {
+      "id": "S12",
+      "title": "Google Cloud Pub/Sub — Exactly-once delivery",
+      "author": "Google",
+      "url": "https://docs.cloud.google.com/pubsub/docs/exactly-once-delivery",
+      "evidence_class": "VENDOR_DOCUMENTED_SEMANTICS"
+    },
+    {
+      "id": "S13",
+      "title": "AWS SQS FIFO deduplication — AWS docs & engineering analyses (adhdecode/reintech/oneuptime/joudwawad)",
+      "author": "AWS + engineering analyses",
+      "url": "https://adhdecode.com/articles/sqs/sqs-fifo-deduplication-id/",
+      "evidence_class": "VENDOR_DOCUMENTED_SEMANTICS"
+    },
+    {
+      "id": "S14",
+      "title": "Apache Kafka exactly-once semantics (KIP-98; Conduktor/AxonOps engineering docs)",
+      "author": "Apache Kafka ecosystem",
+      "url": "https://www.conduktor.io/blog/exactly-once-semantics-when-it-works",
+      "evidence_class": "VENDOR_DOCUMENTED_SEMANTICS"
+    },
+    {
+      "id": "S15",
+      "title": "Apache Flink fault tolerance / exactly-once docs + analyses",
+      "author": "Apache Flink",
+      "url": "https://nightlies.apache.org/flink/flink-docs-master/docs/learn-flink/fault_tolerance/",
+      "evidence_class": "VENDOR_DOCUMENTED_SEMANTICS"
+    },
+    {
+      "id": "S16",
+      "title": "Temporal docs — activity idempotency, workflow SideEffect APIs, determinism",
+      "author": "Temporal Technologies",
+      "url": "https://docs.temporal.io/develop/python/best-practices/error-handling",
+      "evidence_class": "VENDOR_DOCUMENTED_SEMANTICS"
+    },
+    {
+      "id": "S17",
+      "title": "Azure Durable Functions — orchestrator code constraints (+ MS Q&A)",
+      "author": "Microsoft",
+      "url": "https://learn.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-code-constraints",
+      "evidence_class": "VENDOR_DOCUMENTED_SEMANTICS"
+    },
+    {
+      "id": "S18",
+      "title": "AWS Lambda Durable Execution / AWS Durable Execution SDK — idempotency and retries",
+      "author": "AWS",
+      "url": "https://docs.aws.amazon.com/durable-execution/patterns/best-practices/idempotency/",
+      "evidence_class": "VENDOR_DOCUMENTED_SEMANTICS"
+    },
+    {
+      "id": "S19",
+      "title": "Kubernetes client-go leaderelection package documentation",
+      "author": "Kubernetes",
+      "url": "https://pkg.go.dev/k8s.io/client-go/tools/leaderelection",
+      "evidence_class": "VENDOR_DOCUMENTED_SEMANTICS"
+    },
+    {
+      "id": "S20",
+      "title": "Azure Architecture Center — Compensating Transaction pattern",
+      "author": "Microsoft",
+      "url": "https://github.com/mspnp/architecture-center/blob/master/docs/patterns/compensating-transaction.md",
+      "evidence_class": "VENDOR_DOCUMENTED_SEMANTICS"
+    },
+    {
+      "id": "S21",
+      "title": "Reactive Design Patterns — Saga; Richardson-derived compensation material",
+      "author": "multiple",
+      "url": "https://www.reactivedesignpatterns.com/patterns/saga.html",
+      "evidence_class": "ENGINEERING_PRACTICE"
+    },
+    {
+      "id": "S22",
+      "title": "Orkes Conductor — Saga compensation recipe",
+      "author": "Orkes",
+      "url": "https://orkes.io/content/devguide/cookbook/saga-compensation",
+      "evidence_class": "ENGINEERING_PRACTICE"
+    },
+    {
+      "id": "S23",
+      "title": "Payment gateway failover (timeouts ≠ failure; status-check-first)",
+      "author": "Paysight",
+      "url": "https://www.paysight.io/blogs/payment-gateway-failover-for-ecommerce",
+      "evidence_class": "ENGINEERING_PRACTICE"
+    },
+    {
+      "id": "S24",
+      "title": "Payment systems: ledgers, idempotency, reconciliation",
+      "author": "Prachub",
+      "url": "https://prachub.com/concepts/payment-systems-ledgers-idempotency-and-reconciliation",
+      "evidence_class": "ENGINEERING_PRACTICE"
+    },
+    {
+      "id": "S25",
+      "title": "Event sourcing critique cluster: event store ≠ audit log; ES decision frameworks",
+      "author": "multiple",
+      "url": "https://dev.to/gentlyding/event-sourcing-gives-you-an-event-store-not-an-audit-log-42k",
+      "evidence_class": "ENGINEERING_PRACTICE"
+    },
+    {
+      "id": "S25b",
+      "title": "Event Sourcing: The Append-Only Truth",
+      "author": "Rohit (systemdesignplaybook)",
+      "url": "https://systemdesignplaybook.substack.com/p/29-event-sourcing-the-append-only",
+      "evidence_class": "ENGINEERING_PRACTICE"
+    },
+    {
+      "id": "S29",
+      "title": "2PC blocking/uncertain-state analyses (singhajit; cs.stackexchange 76192; adhdecode)",
+      "author": "multiple",
+      "url": "https://singhajit.com/distributed-systems/two-phase-commit/",
+      "evidence_class": "ENGINEERING_PRACTICE"
+    },
+    {
+      "id": "S31",
+      "title": "Lost-update analyses (abstractalgorithms; adhdecode; Medium/Verma)",
+      "author": "multiple",
+      "url": "https://www.abstractalgorithms.dev/lost-update-database-anomaly",
+      "evidence_class": "ENGINEERING_PRACTICE"
+    },
+    {
+      "id": "S31b",
+      "title": "Read-Modify-Write anti-pattern (MongoDB DevRel)",
+      "author": "MongoDB",
+      "url": "https://medium.com/mongodb/devrel-insights-read-modify-write-anti-pattern-36245f56489f",
+      "evidence_class": "VENDOR_DOCUMENTED_SEMANTICS"
+    },
+    {
+      "id": "S32",
+      "title": "draft-ietf-httpapi-idempotency-key-header-03 full text",
+      "author": "IETF HTTPAPI WG",
+      "url": "https://www.greenbytes.de/tech/webdav/draft-ietf-httpapi-idempotency-key-header-03.txt",
+      "evidence_class": "STANDARD"
+    },
+    {
+      "id": "S33",
+      "title": "Temporal blog — Idempotency and durable execution",
+      "author": "Temporal Technologies",
+      "url": "https://temporal.io/blog/idempotency-and-durable-execution",
+      "evidence_class": "VENDOR_DOCUMENTED_SEMANTICS"
+    },
+    {
+      "id": "S34",
+      "title": "Temporal tutorial — standalone activities: at-least-once + idempotency = effectively-once",
+      "author": "Temporal Technologies",
+      "url": "https://learn.temporal.io/tutorials/java/standalone-activities/",
+      "evidence_class": "VENDOR_DOCUMENTED_SEMANTICS"
+    },
+    {
+      "id": "S35",
+      "title": "Consumer crashes after the side effect but before acknowledgement",
+      "author": "OneUptime",
+      "url": "https://oneuptime.com/blog/post/2026-07-21-consumer-crash-side-effect-before-ack/view",
+      "evidence_class": "ENGINEERING_PRACTICE"
+    },
+    {
+      "id": "S36",
+      "title": "An unknown provider outcome is not a new operation (payment identity/reconciliation)",
+      "author": "D. Nasyrov",
+      "url": "https://hackmd.io/@dmytro-nasyrov/payment-event-idempotency-boundary",
+      "evidence_class": "ENGINEERING_PRACTICE"
+    },
+    {
+      "id": "S37",
+      "title": "Durability: what does COMMIT really promise? + CommitOutcomeUnknown client patterns",
+      "author": "System Design Academy + engineering practice",
+      "url": "https://www.systemdesignacademy.com/blog/durability-in-databases",
+      "evidence_class": "ENGINEERING_PRACTICE"
+    },
+    {
+      "id": "S38",
+      "title": "AWS Step Functions — choosing workflow type; execution guarantees",
+      "author": "AWS",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/choosing-workflow-type.html",
+      "evidence_class": "VENDOR_DOCUMENTED_SEMANTICS"
+    },
+    {
+      "id": "S39",
+      "title": "Dual-write problem / transactional outbox pattern analyses",
+      "author": "multiple (Richardson-adjacent)",
+      "url": "https://singhajit.com/transactional-outbox-pattern/",
+      "evidence_class": "ENGINEERING_PRACTICE"
+    },
+    {
+      "id": "S40",
+      "title": "Saga backward/forward recovery; compensable/pivot/retryable taxonomy",
+      "author": "kwahome; Conduktor glossary",
+      "url": "https://kwahome.medium.com/distributed-systems-transactions-atomic-commitment-sagas-ca79ac156f36",
+      "evidence_class": "ENGINEERING_PRACTICE"
+    },
+    {
+      "id": "S41",
+      "title": "Two-tab / two-request-identity collision analysis (SetupIntent example)",
+      "author": "engineering PR analysis (macro #7301)",
+      "url": "https://github.com/mastermindx-market-intelligence/macro/pull/7301",
+      "evidence_class": "ENGINEERING_PRACTICE"
+    }
+  ],
+  "claims": [
+    {
+      "id": "C01",
+      "claim": "End-to-end exactly-once business effects cannot be guaranteed by a workflow runtime alone; require target-side idempotency/dedup",
+      "evidence_class": "FOUNDATIONAL_SYSTEMS_RESULT+VENDOR_DOCUMENTED_SEMANTICS",
+      "sources": [
+        "S8",
+        "S14",
+        "S15",
+        "S34"
+      ],
+      "counterevidence": "none found; vendor claims are all boundary-scoped",
+      "boundary": "proven for systems that cannot observe target state",
+      "status": "SUPPORTED",
+      "confidence": "HIGH",
+      "hf_consequence": "HF contracts must never claim unscoped effect exactly-once",
+      "falsifier": "durable runtime demonstrating exactly-once effects on arbitrary non-idempotent external API"
+    },
+    {
+      "id": "C02",
+      "claim": "Absence of a success acknowledgement is not evidence of failure",
+      "evidence_class": "FOUNDATIONAL_SYSTEMS_RESULT+VENDOR_DOCUMENTED_SEMANTICS",
+      "sources": [
+        "S8",
+        "S11",
+        "S23",
+        "S36",
+        "S37"
+      ],
+      "counterevidence": "distinction collapses for naturally idempotent effects (harmless to retry)",
+      "boundary": "consequential effects",
+      "status": "SUPPORTED",
+      "confidence": "HIGH",
+      "hf_consequence": "mandate UNKNOWN_OUTCOME; forbid timeout=failed",
+      "falsifier": "method distinguishing message-loss from execution-failure at distance with zero extra round-trips"
+    },
+    {
+      "id": "C03",
+      "claim": "Source-native atomic conditional mutation superior to harness read-check-write for source-local invariants",
+      "evidence_class": "VENDOR_DOCUMENTED_SEMANTICS+FOUNDATIONAL_SYSTEMS_RESULT",
+      "sources": [
+        "S7a",
+        "S9",
+        "S30",
+        "S31"
+      ],
+      "counterevidence": "DynamoDB global tables LWW breaks optimistic locking; HTTP date validators 1-second granularity; conditional writes do not dedupe retries by themselves",
+      "boundary": "source-local invariants only",
+      "status": "SUPPORTED",
+      "confidence": "HIGH",
+      "hf_consequence": "Rule R2; ban harness read-check-write on guarded resources",
+      "falsifier": "source-local invariant a harness check enforces more strongly than the source's conditional write"
+    },
+    {
+      "id": "C04",
+      "claim": "A distributed lock does not protect a resource that does not itself reject stale holders; fencing requires resource cooperation",
+      "evidence_class": "FOUNDATIONAL_SYSTEMS_RESULT+VENDOR_DOCUMENTED_SEMANTICS",
+      "sources": [
+        "S1",
+        "S2",
+        "S19"
+      ],
+      "counterevidence": "antirez: bounded clocks suffice for efficiency-class locks",
+      "boundary": "correctness-class use",
+      "status": "SUPPORTED",
+      "confidence": "HIGH",
+      "hf_consequence": "no locks as safety mechanisms for external effects; prefer conditional writes",
+      "falsifier": "lock-only system with demonstrated stale-holder safety vs unbounded pauses and no resource-side checks"
+    },
+    {
+      "id": "C05",
+      "claim": "Compensation is a new business operation, not a technical rollback; can fail or be impossible",
+      "evidence_class": "VENDOR_DOCUMENTED_SEMANTICS+ENGINEERING_PRACTICE",
+      "sources": [
+        "S5",
+        "S20",
+        "S21",
+        "S22"
+      ],
+      "counterevidence": "LLM-generated compensation is research-grade only",
+      "boundary": "semantic business reversal; DB rollbacks are a different mechanism",
+      "status": "SUPPORTED",
+      "confidence": "HIGH",
+      "hf_consequence": "compensation as domain op with identity/authorization/idempotency; never auto-inverse",
+      "falsifier": "generic automatic inverse safe across heterogeneous business systems"
+    },
+    {
+      "id": "C06",
+      "claim": "Event sourcing is neither necessary for durable execution/audit nor sufficient as an audit log",
+      "evidence_class": "VENDOR_DOCUMENTED_SEMANTICS+ENGINEERING_PRACTICE",
+      "sources": [
+        "S17",
+        "S25",
+        "S33"
+      ],
+      "counterevidence": "ES does provide change history within one trust domain; temporal queries are ES-strength",
+      "boundary": "third-party audit claims",
+      "status": "SUPPORTED",
+      "confidence": "MEDIUM",
+      "hf_consequence": "ES activation conditions only; default = transactional state + append-only audit/receipts",
+      "falsifier": "compliance regime accepting vanilla event stores as sufficient legal audit evidence without integrity anchoring"
+    },
+    {
+      "id": "C07",
+      "claim": "'Exactly-once' vendor claims are boundary-specific and frequently misread",
+      "evidence_class": "VENDOR_DOCUMENTED_SEMANTICS",
+      "sources": [
+        "S14",
+        "S15",
+        "S18",
+        "S38"
+      ],
+      "counterevidence": "none; vendors scope their own claims",
+      "boundary": "claims as documented",
+      "status": "SUPPORTED",
+      "confidence": "HIGH",
+      "hf_consequence": "glossary fixes delivery/processing/effect suffixes; bans unscoped usage",
+      "falsifier": "vendor doc claiming unscoped end-to-end effect exactly-once"
+    },
+    {
+      "id": "C08",
+      "claim": "Stable effect identity required only for a subset of effects (harmful non-idempotent class)",
+      "evidence_class": "DESIGN_RECOMMENDATION",
+      "sources": [
+        "S9",
+        "S11",
+        "S18",
+        "S34",
+        "S13"
+      ],
+      "counterevidence": "universal keying is harmless but not necessary; keys can mislead when identity is wrong",
+      "boundary": "necessity claim only",
+      "status": "SUPPORTED",
+      "confidence": "MEDIUM",
+      "hf_consequence": "effect-class-driven identity requirement",
+      "falsifier": "read-only effect requiring identity for correctness (not analytics)"
+    },
+    {
+      "id": "C09",
+      "claim": "Delayed duplicates beyond native dedup windows occur and are material for harmful effects",
+      "evidence_class": "VENDOR_DOCUMENTED_SEMANTICS+ENGINEERING_PRACTICE",
+      "sources": [
+        "S11",
+        "S13"
+      ],
+      "counterevidence": "none claiming windows cover all duplicate horizons",
+      "boundary": "window durations differ per system",
+      "status": "SUPPORTED",
+      "confidence": "HIGH",
+      "hf_consequence": "dedup horizon = business-defined; exceed native windows where harm is material",
+      "falsifier": "native provider guaranteeing unbounded dedup retention"
+    },
+    {
+      "id": "C10",
+      "claim": "Durable runtimes re-execute activities/steps after crash-before-record; external calls need identity guards",
+      "evidence_class": "VENDOR_DOCUMENTED_SEMANTICS",
+      "sources": [
+        "S16",
+        "S17",
+        "S18",
+        "S35"
+      ],
+      "counterevidence": "at-most-once modes exist but trade skips for duplicates",
+      "boundary": "at-most-once is per attempt, not per workflow",
+      "status": "SUPPORTED",
+      "confidence": "HIGH",
+      "hf_consequence": "identity-before-attempt ordering; receipts after",
+      "falsifier": "runtime that checkpoints before external calls and never replays them (still fails lost acks)"
+    },
+    {
+      "id": "C11",
+      "claim": "Orchestrator/replay code containing direct external effects is a correctness defect",
+      "evidence_class": "VENDOR_DOCUMENTED_SEMANTICS",
+      "sources": [
+        "S16",
+        "S17",
+        "S18"
+      ],
+      "counterevidence": "none",
+      "boundary": "replay-based runtimes",
+      "status": "SUPPORTED",
+      "confidence": "HIGH",
+      "hf_consequence": "separate plan/decide (pure) from act (guarded); zero external calls in replayed logic",
+      "falsifier": "replay-based engine safely tolerating nondeterministic external calls in replayed logic"
+    },
+    {
+      "id": "C12",
+      "claim": "Leases require clock/rate assumptions and admit dual holders during skew; fencing closes it only at token-checking resources",
+      "evidence_class": "FOUNDATIONAL_SYSTEMS_RESULT+VENDOR_DOCUMENTED_SEMANTICS",
+      "sources": [
+        "S1",
+        "S3",
+        "S19"
+      ],
+      "counterevidence": "antirez: bounded clocks suffice for efficiency purposes",
+      "boundary": "correctness-class assessment",
+      "status": "SUPPORTED",
+      "confidence": "HIGH",
+      "hf_consequence": "lease usage restricted to HF-internal authority; fencing only where token checks exist",
+      "falsifier": "lease protocol with proven no-dual-holder property under arbitrary skew without resource checks"
+    },
+    {
+      "id": "C13",
+      "claim": "Native dedup windows + fingerprints conflict with legitimate re-planning (same logical effect, changed payload)",
+      "evidence_class": "ENGINEERING_PRACTICE",
+      "sources": [
+        "S10",
+        "S11",
+        "S36"
+      ],
+      "counterevidence": "Stripe recommends fresh keys when modifying a request — new logical effect; boundary is a business call",
+      "boundary": "depends on HF logical-effect identity definition under replanning",
+      "status": "PARTIALLY_SUPPORTED",
+      "confidence": "MEDIUM",
+      "hf_consequence": "define identity stability rules for re-planned operations (OQ-3)",
+      "falsifier": "general rule classifying payload changes as same/new effect without business input"
+    },
+    {
+      "id": "C14",
+      "claim": "HF-owned machinery can reduce reliability when the source has stronger native guarantees",
+      "evidence_class": "DESIGN_RECOMMENDATION",
+      "sources": [
+        "S1",
+        "S2",
+        "S14",
+        "S30",
+        "S39"
+      ],
+      "counterevidence": "sources without native guards need harness machinery; harness records still needed for evidence",
+      "boundary": "preference, not elimination; holds only where native mechanism provably expresses the invariant",
+      "status": "SUPPORTED",
+      "confidence": "MEDIUM",
+      "hf_consequence": "source-native gate in promotion process",
+      "falsifier": "invariant class where harness-side implementation dominates all native options"
+    },
+    {
+      "id": "C15",
+      "claim": "2PC-class distributed transactions are a poor fit as an HF coordination mechanism",
+      "evidence_class": "FOUNDATIONAL_SYSTEMS_RESULT",
+      "sources": [
+        "S6",
+        "S29",
+        "S39"
+      ],
+      "counterevidence": "XA viable in closed single-org database fleets",
+      "boundary": "heterogeneous external APIs cannot participate in 2PC at all",
+      "status": "SUPPORTED",
+      "confidence": "HIGH",
+      "hf_consequence": "design for local atomicity + compensation/reconciliation, not distributed transactions",
+      "falsifier": "wide adoption of XA-style coordination across arbitrary SaaS APIs"
+    },
+    {
+      "id": "C16",
+      "claim": "Pub/Sub 'exactly-once delivery' = no-redelivery-after-ack, not exactly-once processing",
+      "evidence_class": "VENDOR_DOCUMENTED_SEMANTICS",
+      "sources": [
+        "S12"
+      ],
+      "counterevidence": "none",
+      "boundary": "delivery-layer only; pull-only; region-scoped",
+      "status": "SUPPORTED",
+      "confidence": "HIGH",
+      "hf_consequence": "terminology entry; no processing guarantees inferred",
+      "falsifier": "Google documentation extending guarantee to downstream processing"
+    },
+    {
+      "id": "C17",
+      "claim": "SQS FIFO dedup ≠ consumer idempotency (send-side, windowed)",
+      "evidence_class": "VENDOR_DOCUMENTED_SEMANTICS+ENGINEERING_PRACTICE",
+      "sources": [
+        "S13"
+      ],
+      "counterevidence": "none",
+      "boundary": "FIFO queues",
+      "status": "SUPPORTED",
+      "confidence": "HIGH",
+      "hf_consequence": "effect-level dedup not inherited from queue dedup",
+      "falsifier": "AWS docs guaranteeing consumer-side dedup via MessageDeduplicationId"
+    },
+    {
+      "id": "C18",
+      "claim": "Step Functions Standard 'exactly-once execution model' refers to workflow/task starts by the service; coexists with retry-driven re-execution; Express is at-least-once",
+      "evidence_class": "VENDOR_DOCUMENTED_SEMANTICS",
+      "sources": [
+        "S38"
+      ],
+      "counterevidence": "none (vendor self-consistent)",
+      "boundary": "scoped to Step Functions execution semantics",
+      "status": "SUPPORTED",
+      "confidence": "HIGH",
+      "hf_consequence": "evidence for terminology gate",
+      "falsifier": "vendor doc unifying execution-model and external-effect guarantees"
+    },
+    {
+      "id": "C19",
+      "claim": "HF can rely on provider webhooks as sole truth for outcome resolution",
+      "evidence_class": "ENGINEERING_PRACTICE",
+      "sources": [
+        "S11",
+        "S23",
+        "S36"
+      ],
+      "counterevidence": "webhook delivery itself is at-least-once, unordered, can be missed",
+      "boundary": "webhooks are evidence inputs, never sole authority",
+      "status": "CONTRADICTED",
+      "confidence": "HIGH",
+      "hf_consequence": "reconciliation = query + webhook + receipts with polling fallback",
+      "falsifier": "provider guaranteeing transactional, ordered, lossless webhook delivery"
+    },
+    {
+      "id": "C20",
+      "claim": "Checkpoint+journal history is sufficient internal state machinery for HF workflow durability; full ES adds capability only under named activation conditions",
+      "evidence_class": "ENGINEERING_PRACTICE+VENDOR_DOCUMENTED_SEMANTICS",
+      "sources": [
+        "S15",
+        "S16",
+        "S17",
+        "S25"
+      ],
+      "counterevidence": "ES value where temporal-query requirements exist",
+      "boundary": "HF-internal state vs business-domain event streams",
+      "status": "SUPPORTED",
+      "confidence": "MEDIUM",
+      "hf_consequence": "default HF state model = transactional state + append-only journal/receipts",
+      "falsifier": "HF requirement only satisfiable via temporal state reconstruction"
+    }
+  ],
+  "hypotheses": [
+    {
+      "id": "H1",
+      "hypothesis": "Durable workflow execution does not imply exactly-once external business effects",
+      "verdict": "SUPPORTED",
+      "confidence": "HIGH",
+      "key_evidence": [
+        "C01",
+        "C10",
+        "C11",
+        "S14",
+        "S15",
+        "S16",
+        "S18"
+      ],
+      "counterevidence_boundary": "at-most-once policies trade duplicates for skips",
+      "falsifier": "demonstrated effect exactly-once from runtime durability alone"
+    },
+    {
+      "id": "H2",
+      "hypothesis": "Source-native atomic conditional mutation preferable to external read-check-write for source-local invariants",
+      "verdict": "SUPPORTED",
+      "confidence": "HIGH",
+      "key_evidence": [
+        "C03",
+        "S9",
+        "S30",
+        "S31"
+      ],
+      "counterevidence_boundary": "global-table LWW caveat; validator granularity; does not dedupe retries",
+      "falsifier": "harness check provably stronger than native guard for a source-local invariant"
+    },
+    {
+      "id": "H3",
+      "hypothesis": "Unknown outcome should be represented explicitly rather than collapsed into success or failure",
+      "verdict": "SUPPORTED",
+      "confidence": "HIGH",
+      "key_evidence": [
+        "C02",
+        "S6",
+        "S11",
+        "S36",
+        "S37"
+      ],
+      "counterevidence_boundary": "read-only effects do not need the state",
+      "falsifier": "method always resolving outcome at first failure detection with zero ambiguity"
+    },
+    {
+      "id": "H4",
+      "hypothesis": "Blind retry unsafe when previous outcome unknown and duplicate execution materially harmful",
+      "verdict": "SUPPORTED",
+      "confidence": "HIGH",
+      "key_evidence": [
+        "C02",
+        "C09",
+        "S13",
+        "S23"
+      ],
+      "counterevidence_boundary": "retry with stable identity or native key is the safe form; naturally idempotent effects exempt",
+      "falsifier": "idempotent-by-construction effect harmed by retry"
+    },
+    {
+      "id": "H5",
+      "hypothesis": "Stable effect identity necessary only for selected effect classes",
+      "verdict": "SUPPORTED",
+      "confidence": "MEDIUM",
+      "key_evidence": [
+        "C08",
+        "S9",
+        "S18"
+      ],
+      "counterevidence_boundary": "universal keying harmless but unnecessary; wrong identity misleads",
+      "falsifier": "read-only effect requiring identity for correctness"
+    },
+    {
+      "id": "H6",
+      "hypothesis": "Distributed lock without fencing may fail to prevent stale writers",
+      "verdict": "SUPPORTED",
+      "confidence": "HIGH",
+      "key_evidence": [
+        "C04",
+        "C12",
+        "S1",
+        "S19"
+      ],
+      "counterevidence_boundary": "efficiency-class locks excluded",
+      "falsifier": "lock-only system safe under unbounded pauses without resource checks"
+    },
+    {
+      "id": "H7",
+      "hypothesis": "Compensation is a separate domain operation rather than a technical rollback",
+      "verdict": "SUPPORTED",
+      "confidence": "HIGH",
+      "key_evidence": [
+        "C05",
+        "S20",
+        "S22"
+      ],
+      "counterevidence_boundary": "DB rollbacks are a different in-system mechanism",
+      "falsifier": "generic safe auto-inverse across business systems"
+    },
+    {
+      "id": "H8",
+      "hypothesis": "Event Sourcing not required for every durable or auditable harness",
+      "verdict": "SUPPORTED",
+      "confidence": "MEDIUM",
+      "key_evidence": [
+        "C06",
+        "C20",
+        "S17",
+        "S25",
+        "S33"
+      ],
+      "counterevidence_boundary": "ES valuable under temporal-query/rebuild activation conditions",
+      "falsifier": "HF requirement class only satisfiable via ES"
+    },
+    {
+      "id": "H9",
+      "hypothesis": "Exactly-once terminology overloaded; must be decomposed by boundary",
+      "verdict": "SUPPORTED",
+      "confidence": "HIGH",
+      "key_evidence": [
+        "C01",
+        "C07",
+        "C16",
+        "C17",
+        "C18"
+      ],
+      "counterevidence_boundary": "none",
+      "falsifier": "vendor/standard defining unscoped end-to-end effect exactly-once"
+    },
+    {
+      "id": "H10",
+      "hypothesis": "More harness-owned machinery can reduce reliability when authoritative systems expose stronger native guarantees",
+      "verdict": "SUPPORTED_AS_PREFERENCE_WITH_NAMED_BOUNDARY",
+      "confidence": "MEDIUM",
+      "key_evidence": [
+        "C14",
+        "S1",
+        "S30",
+        "S39"
+      ],
+      "counterevidence_boundary": "holds only where native mechanism expresses the same invariant more strongly; harness evidence records remain necessary",
+      "falsifier": "invariant where harness-side implementation dominates all native options"
+    }
+  ],
+  "counterevidence": [
+    {
+      "target_claim": "idempotency keys represent business identity",
+      "counterevidence": "payload-hash fingerprints collapse legitimate distinct operations; one operation with changed payload escapes dedup; different request identities for one logical effect (two-tab SetupIntent case)",
+      "sources": [
+        "S13",
+        "S36",
+        "S41"
+      ],
+      "resolution": "effect identity must be chosen at the logical layer; fingerprint conflicts (422/409) need identity stability rules (OQ-3)"
+    },
+    {
+      "target_claim": "webhooks can be sole outcome authority",
+      "counterevidence": "webhook delivery at-least-once, unordered, missable; orphan-recovery jobs recommended",
+      "sources": [
+        "S36",
+        "S23"
+      ],
+      "resolution": "C19 CONTRADICTED; reconciliation = query + webhook + receipts"
+    },
+    {
+      "target_claim": "distributed locks provide safety",
+      "counterevidence": "GC pause / delay / clock skew admit dual holders; Kubernetes leaderelection explicitly no fencing; antirez concedes lock-avoidance where resources can CAS",
+      "sources": [
+        "S1",
+        "S2",
+        "S19"
+      ],
+      "resolution": "C04 SUPPORTED for correctness-class; locks demoted to efficiency tools"
+    },
+    {
+      "target_claim": "event sourcing provides enterprise audit",
+      "counterevidence": "event store ≠ audit log: no third-party verifiability, compaction/scavenging, app-clock timestamps",
+      "sources": [
+        "S25"
+      ],
+      "resolution": "audit-grade evidence needs hash-chain + external timestamps regardless of ES"
+    },
+    {
+      "target_claim": "native guards make harness machinery unnecessary everywhere",
+      "counterevidence": "not all sources offer native guards; native windows bounded; native guards do not carry logical-effect identity",
+      "sources": [
+        "S11",
+        "S13"
+      ],
+      "resolution": "H10 is a preference with named boundary, not elimination"
+    },
+    {
+      "target_claim": "sagas can undo any step",
+      "counterevidence": "unsendable email class; compensation can fail; compensation of unknown outcomes unsafe",
+      "sources": [
+        "S20",
+        "S21",
+        "S22"
+      ],
+      "resolution": "C05; pivot-last ordering; compensation contracts only on decided-success outcomes"
+    },
+    {
+      "target_claim": "workflow durability implies effect exactly-once",
+      "counterevidence": "crash-after-external-success re-executes steps in all four studied runtimes",
+      "sources": [
+        "S16",
+        "S17",
+        "S18",
+        "S35"
+      ],
+      "resolution": "H1 SUPPORTED; identity guards required"
+    }
+  ],
+  "failure_classes": [
+    {
+      "id": "FC-01",
+      "name": "Outcome ambiguity",
+      "definition": "Consequential operation terminated without usable result signal (timeout, connection loss, indeterminate 5xx, lost ack)",
+      "axes": {
+        "D1_outcome_determinacy": "unknown"
+      },
+      "scenarios": [
+        "F1",
+        "F12"
+      ]
+    },
+    {
+      "id": "FC-02",
+      "name": "Lost acknowledgement",
+      "definition": "Effect may have executed; ack/response provably or possibly lost",
+      "axes": {
+        "D1_outcome_determinacy": "unknown"
+      },
+      "scenarios": [
+        "F1"
+      ]
+    },
+    {
+      "id": "FC-03",
+      "name": "Duplicate effect",
+      "definition": "Logical effect executed >=2 times",
+      "axes": {
+        "D2_multiplicity": ">=2"
+      },
+      "scenarios": [
+        "F2",
+        "F3",
+        "F11"
+      ]
+    },
+    {
+      "id": "FC-04",
+      "name": "Delayed duplicate",
+      "definition": "Duplicate beyond dedup/idempotency window",
+      "axes": {
+        "D2_multiplicity": ">=2",
+        "D5_scope": "late"
+      },
+      "scenarios": [
+        "F11"
+      ]
+    },
+    {
+      "id": "FC-05",
+      "name": "Stale-state mutation",
+      "definition": "Mutation applied on state that changed after the read (lost update)",
+      "axes": {
+        "D3_freshness": "stale"
+      },
+      "scenarios": [
+        "F4"
+      ]
+    },
+    {
+      "id": "FC-06",
+      "name": "Write conflict",
+      "definition": "Two legitimate writers produce conflicting outcomes",
+      "axes": {
+        "D3_freshness": "stale",
+        "D5_scope": "multi-writer"
+      },
+      "scenarios": [
+        "F5"
+      ]
+    },
+    {
+      "id": "FC-07",
+      "name": "Lease loss",
+      "definition": "Worker's authority expired mid-flight (may or may not know)",
+      "axes": {
+        "D4_authority": "lost"
+      },
+      "scenarios": [
+        "F6"
+      ]
+    },
+    {
+      "id": "FC-08",
+      "name": "Stale writer / zombie",
+      "definition": "Worker acts after authority moved to another worker",
+      "axes": {
+        "D4_authority": "stale"
+      },
+      "scenarios": [
+        "F6"
+      ]
+    },
+    {
+      "id": "FC-09",
+      "name": "Partial multi-system effect",
+      "definition": "Subset of a multi-system operation committed",
+      "axes": {
+        "D5_scope": "multi-system"
+      },
+      "scenarios": [
+        "F7"
+      ]
+    },
+    {
+      "id": "FC-10",
+      "name": "Crash-after-effect / unrecorded effect",
+      "definition": "External effect committed; local/recorded state does not reflect it",
+      "axes": {
+        "D1_outcome_determinacy": "locally-unknown",
+        "D5_scope": 2
+      },
+      "scenarios": [
+        "F3",
+        "F7"
+      ]
+    },
+    {
+      "id": "FC-11",
+      "name": "Compensation failure",
+      "definition": "Compensating operation itself fails or is unsafe to run",
+      "axes": {
+        "D6_recoverability": "degraded"
+      },
+      "scenarios": [
+        "F8"
+      ]
+    },
+    {
+      "id": "FC-12",
+      "name": "Irreversibility",
+      "definition": "Effect has no meaningful inverse; deviation permanent without new forward operations",
+      "axes": {
+        "D6_recoverability": "none"
+      },
+      "scenarios": [
+        "F9"
+      ]
+    },
+    {
+      "id": "FC-13",
+      "name": "Compensation of unknown outcome",
+      "definition": "Compensation attempted while original outcome unknown (compensate-nothing / double-compensate)",
+      "axes": {
+        "D1_outcome_determinacy": "unknown",
+        "D6_recoverability": "degraded"
+      },
+      "scenarios": [
+        "F8",
+        "F12"
+      ]
+    },
+    {
+      "id": "FC-14",
+      "name": "Reconciliation failure",
+      "definition": "Authoritative query unavailable, ambiguous, or conflicting evidence",
+      "axes": {
+        "D1_outcome_determinacy": "unknown",
+        "D6_recoverability": "human-only"
+      },
+      "scenarios": [
+        "F12"
+      ]
+    },
+    {
+      "id": "FC-15",
+      "name": "Replay-induced duplication",
+      "definition": "Replayed control logic re-issues an external effect",
+      "axes": {
+        "D2_multiplicity": ">=2"
+      },
+      "scenarios": [
+        "F10"
+      ]
+    }
+  ],
+  "failure_taxonomy_note": "Six orthogonal dimensions (D1 outcome determinacy, D2 multiplicity, D3 freshness, D4 authority, D5 scope, D6 recoverability); a single incident maps to a set of classes.",
+  "failure_scenarios": [
+    {
+      "id": "F1",
+      "name": "Lost acknowledgement",
+      "observable_facts": "request sent; remote may have executed; no response; wire cannot distinguish lost-before-execution from lost-after-commit",
+      "unsafe_assumption": "timeout => failure => safe to retry or abort",
+      "minimum_protection": "effect classification; mark UNKNOWN_OUTCOME; no automatic retry for harmful effects",
+      "stronger_optional": "native idempotency key held stable + authoritative status query before compensation",
+      "residual_uncertainty": "status API may lag the write",
+      "recovery_route": "reconcile (query/webhook/settlement) -> decided state; escalate on conflicting evidence"
+    },
+    {
+      "id": "F2",
+      "name": "Duplicate delivery",
+      "observable_facts": "same logical operation arrives twice (redelivery, double-submit, retry storm)",
+      "unsafe_assumption": "dedup at one layer implies effect-level dedup",
+      "minimum_protection": "verified natural idempotency, else stable logical-effect identity checked in durable store",
+      "stronger_optional": "native key + HF-side durable dedup keyed on logical identity",
+      "residual_uncertainty": "identity inference for semantically-equal payload-different duplicates",
+      "recovery_route": "reconcile; compensate only if reversible and authorized"
+    },
+    {
+      "id": "F3",
+      "name": "Retry after crash (crash after external success, before recording completion)",
+      "observable_facts": "runtime shows attempt incomplete; provider shows or may later show success",
+      "unsafe_assumption": "incomplete-in-runtime => not executed externally",
+      "minimum_protection": "at-most-once policy for harmful effects + UNKNOWN_OUTCOME",
+      "stronger_optional": "identity generated inside checkpointed step / derived from workflow+activity ID; receipt recorded before success",
+      "residual_uncertainty": "provider key retention window",
+      "recovery_route": "reconcile by effect identity; adopt executed outcome rather than re-executing"
+    },
+    {
+      "id": "F4",
+      "name": "Stale read",
+      "observable_facts": "read V at t0; write at t1; value changed in between",
+      "unsafe_assumption": "read-check-write proves anything about t1 state",
+      "minimum_protection": "source-native conditional mutation; handle precondition failure",
+      "stronger_optional": "transaction at source; monotonic status preconditions",
+      "residual_uncertainty": "none for source-local invariant with native guard; cross-system invariants unprotected",
+      "recovery_route": "refresh -> revalidate -> retry or abort; never force-write"
+    },
+    {
+      "id": "F5",
+      "name": "Concurrent writers",
+      "observable_facts": "two legitimate workers submit conflicting mutations near-simultaneously",
+      "unsafe_assumption": "first/last-wins acceptable; or harness lock made them serial",
+      "minimum_protection": "source-native serialization point",
+      "stronger_optional": "business-level versioning/epochs; approval for conflict class",
+      "residual_uncertainty": "winner legitimacy is a business question",
+      "recovery_route": "loser reconciles against winner; compensates own partial work if authorized"
+    },
+    {
+      "id": "F6",
+      "name": "Lease expiration",
+      "observable_facts": "A's lease expired possibly unnoticed; B active; both may issue effects",
+      "unsafe_assumption": "lease expiry => old holder stops; new holder sole writer",
+      "minimum_protection": "post-expiry A actions treated as stale-writer risks; B's writes conditional on source epoch/version",
+      "stronger_optional": "fencing/epoch tokens at acceptance point; else drain + conditional-write gatekeeping",
+      "residual_uncertainty": "expiry-to-notice window irreducible; protection must live at the resource",
+      "recovery_route": "B reconciles A's in-flight operations via effect identity registry"
+    },
+    {
+      "id": "F7",
+      "name": "Partial multi-system effect",
+      "observable_facts": "A committed; B did not; no shared transaction",
+      "unsafe_assumption": "single 'transaction failed' status suffices; re-running whole step safe for A",
+      "minimum_protection": "per-system outcome records with sub-states (decided-success/NOT_EXECUTED/UNKNOWN)",
+      "stronger_optional": "pivot-last ordering; compensable-step registry; invariant reordering",
+      "residual_uncertainty": "A's effect may itself be unknown (compound ambiguity)",
+      "recovery_route": "forward-recover B or compensate A per effect classes; never blanket"
+    },
+    {
+      "id": "F8",
+      "name": "Compensation failure",
+      "observable_facts": "compensating op failed or stuck",
+      "unsafe_assumption": "compensation more reliable than forward path; compensation retries harmless forever",
+      "minimum_protection": "compensation as effect with own identity, idempotency, retry budget; failure raises alert state",
+      "stronger_optional": "longer retry horizon than forward path; escalation queue; human authorization",
+      "residual_uncertainty": "compensation can itself be UNKNOWN_OUTCOME (recursion)",
+      "recovery_route": "escalate to human with evidence bundle"
+    },
+    {
+      "id": "F9",
+      "name": "Irreversible effect",
+      "observable_facts": "no meaningful inverse exists",
+      "unsafe_assumption": "saga/rollback framework can undo it",
+      "minimum_protection": "class = NON_IDEMPOTENT_IRREVERSIBLE; approval gate; no compensation field",
+      "stronger_optional": "pivot-last ordering; dry-run/preview; staged commitments",
+      "residual_uncertainty": "none removed — exposure reduced only",
+      "recovery_route": "forward correction as new authorized business operation"
+    },
+    {
+      "id": "F10",
+      "name": "Replay containing unsafe external side effect",
+      "observable_facts": "replay of orchestration history performs I/O or unrecorded nondeterminism => duplicate I/O",
+      "unsafe_assumption": "workflow durability makes replayed side effects safe",
+      "minimum_protection": "external calls only in non-replayed step/activity boundaries; deterministic APIs inside",
+      "stronger_optional": "recorded nondeterminism APIs, knowing they still have no exactly-once guarantee",
+      "residual_uncertainty": "history corruption is separate disaster class",
+      "recovery_route": "runtime-level; HF duty is the constraint"
+    },
+    {
+      "id": "F11",
+      "name": "Delayed duplicate beyond window",
+      "observable_facts": "duplicate after provider pruned key / queue window / name retention",
+      "unsafe_assumption": "window expired => operation finished and safe to re-run",
+      "minimum_protection": "HF durable dedup keyed by logical effect, retention >= business horizon; monotonic source preconditions",
+      "stronger_optional": "unbounded/long-retention identity store; contractual provider dedup",
+      "residual_uncertainty": "storage lifetime vs business horizon; privacy-law tension",
+      "recovery_route": "duplicate detected late -> reconcile + compensate if authorized"
+    },
+    {
+      "id": "F12",
+      "name": "Unknown authoritative state",
+      "observable_facts": "consequential op issued; outcome unknown; no status endpoint or it is down; webhooks absent/missed",
+      "unsafe_assumption": "after T minutes with no evidence, treat as failed",
+      "minimum_protection": "explicit UNKNOWN_OUTCOME persisted with attempt evidence; no auto retry/compensation",
+      "stronger_optional": "multi-source reconciliation with freshness/authority models; deadline escalation",
+      "residual_uncertainty": "may persist indefinitely (reconciliation failure) — permanent visible limbo with owner is correct",
+      "recovery_route": "scheduled reconciliation with backoff; escalation with evidence; human decision"
+    }
+  ],
+  "effect_classes": [
+    {
+      "name": "READ_ONLY",
+      "retry_policy": "free retry; stale-tolerance policy",
+      "identity_requirement": "none (request id for tracing only)",
+      "reconciliation_requirement": "none; freshness validation at use site",
+      "validation_requirement": "freshness check if used for consequential decisions",
+      "authorization_sensitivity": "low",
+      "compensation_possibility": "N/A"
+    },
+    {
+      "name": "IDEMPOTENT_WRITE",
+      "retry_policy": "auto-retry with backoff; safe by construction",
+      "identity_requirement": "request identity for tracing; effect identity not required if reapplication verified no-op",
+      "reconciliation_requirement": "on contradiction only",
+      "validation_requirement": "verify true idempotency (syntax != effect)",
+      "authorization_sensitivity": "low-medium",
+      "compensation_possibility": "rarely needed (re-apply forward)"
+    },
+    {
+      "name": "GUARDED_WRITE",
+      "retry_policy": "auto-retry with same stable key/precondition",
+      "identity_requirement": "REQUIRED: stable logical identity mapped onto native key/precondition",
+      "reconciliation_requirement": "status query on unknown outcome; duplicate-proofness delegated to source within window",
+      "validation_requirement": "verify native window >= duplicate horizon else add HF dedup",
+      "authorization_sensitivity": "medium",
+      "compensation_possibility": "domain op if business-reversible"
+    },
+    {
+      "name": "NON_IDEMPOTENT_REVERSIBLE",
+      "retry_policy": "at-most-once default; retry only under identity guard or after reconcile",
+      "identity_requirement": "REQUIRED: logical effect identity + durable dedup",
+      "reconciliation_requirement": "REQUIRED on any unknown outcome",
+      "validation_requirement": "provider receipt verification",
+      "authorization_sensitivity": "high",
+      "compensation_possibility": "yes — separate authorized domain op"
+    },
+    {
+      "name": "NON_IDEMPOTENT_IRREVERSIBLE",
+      "retry_policy": "at-most-once; NO auto-retry; reconcile-then-escalate",
+      "identity_requirement": "REQUIRED",
+      "reconciliation_requirement": "REQUIRED (evidence-first)",
+      "validation_requirement": "pre-execution validation + approval gate",
+      "authorization_sensitivity": "highest (explicit approval)",
+      "compensation_possibility": "none — forward correction ops only"
+    }
+  ],
+  "effect_classes_note": "Proposed v0.1 starting classes; not final HF enums; subject to fault-injection data.",
+  "mechanisms": [
+    {
+      "name": "no special mechanism",
+      "protected_invariant": "duplicate/stale writes harmless",
+      "assumptions": "natural idempotency or single writer",
+      "failure_mode": "silent lost updates if assumption wrong",
+      "complexity": "none",
+      "source_support_required": "none",
+      "cross_system_applicability": "trivially yes",
+      "stale_worker_resistance": "none"
+    },
+    {
+      "name": "serialization (HF-local single-writer)",
+      "protected_invariant": "one worker at a time per HF",
+      "assumptions": "HF sole writer; process survives",
+      "failure_mode": "HF restart/multi-instance breaks it",
+      "complexity": "low",
+      "source_support_required": "none",
+      "cross_system_applicability": "no",
+      "stale_worker_resistance": "poor"
+    },
+    {
+      "name": "optimistic concurrency (harness-side)",
+      "protected_invariant": "HF view consistency",
+      "assumptions": "HF state authoritative",
+      "failure_mode": "divergence from source; race vs external writers",
+      "complexity": "medium",
+      "source_support_required": "none",
+      "cross_system_applicability": "no",
+      "stale_worker_resistance": "poor"
+    },
+    {
+      "name": "source-native conditional mutation",
+      "protected_invariant": "source-local invariant",
+      "assumptions": "source supports preconditions",
+      "failure_mode": "precondition too weak (version != effect-dedup)",
+      "complexity": "low",
+      "source_support_required": "yes (native)",
+      "cross_system_applicability": "per-source only",
+      "stale_worker_resistance": "strong (rejected at source)"
+    },
+    {
+      "name": "transaction",
+      "protected_invariant": "atomic multi-object invariant in one system",
+      "assumptions": "same-system scope",
+      "failure_mode": "blocks; does not span systems",
+      "complexity": "medium",
+      "source_support_required": "native",
+      "cross_system_applicability": "no",
+      "stale_worker_resistance": "strong within system"
+    },
+    {
+      "name": "lock (harness or DLM)",
+      "protected_invariant": "mutual exclusion advice",
+      "assumptions": "time bounds hold; holder honest",
+      "failure_mode": "GC pause/delay => dual holders; no resource enforcement",
+      "complexity": "medium-high",
+      "source_support_required": "resource must enforce to be safe",
+      "cross_system_applicability": "no",
+      "stale_worker_resistance": "none without fencing"
+    },
+    {
+      "name": "lease",
+      "protected_invariant": "time-bounded authority",
+      "assumptions": "bounded clock skew; expiry noticed",
+      "failure_mode": "dual holders in skew window",
+      "complexity": "medium",
+      "source_support_required": "registry",
+      "cross_system_applicability": "no",
+      "stale_worker_resistance": "weak alone"
+    },
+    {
+      "name": "lease + fencing",
+      "protected_invariant": "authority + resource-rejected stale writes",
+      "assumptions": "resource can check monotonic tokens",
+      "failure_mode": "requires monotonic token source",
+      "complexity": "high",
+      "source_support_required": "resource-side token check",
+      "cross_system_applicability": "no",
+      "stale_worker_resistance": "strong where enforced"
+    },
+    {
+      "name": "source-native transactional mechanism (derived rule)",
+      "protected_invariant": "the business invariant itself",
+      "assumptions": "source exposes it (status preconditions, conditional writes)",
+      "failure_mode": "mis-specified precondition",
+      "complexity": "low-medium",
+      "source_support_required": "native",
+      "cross_system_applicability": "per-source",
+      "stale_worker_resistance": "strong"
+    }
+  ],
+  "mechanisms_note": "No mechanism in this table protects a cross-system invariant; that class requires saga-style compensation or restructured invariants (S5, S39).",
+  "recovery_matrix": [
+    {
+      "strategy": "retry (identity-guarded)",
+      "applicable_state": "decided-failure at transport; or guarded unknown",
+      "preconditions": "stable identity/native key; transient error class",
+      "own_failure_mode": "duplicate if identity lost; retry storm"
+    },
+    {
+      "strategy": "retry (unguarded)",
+      "applicable_state": "naturally idempotent effects only",
+      "preconditions": "verified idempotency",
+      "own_failure_mode": "duplicate effect if idempotency misjudged"
+    },
+    {
+      "strategy": "reconcile (query authoritative state)",
+      "applicable_state": "UNKNOWN_OUTCOME",
+      "preconditions": "status API/webhook exists & authoritative",
+      "own_failure_mode": "query lag; unavailable API (FC-14)"
+    },
+    {
+      "strategy": "re-read (refresh state)",
+      "applicable_state": "stale-read rejection",
+      "preconditions": "source readable",
+      "own_failure_mode": "racing-writers loop (need backoff/bound)"
+    },
+    {
+      "strategy": "rebind/revalidate",
+      "applicable_state": "business assumptions expired",
+      "preconditions": "revalidation logic exists",
+      "own_failure_mode": "decision changes mid-flow (re-authorize)"
+    },
+    {
+      "strategy": "forward recovery",
+      "applicable_state": "failed step before pivot",
+      "preconditions": "idempotent/identity-guarded steps",
+      "own_failure_mode": "same as retry"
+    },
+    {
+      "strategy": "compensate",
+      "applicable_state": "decided-success partial effects, authorized",
+      "preconditions": "domain-defined inverse; pivot not passed",
+      "own_failure_mode": "FC-11; FC-13"
+    },
+    {
+      "strategy": "human escalation",
+      "applicable_state": "ambiguous/material",
+      "preconditions": "escalation path, evidence bundle",
+      "own_failure_mode": "human latency; manual error"
+    },
+    {
+      "strategy": "abort (decide NOT done)",
+      "applicable_state": "pre-execution failure classes only",
+      "preconditions": "proof of non-execution",
+      "own_failure_mode": "wrong abort on unknown (FC-01 misuse)"
+    }
+  ],
+  "decision_contract": {
+    "version": "v0.1",
+    "fields": {
+      "effect_class": "REQUIRED",
+      "logical_effect_identity": "REQUIRED (null allowed for READ_ONLY)",
+      "operation_identity": "REQUIRED",
+      "duplicate_harm": "REQUIRED (NONE|RECOVERABLE|MATERIAL)",
+      "unknown_outcome_policy": "REQUIRED (RECONCILE_FIRST|IDENTITY_GUARDED_RETRY|NO_RETRY_ESCALATE)",
+      "retry_policy": "REQUIRED (derived, never free-text)",
+      "receipt_policy": "REQUIRED",
+      "source_idempotency_capability": "CONDITIONAL",
+      "source_conditional_write": "CONDITIONAL",
+      "source_status_query": "CONDITIONAL",
+      "source_dedup_window": "CONDITIONAL",
+      "retention_horizon": "CONDITIONAL (REQUIRED_IF duplicate_harm=MATERIAL)",
+      "reversibility": "CONDITIONAL (REQUIRED_IF multi-step member)",
+      "compensation_support": "CONDITIONAL (REQUIRED_IF reversibility=REVERSIBLE)",
+      "authorization_sensitivity": "CONDITIONAL",
+      "semantic_undo_inference": "EXPERIMENTAL",
+      "auto_cross_system_reconciliation": "EXPERIMENTAL",
+      "exactly_once_effect_flag": "REJECTED",
+      "harness_lock_for_external_correctness": "REJECTED",
+      "ledger_for_every_tool_call": "REJECTED",
+      "timeout_equals_failure": "REJECTED"
+    },
+    "decision_procedure": [
+      "classify effect; set defaults from effect class",
+      "if duplicate_harm=MATERIAL: identity REQUIRED; map to native key; add HF dedup if native window < retention horizon",
+      "on failure signal classify: rejected-before-execution vs UNKNOWN (timeouts/5xx/lost-ack => UNKNOWN by default)",
+      "UNKNOWN_OUTCOME action order: query authoritative status -> wait webhook within deadline -> identity-guarded retry only if native key held -> escalate; never compensate from UNKNOWN",
+      "record receipts at every transition; ack != outcome"
+    ]
+  },
+  "source_native_guard_matrix": {
+    "Stripe_class_payment_APIs": {
+      "conditional_writes": null,
+      "idempotency_keys": "yes (>=24h, parameter-conflict error, 500-replay+indeterminacy)",
+      "status_reconciliation": "webhooks + retrieve APIs",
+      "fencing": null
+    },
+    "HTTP_REST": {
+      "conditional_writes": "yes (If-Match/If-Unmodified-Since/412)",
+      "idempotency_keys": "expired draft only",
+      "status_reconciliation": "GET revalidation",
+      "fencing": null
+    },
+    "PostgreSQL_class_RDBMS": {
+      "conditional_writes": "yes (WHERE/CAS)",
+      "transactions": "yes (local ACID)",
+      "idempotency_keys": "unique constraints + ON CONFLICT",
+      "fencing": "row-level CAS effectively fences"
+    },
+    "DynamoDB": {
+      "conditional_writes": "yes (condition expressions; zero capacity on failed condition)",
+      "transactions": "TransactWrite items",
+      "caveat": "global tables LWW breaks optimistic locking",
+      "fencing": "conditional put with monotonic attr can act as fencing"
+    },
+    "MongoDB": {
+      "conditional_writes": "yes (filter precondition, findOneAndModify)",
+      "transactions": "multi-doc replica-set scoped",
+      "fencing": null
+    },
+    "Kafka": {
+      "dedup": "PID+sequence (broker-enforced)",
+      "transactions": "Kafka-internal read-process-write",
+      "fencing": "yes, broker-enforced (ProducerFencedException)"
+    },
+    "SQS_FIFO": {
+      "dedup": "5-minute send-side window only",
+      "status_reconciliation": "visibility-timeout redelivery",
+      "fencing": null
+    },
+    "Google_Pub_Sub": {
+      "dedup": "no-redelivery-after-ack (region-scoped, pull-only)",
+      "fencing": "latest-ack-id rule"
+    },
+    "Temporal": {
+      "idempotency": "WF-ID+Activity-ID recommended key; duplicate-reject start policies",
+      "execution": "at-least-once activities; at-most-once configurable",
+      "fencing": "internal workflow-task fencing"
+    },
+    "Azure_Durable_Functions": {
+      "execution": "at-least-once activities; idempotency required by docs",
+      "internals": "event-sourced orchestrator history"
+    },
+    "AWS_Step_Functions": {
+      "idempotency": "execution-name uniqueness (90 days); same-name+same-input => idempotent start",
+      "execution": "Standard exactly-once execution model (scoped); Express at-least-once"
+    },
+    "AWS_Durable_Execution_SDK": {
+      "execution": "steps at-least-once; AtMostOncePerRetry x no-retry => exactly-once end-to-end per attempt semantics",
+      "idempotency": "keys minted inside checkpointed steps"
+    },
+    "Kubernetes_Lease": {
+      "leases": "yes (Lease API)",
+      "fencing": "explicitly NOT provided"
+    },
+    "ZooKeeper_etcd": {
+      "leases": "ephemeral/TTL",
+      "fencing": "yes (zxid/revision as fencing token)"
+    }
+  },
+  "decision_rules": [
+    {
+      "id": "R1",
+      "rule": "IF source offers caller-supplied idempotency keys THEN map HF logical-effect identity onto that key UNLESS native retention window < business duplicate horizon (then add HF dedup too, R6)",
+      "activation_condition": "consequential effect on source with native keys",
+      "protected_invariant": "one logical effect <= one execution",
+      "failure_prevented": "F1/F3 duplicates",
+      "evidence_class": "VENDOR_DOCUMENTED_SEMANTICS",
+      "sources": [
+        "S10",
+        "S11"
+      ],
+      "residual_risk": "window expiry (F11); payload conflict on re-planned ops",
+      "deactivation_condition": "source drops/changes key semantics"
+    },
+    {
+      "id": "R2",
+      "rule": "IF invariant is source-local THEN use source-native atomic precondition+mutation; harness read-check-write prohibited on that resource UNLESS native mechanism known-weaker (then re-home invariant or add source-side monotonic preconditions)",
+      "activation_condition": "source-local invariant on guarded resource",
+      "protected_invariant": "no lost update",
+      "failure_prevented": "F4/F5",
+      "evidence_class": "VENDOR_DOCUMENTED_SEMANTICS+FOUNDATIONAL_SYSTEMS_RESULT",
+      "sources": [
+        "S9",
+        "S30",
+        "S31"
+      ],
+      "residual_risk": "cross-system invariants remain unproven",
+      "deactivation_condition": "source loses conditional-write support"
+    },
+    {
+      "id": "R3",
+      "rule": "IF consequential operation returns timeout/connection-loss/indeterminate-error THEN set UNKNOWN_OUTCOME and take no retry/compensation except per R4/R5 UNLESS effect proven naturally idempotent",
+      "activation_condition": "consequential effect with ambiguous signal",
+      "protected_invariant": "no decision from ambiguous evidence",
+      "failure_prevented": "F1/F12 misuse",
+      "evidence_class": "FOUNDATIONAL_SYSTEMS_RESULT+VENDOR_DOCUMENTED_SEMANTICS",
+      "sources": [
+        "S8",
+        "S11",
+        "S23",
+        "S36",
+        "S37"
+      ],
+      "residual_risk": "limbo duration",
+      "deactivation_condition": "none (gate-level rule)"
+    },
+    {
+      "id": "R4",
+      "rule": "IF UNKNOWN_OUTCOME and authoritative status path exists THEN reconcile before any retry or compensation UNLESS native idempotency key still validly held (identity-guarded retry may precede)",
+      "activation_condition": "UNKNOWN_OUTCOME with status path",
+      "protected_invariant": "decisions from authoritative evidence",
+      "failure_prevented": "FC-13/FC-14",
+      "evidence_class": "ENGINEERING_PRACTICE",
+      "sources": [
+        "S23",
+        "S24",
+        "S36"
+      ],
+      "residual_risk": "status lag",
+      "deactivation_condition": "status path loses authority"
+    },
+    {
+      "id": "R5",
+      "rule": "IF stale concurrent writer would cause material harm THEN achieve exclusion via source-native conditional/monotonic state or fence-capable infrastructure UNLESS the resource itself checks fencing tokens (then lease+fencing acceptable)",
+      "activation_condition": "material harm from stale concurrent writer",
+      "protected_invariant": "no zombie write",
+      "failure_prevented": "F6",
+      "evidence_class": "FOUNDATIONAL_SYSTEMS_RESULT+VENDOR_DOCUMENTED_SEMANTICS",
+      "sources": [
+        "S1",
+        "S2",
+        "S19"
+      ],
+      "residual_risk": "token-checking resources required",
+      "deactivation_condition": "never for external SaaS; internal efficiency locks exempt"
+    },
+    {
+      "id": "R6",
+      "rule": "IF duplicate_harm=MATERIAL AND (no native key OR native window < retention horizon) THEN persist logical-effect identity in HF durable dedup with retention >= horizon, checked before first attempt UNLESS source guarantees unbounded dedup",
+      "activation_condition": "material duplicate harm, insufficient native coverage",
+      "protected_invariant": "one effect per identity beyond windows",
+      "failure_prevented": "F11",
+      "evidence_class": "VENDOR_DOCUMENTED_SEMANTICS+ENGINEERING_PRACTICE",
+      "sources": [
+        "S11",
+        "S13"
+      ],
+      "residual_risk": "storage lifetime vs legal retention (OQ-5)",
+      "deactivation_condition": "harm class downgraded"
+    },
+    {
+      "id": "R7",
+      "rule": "IF workflow logic may be replayed THEN external effects execute only in non-replayed step/activity boundaries with recorded nondeterminism and stable identity UNLESS effect verified idempotent and harmless on replay",
+      "activation_condition": "replay-based runtime",
+      "protected_invariant": "replay adds no external effects",
+      "failure_prevented": "F10",
+      "evidence_class": "VENDOR_DOCUMENTED_SEMANTICS",
+      "sources": [
+        "S16",
+        "S17",
+        "S18"
+      ],
+      "residual_risk": "history corruption (separate class)",
+      "deactivation_condition": "non-replaying engine"
+    },
+    {
+      "id": "R8",
+      "rule": "IF effect is NON_IDEMPOTENT_IRREVERSIBLE THEN require approval gate + execution after all fallible/reversible steps UNLESS documented dry-run equivalent exists and is used",
+      "activation_condition": "irreversible or privileged effect",
+      "protected_invariant": "irreversibles only on validated states",
+      "failure_prevented": "F9",
+      "evidence_class": "ENGINEERING_PRACTICE+VENDOR_DOCUMENTED_SEMANTICS",
+      "sources": [
+        "S20",
+        "S21"
+      ],
+      "residual_risk": "none removed (exposure reduction only)",
+      "deactivation_condition": "effect reclassified reversible"
+    },
+    {
+      "id": "R9",
+      "rule": "IF a step claims compensation support THEN compensation must be a named domain operation with own identity, authorization, idempotency, retry budget >= forward path, and MAY only run on decided-success outcomes UNLESS source-native inverse exists",
+      "activation_condition": "reversible material step in multi-step flow",
+      "protected_invariant": "compensations safe, authorized, idempotent",
+      "failure_prevented": "F8 / FC-11 / FC-13",
+      "evidence_class": "ENGINEERING_PRACTICE+VENDOR_DOCUMENTED_SEMANTICS",
+      "sources": [
+        "S5",
+        "S20",
+        "S22"
+      ],
+      "residual_risk": "compensation can still fail -> escalation",
+      "deactivation_condition": "flow becomes single-transaction at one source"
+    },
+    {
+      "id": "R10",
+      "rule": "IF an effect executes THEN record attempt/identity/request-evidence/response-ack/authoritative-outcome-evidence as separate fields; never write success from ack alone UNLESS effect is READ_ONLY (attempt log only)",
+      "activation_condition": "any consequential effect",
+      "protected_invariant": "evidence completeness",
+      "failure_prevented": "FC-01..03 forensics",
+      "evidence_class": "ENGINEERING_PRACTICE",
+      "sources": [
+        "S24",
+        "S36"
+      ],
+      "residual_risk": "evidence tamper unless integrity-protected (OQ-6)",
+      "deactivation_condition": "none"
+    },
+    {
+      "id": "R11",
+      "rule": "IF a new source/effect is onboarded THEN discover {idempotency key? window? conditional write? status query? dedup semantics?} before first consequential use UNLESS effect is READ_ONLY",
+      "activation_condition": "source onboarding",
+      "protected_invariant": "informed effect contracts",
+      "failure_prevented": "wrong defaults",
+      "evidence_class": "DESIGN_RECOMMENDATION",
+      "sources": [
+        "S11",
+        "S13",
+        "S30"
+      ],
+      "residual_risk": "docs drift -> periodic re-verification",
+      "deactivation_condition": "none"
+    },
+    {
+      "id": "R12",
+      "rule": "IF UNKNOWN_OUTCOME persists past reconciliation deadline AND duplicate_harm=MATERIAL THEN escalate to human with evidence bundle; do not auto-decide UNLESS business rules define bounded auto-policy (e.g., void-after-confirmed-nonexecution)",
+      "activation_condition": "unresolvable limbo on material effect",
+      "protected_invariant": "limbo has an owner",
+      "failure_prevented": "FC-14",
+      "evidence_class": "ENGINEERING_PRACTICE",
+      "sources": [
+        "S20",
+        "S22",
+        "S36"
+      ],
+      "residual_risk": "human latency",
+      "deactivation_condition": "none (safety default)"
+    }
+  ],
+  "anti_patterns": [
+    {
+      "name": "timeout = failure",
+      "refutation": "ack absence is not failure evidence",
+      "sources": [
+        "S8",
+        "S11",
+        "S23",
+        "S37"
+      ],
+      "correct_behavior": "UNKNOWN_OUTCOME + reconcile"
+    },
+    {
+      "name": "retry until success",
+      "refutation": "unbounded retry without identity duplicates harmful effects",
+      "sources": [
+        "S13",
+        "S35"
+      ],
+      "correct_behavior": "class-based retry budgets + identity guards"
+    },
+    {
+      "name": "workflow durability = business exactly-once",
+      "refutation": "durability covers control state, not external effects",
+      "sources": [
+        "S15",
+        "S16",
+        "S18"
+      ],
+      "correct_behavior": "effect-level identity/idempotency required separately"
+    },
+    {
+      "name": "every effect requires an HF ledger",
+      "refutation": "reads/natural idempotents need tracing at most; minimality violation",
+      "sources": [
+        "S9",
+        "S18"
+      ],
+      "correct_behavior": "identity for harmful non-idempotent class only"
+    },
+    {
+      "name": "distributed lock = safety",
+      "refutation": "unfenced locks admit stale writers; leases explicitly unfenced in k8s",
+      "sources": [
+        "S1",
+        "S19"
+      ],
+      "correct_behavior": "conditional state transitions / fencing at resources"
+    },
+    {
+      "name": "compensation = rollback",
+      "refutation": "compensation is a new forward business operation; can fail or be impossible",
+      "sources": [
+        "S20",
+        "S22"
+      ],
+      "correct_behavior": "compensation contracts with authorization and own identity"
+    },
+    {
+      "name": "event sourcing = enterprise maturity",
+      "refutation": "ES is a named-requirement tool; audit != event store; durable runtimes use journal/checkpoint internally",
+      "sources": [
+        "S17",
+        "S25",
+        "S33"
+      ],
+      "correct_behavior": "activation conditions only"
+    },
+    {
+      "name": "current state = known previous effect outcome",
+      "refutation": "current state cannot prove previous attempt's outcome",
+      "sources": [
+        "S36"
+      ],
+      "correct_behavior": "explicit UNKNOWN_OUTCOME/submitted states"
+    },
+    {
+      "name": "acknowledgement loss = operation failure",
+      "refutation": "same evidence as timeout=failure; corrupts messaging-layer designs too",
+      "sources": [
+        "S35"
+      ],
+      "correct_behavior": "treat as ambiguity"
+    },
+    {
+      "name": "source-native guard duplicated by weaker harness logic",
+      "refutation": "weaker checks add failure modes, not strength; protection must live at the resource",
+      "sources": [
+        "S1",
+        "S30",
+        "S39"
+      ],
+      "correct_behavior": "delegate invariant to source; harness records evidence only"
+    }
+  ],
+  "profile_implications": {
+    "A": [
+      "effect classification only (READ_ONLY / IDEMPOTENT_WRITE); free retries; request-id tracing; freshness policy for stale-sensitive reads",
+      "not applied: effect identity machinery, dedup stores, UNKNOWN_OUTCOME state, locks, compensation, event sourcing",
+      "escalation to B on any consequential write"
+    ],
+    "B": [
+      "EffectContract per consequential effect; native-first delegation (R1, R2, R11); receipts (R10)",
+      "UNKNOWN_OUTCOME + reconcile-before-retry (R3, R4)",
+      "identity + durable dedup only where duplicate_harm=MATERIAL and native coverage insufficient (R6)",
+      "optimistic versioning on HF-owned state; no leases while single-writer",
+      "not applied by default: compensation engine, fencing, ES, harness lock managers"
+    ],
+    "C": [
+      "Profile B plus — each only under activation condition:",
+      "approval gates + pivot-last ordering (R8) for irreversible/privileged effects",
+      "compensation contracts with human escalation on compensation failure (R9, R12)",
+      "durable dedup with retention >= business horizon (R6)",
+      "lease+fencing for HF-internal authority only where conditional transitions cannot replace it (R5); otherwise flow not approvable",
+      "integrity-anchored receipt storage when third-party audit required (OQ-6)",
+      "explicitly NOT all-mechanisms-enabled: no harness locks, no exactly-once claims, no universal ledger, no mandatory ES, no auto-compensation on unknown outcomes"
+    ]
+  },
+  "fault_injection_tests": [
+    {
+      "id": "FI-1",
+      "name": "lost acknowledgement",
+      "setup": "stub source executing write, dropping response; GUARDED/NON_IDEMPOTENT effect",
+      "injected_failure": "drop response after commit",
+      "expected_safe_behavior": "state=UNKNOWN_OUTCOME; reconcile query issued; single effect",
+      "unacceptable_outcome": "retry creates second effect; state=FAILED",
+      "observable_evidence": "source effect count=1; state transition log"
+    },
+    {
+      "id": "FI-2",
+      "name": "duplicate request",
+      "setup": "same logical op delivered twice (broker replay)",
+      "injected_failure": "second delivery in-flight and post-window",
+      "expected_safe_behavior": "one effect; second suppressed by native key + HF dedup",
+      "unacceptable_outcome": "2 effects; dedup miss",
+      "observable_evidence": "dedup hit counter; source effect count"
+    },
+    {
+      "id": "FI-3",
+      "name": "crash after external success",
+      "setup": "kill worker between call OK and record",
+      "injected_failure": "process kill at window",
+      "expected_safe_behavior": "on restart reconcile via identity; adopt outcome; no re-execution",
+      "unacceptable_outcome": "re-executed effect",
+      "observable_evidence": "attempt ledger vs source truth diff = empty"
+    },
+    {
+      "id": "FI-4",
+      "name": "concurrent mutation",
+      "setup": "two writers on same object",
+      "injected_failure": "interleave read/write",
+      "expected_safe_behavior": "loser receives precondition failure; refreshes; no lost update",
+      "unacceptable_outcome": "silent overwrite",
+      "observable_evidence": "version audit trail"
+    },
+    {
+      "id": "FI-5",
+      "name": "stale version",
+      "setup": "writer holds old ETag/version",
+      "injected_failure": "state advances mid-flight",
+      "expected_safe_behavior": "412/ConditionalCheckFailed handled as stale-state class",
+      "unacceptable_outcome": "force-write succeeds",
+      "observable_evidence": "precondition-fail event"
+    },
+    {
+      "id": "FI-6",
+      "name": "lease expiry",
+      "setup": "worker A paused past lease; B acquires",
+      "injected_failure": "pause A past TTL",
+      "expected_safe_behavior": "A's post-pause writes rejected (conditional/epoch) or A abstains; B reconciles A's in-flights",
+      "unacceptable_outcome": "A overwrites B's effect",
+      "observable_evidence": "fencing/epoch rejections; effect count"
+    },
+    {
+      "id": "FI-7",
+      "name": "stale worker",
+      "setup": "A resuming after B committed",
+      "injected_failure": "resume A mid-write",
+      "expected_safe_behavior": "A's stale write fails at resource; alert raised",
+      "unacceptable_outcome": "stale write lands",
+      "observable_evidence": "rejection + alert logs"
+    },
+    {
+      "id": "FI-8",
+      "name": "partial multi-system success",
+      "setup": "flow A (reversible), B (fails), C (pivot)",
+      "injected_failure": "fail B after A commits",
+      "expected_safe_behavior": "A compensated (authorized domain op, idempotent) or forward-recovered per classes; C never started",
+      "unacceptable_outcome": "C started; A uncompensated silently",
+      "observable_evidence": "per-system outcome records"
+    },
+    {
+      "id": "FI-9",
+      "name": "compensation failure",
+      "setup": "A committed; compensate",
+      "injected_failure": "fail compensation N times",
+      "expected_safe_behavior": "retry with own identity; then escalation state + alert; forward state consistent",
+      "unacceptable_outcome": "silent success claim; budget-less loop",
+      "observable_evidence": "escalation event; evidence bundle"
+    },
+    {
+      "id": "FI-10",
+      "name": "irreversible side effect",
+      "setup": "effect class IRREVERSIBLE",
+      "injected_failure": "attempt to auto-compensate",
+      "expected_safe_behavior": "contract has no compensation field; forward-correction proposal requires approval",
+      "unacceptable_outcome": "auto-inverse invoked",
+      "observable_evidence": "contract schema validation"
+    },
+    {
+      "id": "FI-11",
+      "name": "replay duplication",
+      "setup": "replay-based runtime; orchestration with external call",
+      "injected_failure": "force replay (worker restart) mid-activity",
+      "expected_safe_behavior": "call not re-issued from replayed logic; activity boundary dedupes via identity",
+      "unacceptable_outcome": "duplicate external call from replay",
+      "observable_evidence": "stub call count=1; history events"
+    },
+    {
+      "id": "FI-12",
+      "name": "delayed duplicate",
+      "setup": "duplicate after native window",
+      "injected_failure": "replay op after window expiry",
+      "expected_safe_behavior": "HF durable dedup rejects; or source monotonic precondition makes it a no-op",
+      "unacceptable_outcome": "effect re-applied",
+      "observable_evidence": "dedup store hit; precondition-fail event"
+    }
+  ],
+  "promotion_decisions": [
+    {
+      "mechanism": "explicit UNKNOWN_OUTCOME state + outcome honesty (ack != outcome)",
+      "decision": "PROMOTE_TO_DESIGN_PRINCIPLE",
+      "rationale": "C02; foundational + universal vendor semantics",
+      "evidence_boundary": "consequential effects (reads exempt)"
+    },
+    {
+      "mechanism": "effect-class model with derived retry/identity/reconciliation",
+      "decision": "PROMOTE_TO_DESIGN_PRINCIPLE",
+      "rationale": "C07/C08",
+      "evidence_boundary": "enums v0.1, subject to fault-injection"
+    },
+    {
+      "mechanism": "prefer source-native atomic precondition+mutation",
+      "decision": "PROMOTE_TO_DESIGN_PRINCIPLE",
+      "rationale": "C03",
+      "evidence_boundary": "source-local invariants only; known-weak native modes excepted"
+    },
+    {
+      "mechanism": "receipts separating ack vs authoritative outcome evidence",
+      "decision": "PROMOTE_TO_DESIGN_PRINCIPLE",
+      "rationale": "C02; R10",
+      "evidence_boundary": "READ_ONLY needs attempt traces only"
+    },
+    {
+      "mechanism": "ban unscoped 'exactly-once' claims",
+      "decision": "PROMOTE_TO_DESIGN_PRINCIPLE",
+      "rationale": "C01, C07, C16-C18",
+      "evidence_boundary": "none — terminology gate"
+    },
+    {
+      "mechanism": "stable logical effect identity mapped to native keys where present",
+      "decision": "PROMOTE_AS_CONDITIONAL_MECHANISM",
+      "activation": "duplicate_harm in {RECOVERABLE, MATERIAL} or flow membership",
+      "evidence_boundary": "identity-under-replanning unresolved (OQ-3)"
+    },
+    {
+      "mechanism": "reconcile-before-retry/compensate protocol",
+      "decision": "PROMOTE_AS_CONDITIONAL_MECHANISM",
+      "activation": "UNKNOWN_OUTCOME with available authoritative query",
+      "evidence_boundary": "status path availability"
+    },
+    {
+      "mechanism": "HF durable dedup store with retention horizon",
+      "decision": "PROMOTE_AS_CONDITIONAL_MECHANISM",
+      "activation": "material harm AND native coverage < horizon",
+      "evidence_boundary": "experiments FI-2/FI-12 required"
+    },
+    {
+      "mechanism": "lease-based execution authority for HF workers",
+      "decision": "PROMOTE_AS_CONDITIONAL_MECHANISM",
+      "activation": "concurrent HF workers; HF-internal only, with R5",
+      "evidence_boundary": "lease alone explicitly non-safety; FI-6/7 required"
+    },
+    {
+      "mechanism": "compensation contracts (named domain ops)",
+      "decision": "PROMOTE_AS_CONDITIONAL_MECHANISM",
+      "activation": "reversible material steps with named domain inverse",
+      "evidence_boundary": "decided-success outcomes only; generic engine stays experimental"
+    },
+    {
+      "mechanism": "event sourcing for HF internal state",
+      "decision": "KEEP_EXPERIMENTAL",
+      "rationale": "activation conditions documented; default = checkpoint/journal + receipts",
+      "evidence_boundary": "business-domain ES is separate product decision"
+    },
+    {
+      "mechanism": "cross-source effect ordering guarantees",
+      "decision": "KEEP_EXPERIMENTAL",
+      "rationale": "no evidence generic ordering enforceable",
+      "evidence_boundary": "analogy only"
+    },
+    {
+      "mechanism": "semantic-undo inference (auto-derived inverses)",
+      "decision": "KEEP_EXPERIMENTAL",
+      "rationale": "research-grade only",
+      "evidence_boundary": "no production evidence"
+    },
+    {
+      "mechanism": "HF-owned distributed lock manager (Redlock-class) for correctness",
+      "decision": "DO_NOT_PROMOTE",
+      "rationale": "C04",
+      "evidence_boundary": null
+    },
+    {
+      "mechanism": "universal per-tool-call effect ledger",
+      "decision": "DO_NOT_PROMOTE",
+      "rationale": "C08 minimality",
+      "evidence_boundary": null
+    },
+    {
+      "mechanism": "'exactly-once business effect' guarantee in HF contracts",
+      "decision": "DO_NOT_PROMOTE",
+      "rationale": "C01",
+      "evidence_boundary": null
+    },
+    {
+      "mechanism": "timeout=failed / ack-loss=failed mappings",
+      "decision": "DO_NOT_PROMOTE",
+      "rationale": "C02",
+      "evidence_boundary": null
+    },
+    {
+      "mechanism": "harness-side re-implementation of native guards as believed additional safety",
+      "decision": "DO_NOT_PROMOTE",
+      "rationale": "C14",
+      "evidence_boundary": null
+    }
+  ],
+  "experimental_items": [
+    "generic compensation engine (auto-orchestrated compensations)",
+    "semantic-undo inference for LLM-generated operations",
+    "cross-system effect ordering guarantees",
+    "event sourcing as HF internal state model (only if activation conditions appear)",
+    "at-most-once+reconciliation vs at-least-once+identity pattern selection per workload (OQ-8)"
+  ],
+  "rejected_items": [
+    "harness-owned distributed lock manager for correctness-class use",
+    "universal per-tool-call effect ledger",
+    "'exactly-once business effect' guarantee claims",
+    "timeout=failed and ack-loss=failed mappings",
+    "webhooks as sole outcome authority (C19 CONTRADICTED)",
+    "mandatory event sourcing as enterprise-maturity default",
+    "believed redundancy of harness-side re-implementations of native guards"
+  ],
+  "open_questions": [
+    {
+      "id": "OQ-1",
+      "question": "Lease horizons for human-latency agentic work (hour-scale steps vs second-scale lease theory)",
+      "status": "INSUFFICIENT_EVIDENCE",
+      "needs": "HF experiment FI-6/7 at agentic durations"
+    },
+    {
+      "id": "OQ-2",
+      "question": "Per-provider indeterminate-error classification heuristics (5xx semantics differ silently)",
+      "status": "INSUFFICIENT_EVIDENCE",
+      "needs": "per-source registry via R11 discovery"
+    },
+    {
+      "id": "OQ-3",
+      "question": "Effect identity stability rule under payload-changing bounded replanning",
+      "status": "INSUFFICIENT_EVIDENCE",
+      "needs": "business/semantic input; FI-2 payload-variant probes"
+    },
+    {
+      "id": "OQ-4",
+      "question": "Materiality rubric for duplicate_harm=MATERIAL (financial/legal/reputation/irreversibility)",
+      "status": "INSUFFICIENT_EVIDENCE",
+      "needs": "business risk input"
+    },
+    {
+      "id": "OQ-5",
+      "question": "Dedup retention vs privacy-law erasure tension",
+      "status": "INSUFFICIENT_EVIDENCE",
+      "needs": "legal review"
+    },
+    {
+      "id": "OQ-6",
+      "question": "Tamper-evidence requirements for HF receipts (hash-chain + RFC3161-class anchoring indicated, unproven for HF)",
+      "status": "INSUFFICIENT_EVIDENCE",
+      "needs": "audit-requirement analysis"
+    },
+    {
+      "id": "OQ-7",
+      "question": "Precedence rules when status API, webhook, and settlement disagree",
+      "status": "INSUFFICIENT_EVIDENCE",
+      "needs": "per-domain rules"
+    },
+    {
+      "id": "OQ-8",
+      "question": "At-most-once+reconciliation vs at-least-once+identity per workload (residual-risk minimization)",
+      "status": "EXPERIMENT_REQUIRED",
+      "needs": "pattern A/B experiment"
+    },
+    {
+      "id": "OQ-9",
+      "question": "Interaction of LLM step re-decision nondeterminism with replay determinism and identity stability",
+      "status": "INSUFFICIENT_EVIDENCE",
+      "needs": "HF experiment"
+    }
+  ],
+  "revision_triggers": [
+    "contract version/digest change (re-run binding check; expect CONTRACT_VERSION_CHANGED handling)",
+    "IETF idempotency-key draft (or successor) becoming an RFC, or major providers changing key retention/conflict semantics",
+    "durable-runtime semantic changes (Temporal Nexus/dedup policies; AWS Durable Execution SDK GA changes; Azure Durable Task v3-class changes)",
+    "first production evidence of fence-enforcing SaaS APIs (re-opens R5 for external resources)",
+    "HF fault-injection results contradicting any SUPPORTED claim (esp. FI-1, FI-6, FI-11)",
+    "supply of missing knowledge artifacts (05/05.1/05.2/08) -> reconciliation pass; conflicts logged, never silently merged",
+    "new peer-reviewed work on exactly-once effect composition or leases at agentic timescales"
+  ],
+  "final_verdict_sections": {
+    "VALIDATED_FINDINGS": [
+      "outcome honesty: absence of success ack != failure; UNKNOWN_OUTCOME + reconciliation required (C02, H3, H4)",
+      "durable workflow execution does not imply exactly-once external business effects (C01, C10, H1)",
+      "source-native atomic precondition+mutation correct for source-local invariants; harness read-check-write unsafe (C03, H2)",
+      "exactly-once must be decomposed by boundary; end-to-end effect exactly-once requires target cooperation (C07, H9)",
+      "unfenced distributed locks/leases cannot prevent stale writers (C04, C12, H6)",
+      "compensation is a new, authorized, idempotent business operation, not rollback (C05, H7)",
+      "stable effect identity required only for selected effect classes (C08, H5)",
+      "delayed duplicates beyond native windows are real; retention from business horizon (C09)",
+      "more harness machinery can reduce reliability where sources expose stronger native guarantees (C14, H10)",
+      "replay-based runtimes require external effects outside replayed logic with stable recorded identity (C11)"
+    ],
+    "PARTIALLY_SUPPORTED_FINDINGS": [
+      "effect identity under re-planning (C13/OQ-3)",
+      "indeterminate-error classification per provider (OQ-2)",
+      "leases at agentic timescales (OQ-1)",
+      "event sourcing for audit within a single trust domain (C06 boundary)"
+    ],
+    "CONTRADICTED_OR_REJECTED_ASSUMPTIONS": [
+      "webhooks as sole outcome truth (C19 CONTRADICTED)",
+      "every tool invocation needs an HF ledger (REJECTED)",
+      "distributed lock = safety (REJECTED for correctness-class)",
+      "event sourcing as default/enterprise maturity (REJECTED as default)",
+      "timeout/ack-loss = operation failure (REJECTED)",
+      "workflow durability => business exactly-once (REJECTED)",
+      "harness-side guards stack on native guards as believed redundancy (REJECTED)"
+    ],
+    "CONDITIONAL_HF_MECHANISMS": [
+      "stable logical-effect identity + native key mapping (R1, R6)",
+      "reconcile-before-mutate protocol (R4)",
+      "HF durable dedup store with retention >= business horizon (R6)",
+      "lease-based HF-internal execution authority with fencing/conditional-write gatekeeping (R5)",
+      "compensation contracts as named domain operations (R9)",
+      "approval gates + pivot-last ordering (R8)",
+      "capability discovery per source (R11)"
+    ],
+    "EXPERIMENTAL_ITEMS": [
+      "generic compensation engine",
+      "semantic-undo inference",
+      "cross-system effect ordering guarantees",
+      "event sourcing as HF internal state model",
+      "at-most-once+reconciliation vs at-least-once+identity selection (OQ-8)"
+    ],
+    "INSUFFICIENT_EVIDENCE": [
+      "lease safety at hour-scale agent step durations (OQ-1)",
+      "generalizable same-logical-effect identity rule under payload-changing replanning (OQ-3)",
+      "materiality rubric for duplicate harm (OQ-4)",
+      "precedence rules for conflicting authoritative evidence (OQ-7)",
+      "LLM re-decision nondeterminism vs replay determinism (OQ-9)",
+      "tamper-evidence adoption for HF receipts in regulated contexts (OQ-6)"
+    ],
+    "REQUIRED_HF_EXPERIMENTS": [
+      "FI-1/FI-3/FI-12 on HF effect executor with payments-class and database-class stubs (validates R1/R3/R4/R6)",
+      "FI-6/FI-7 lease expiry / stale worker at hour-scale leases (validates R5 boundary, OQ-1)",
+      "FI-11 replay duplication on chosen durable runtime (validates R7)",
+      "FI-2 duplicate burst incl. payload-variant duplicates (probes OQ-3)",
+      "FI-8/FI-9/FI-10 partial flow + compensation failure (validates R8/R9, no-auto-compensation-on-unknown)",
+      "OQ-8 pattern A/B: same Profile C workload both patterns; measure residual duplicates and limbo durations"
+    ],
+    "PROPOSED_KNOWLEDGE_BASE_DELTAS": [
+      "add Canonical Terminology v0.1 to HF glossary; ban unscoped 'exactly-once'",
+      "add Failure Taxonomy v0.1 (FC-01..FC-15) as incident/classification vocabulary",
+      "add Effect/Retry/Reconciliation Decision Contract v0.1 as candidate contract schema",
+      "record Source-Native Guard Capability Matrix as onboarding template (R11 checklist)",
+      "record Architecture Decision Rules R1-R12 as candidates pending separate authorization",
+      "amend prior artifacts upon reconciliation: durable-execution material must state activity-level at-least-once/duplicate caveat (H1); state-ownership material should note source-native preference (H2, H10)",
+      "record fault-injection program as standing evaluation suite"
+    ],
+    "ARCHITECTURE_DECISIONS_REQUIRING_SEPARATE_AUTHORIZATION": [
+      "adopting Decision Contract fields as binding HF contract schema",
+      "HF internal state model choice (checkpoint+journal default vs ES)",
+      "enabling compensation in any Profile C flow",
+      "any lease/fencing deployment for HF worker authority",
+      "dedup retention periods (legal/privacy sign-off)",
+      "approval-gate UX and authority model for irreversibles (R8)",
+      "terminology ban enforcement in templates/linters"
+    ],
+    "FINAL_RESEARCH_STATUS": "PARTIAL_PROMOTION_EXPERIMENT_REQUIRED"
+  },
+  "quality_gates": {
+    "evidence_gate": "all material claims carry S-register sources with evidence classes",
+    "boundary_gate": "native-guard claims bounded to source-local invariants; EOS decomposed; lease claims bounded to correctness-class",
+    "counterevidence_gate": "counterevidence column + dedicated counterevidence list; C19 contradicted; antirez position represented",
+    "minimality_gate": "every promoted mechanism has named failure/invariant; universal ledger rejected",
+    "source_native_gate": "R2 + delegation conclusions; C14",
+    "exactly_once_gate": "C01/C07; terminology bans; vendor claims decomposed",
+    "unknown_outcome_gate": "C02; R3/R4; F1/F12; FC-01",
+    "retry_gate": "retryability derived from effect class + identity state, not error detection",
+    "compensation_gate": "C05; R9; FC-11/13; F8/F9",
+    "architecture_authority_gate": "artifact research-only; separate authorization list",
+    "anti_sycophancy_gate": "hypotheses tested not assumed; prior-facing ideas challenged where evidence demanded"
+  }
+}
