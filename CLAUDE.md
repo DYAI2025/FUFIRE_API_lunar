@@ -82,7 +82,7 @@ git push origin master
 
 ### Dependency & Toolchain Lock Contract (fail-closed)
 
-- **Three lock files are mandatory and validated:** `pyproject.toml` + `uv.lock` (canonical resolver output, must stay revision-3; CI installs `uv sync --frozen`, Docker installs `uv export --frozen … --require-hashes`) + `requirements.lock` (exact `==` pins only). Changing any dependency in pyproject.toml requires regenerating **both** locks, or every CI job fails on `--frozen` drift.
+- **Three lock files are mandatory and validated:** `pyproject.toml` + `uv.lock` (canonical resolver output, must stay revision-3; CI installs `uv sync --frozen`, Docker installs `uv export --frozen … --require-hashes`) + `requirements.lock` (exact `==` pins only). Changing any dependency in pyproject.toml requires regenerating **both** locks. `--frozen` does **not** detect lock drift: it installs the committed lock without checking its freshness, so `uv sync --frozen` stays green on a stale lock. Freshness is proven only by `uv lock --check` (alias `--locked`), which is the `audit-hardening / lock-freshness` CI gate (FUF-158).
 - `scripts/assert_toolchain_versions.py` (run in CI lint; mirrored by `tests/test_toolchain_pinning.py`, so plain `pytest` also catches drift) enforces: exact-pinned dev/build deps, SHA-pinned GitHub Actions, digest-pinned Docker base images (the main Dockerfile must be `python:3.12-slim@sha256:…`), and **identical** build-bootstrap pins (`setuptools==80.9.0`, `wheel==0.47.0`, `pip==26.1.2`, `uv==0.11.29`, Node 22.21.1) across pyproject `[build-system]`, the Dockerfile, and `ci.yml`. Bumping any of these requires lockstep edits to all three files in one commit — a single-file dependabot bump is exactly what broke the Railway build (repaired in 9d19a3e).
 - `Dockerfile.ephe-base` builds a separate GHCR ephemeris base image (manual workflow). The main Dockerfile does **not** consume it, but the toolchain validator checks both files — do not delete it as "dead code".
 
@@ -251,7 +251,37 @@ CI runs on Python 3.10–3.12, installs with `uv sync --frozen --extra dev`, fet
 Mechanics:
 - Markers: `swieph` (registered dynamically in conftest — deliberately NOT duplicated in pyproject; add it to any SE1-dependent test) and `integration` (needs a reachable LeanDeep service; auto-skips).
 - Autouse conftest fixtures reset transit caches and the in-memory rate limiter between tests — don't re-add per-test resets or worry about TestClient tests tripping limits.
-- Snapshots: `tests/snapshots/{moseph,swieph}/` chosen by active backend. Regenerate moseph locally with `UPDATE_SNAPSHOTS=1 pytest tests/test_snapshot_stability.py`; **swieph baselines only via the manual `update-swieph-snapshots.yml` workflow** (emits a review-only patch artifact, never commits). Never hand-edit snapshot JSON.
+- Snapshots: `tests/snapshots/{moseph,swieph}/` chosen by the **active backend**, not by the command —
+  so `UPDATE_SNAPSHOTS=1 pytest` writes whichever tree the current mode selects. **Neither tree may be
+  rebaselined from a developer laptop.** Both come from the manual
+  `update-swieph-snapshots.yml` workflow (filename frozen so it stays dispatchable), which emits a
+  review-only patch artifact and never commits:
+  ```bash
+  gh workflow run update-swieph-snapshots.yml --ref <branch> -f reason='<why>' -f target=swieph
+  gh workflow run update-swieph-snapshots.yml --ref <branch> -f reason='<why>' -f target=moseph
+  ```
+  Two distinct traps, both measured under FUF-157:
+  1. On a machine that has SE1 files, a bare `UPDATE_SNAPSHOTS=1 pytest` rewrites the *swieph* tree and
+     silently leaves moseph stale — that is how moseph fell 25 response fields behind.
+  2. **MOSEPH output is platform-dependent.** Moshier computes from libm transcendentals instead of
+     interpolating the SE1 tables, so macOS and glibc disagree. Baselines regenerated on macOS left
+     17/200 cases red on the ubuntu-latest gate: 16 on `$.bodies.TrueNorthNode.speed` (near-zero node
+     speed, |Δ| 1e-6…1.5e-5, just over the suite's `abs_tol=1e-6`/`rel_tol=1e-4`) and one on
+     `$.solar_terms_count`, an integer that flipped 23→24 and therefore has no tolerance at all.
+     SWIEPH does not have this problem — its tree is table-driven and verifies fine on macOS.
+  Never hand-edit snapshot JSON. Review the patch before committing: an added/removed key is a contract
+  change, a moved float is a calculation change.
+- **Known local asymmetry — the moseph tree is pinned to `ubuntu-latest`.** Because of the MOSEPH
+  platform dependence above, these **17 of 200** snapshot cases fail on an Apple-Silicon macOS box and
+  are green in CI, by design — 16 `western-*` cases on `$.bodies.TrueNorthNode.speed` plus
+  `bazi-std_2025_la` on `$.solar_terms_count`:
+  `std_1960_paris`, `std_2025_la`, `lichun_2024_{before,after}_berlin`, `zi_2359_tokyo`,
+  `zi_0030_beijing`, `zi_boundary_madrid`, `hilat_{reykjavik,tromso,fairbanks}`, `tz_utc`,
+  `tz_cet_vienna`, `tz_est_toronto`, `tz_ist_delhi`, `tz_hst_honolulu`, `tz_brt_saopaulo`.
+  A local `EPHEMERIS_MODE=MOSEPH` run therefore ends at `17 failed, 3200 passed` on macOS while
+  `audit-hardening / moseph-no-se1` is green. Do NOT "fix" that by rebaselining locally — that only
+  moves the same 17 failures back onto CI (measured both directions under FUF-157). Judge a local
+  MOSEPH run against this list; anything outside it is a real regression.
 - Scale: ~183 top-level test files + 22 in `tests/zwds/`. Dedicated suites beyond the basics: match (14 files + sentinel payloads), dayun (13), impact, ephemeris supply-chain governance (`test_ephemeris_*`), release/toolchain gates (`test_release_*`, `test_toolchain_pinning.py`, `test_requirements_lock.py`, `test_sbom_validation.py`), lunar state (USNO reference fixture), natal, golden vectors, `test_import_hierarchy.py`, `test_openapi_contract.py`, `test_app_composition.py` (route-table golden).
 
 ## OpenAPI Contract

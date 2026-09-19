@@ -8407,6 +8407,50 @@
             "type": "string",
             "title": "Version"
           },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "commit_sha": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commit Sha"
+          },
+          "release_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Id"
+          },
+          "image_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Ref"
+          },
           "railway_commit_sha": {
             "anyOf": [
               {
@@ -8456,7 +8500,8 @@
         "required": [
           "version"
         ],
-        "title": "BuildResponse"
+        "title": "BuildResponse",
+        "description": "Build/candidate identity.\n\nThe ``provider``/``commit_sha``/``release_id``/``image_ref`` quartet is the\nprovider-neutral surface (FUF-159): any platform can populate it through the\nexplicit ``FUFIRE_BUILD_*`` variables, so runtime evidence can identify a\ndeployed candidate without the engine knowing which platform it runs on.\nThe ``railway_*``/``fly_*`` fields are retained unchanged for compatibility."
       },
       "CelestialPositionResponse": {
         "properties": {

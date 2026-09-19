@@ -11,6 +11,7 @@ from pathlib import Path, PurePosixPath
 
 SCHEMA_RESOURCES = {
     "bazi_engine/resources/ephemeris.lock.json",
+    "bazi_engine/resources/runtime_contract.v1.json",
     "bazi_engine/resources/schemas/ErrorEnvelope.schema.json",
     "bazi_engine/resources/schemas/ValidateRequest.schema.json",
     "bazi_engine/resources/schemas/ValidateResponse.schema.json",

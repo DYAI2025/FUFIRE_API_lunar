@@ -8,6 +8,12 @@ ROOT = Path(__file__).resolve().parents[1]
 CI_PATH = ROOT / ".github" / "workflows" / "ci.yml"
 DEPENDABOT_PATH = ROOT / ".github" / "dependabot.yml"
 MANDATORY_JOBS = {
+    # FUF-158: the lock-freshness preflight is a top-level job precisely so it
+    # can gate the lock-consuming jobs; release-gate must require it too.
+    "lock-freshness",
+    # 2026-09-17 codebase review: the reusable audit-hardening workflow carries
+    # the root-cause regression gates, so it is release-critical, not advisory.
+    "audit-hardening",
     "test",
     "typecheck",
     "lint",

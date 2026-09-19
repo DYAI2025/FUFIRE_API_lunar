@@ -15,6 +15,11 @@ except ModuleNotFoundError:  # pragma: no cover - Python 3.10 compatibility
 
 
 ACTION_SHA = re.compile(r"^[^@\s]+@[0-9a-f]{40}$")
+# A local reusable workflow (`uses: ./.github/workflows/<name>.yml`) is resolved
+# from the commit being validated, so it is immutable by construction and cannot
+# take an `@ref` suffix. Deliberately narrow: only a repository-relative path
+# under .github/workflows, no `@`, no `..` traversal, nothing remote.
+LOCAL_REUSABLE_WORKFLOW = re.compile(r"^\./\.github/workflows/[A-Za-z0-9._-]+\.ya?ml$")
 DOCKER_ACTION_DIGEST = re.compile(r"^docker://[^@\s]+@sha256:[0-9a-f]{64}$")
 IMAGE_DIGEST = re.compile(r"^[^\s]+@sha256:[0-9a-f]{64}$")
 EXACT_REQUIREMENT = re.compile(r"^[A-Za-z0-9_.-]+(?:\[[^]]+\])?==[^;\s]+(?:;.+)?$")
@@ -46,11 +51,12 @@ def _workflow_errors(root: Path) -> list[str]:
             if not match:
                 continue
             reference = match.group(1)
-            valid = (
-                DOCKER_ACTION_DIGEST.fullmatch(reference)
-                if reference.startswith("docker://")
-                else ACTION_SHA.fullmatch(reference)
-            )
+            if reference.startswith("docker://"):
+                valid = DOCKER_ACTION_DIGEST.fullmatch(reference)
+            elif reference.startswith("./"):
+                valid = LOCAL_REUSABLE_WORKFLOW.fullmatch(reference) and ".." not in reference
+            else:
+                valid = ACTION_SHA.fullmatch(reference)
             if not valid:
                 errors.append(f"{workflow.relative_to(root)}:{line_number}: mutable action {reference}")
 
@@ -70,8 +76,11 @@ def _workflow_errors(root: Path) -> list[str]:
         errors.append("codegen does not select the approved exact Node version")
     if "npm ci --ignore-scripts" not in combined:
         errors.append("codegen does not use the npm lockfile with scripts disabled")
+    # `--frozen` only guarantees a deterministic install from the committed lock;
+    # it never checks that the lock is fresh against pyproject.toml. Lock freshness
+    # is a separate gate (`uv lock --check` in audit-hardening.yml, FUF-158).
     if "uv sync --frozen" not in combined:
-        errors.append("Python CI does not enforce uv.lock with --frozen")
+        errors.append("Python CI does not install from the committed uv.lock with --frozen")
     if "uv export --frozen" not in combined or "--require-hashes" not in combined:
         errors.append("distribution CI does not install a hash-locked uv export")
     pyproject_path = root / "pyproject.toml"

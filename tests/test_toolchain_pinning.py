@@ -33,6 +33,58 @@ def test_validator_rejects_mutable_action_reference(tmp_path: Path) -> None:
     assert any("mutable action" in error for error in errors)
 
 
+def _fixture_repo(tmp_path: Path, workflow_body: str) -> Path:
+    """Minimal repo copy whose ONLY intended defect is `workflow_body`."""
+    for filename in ("pyproject.toml", "uv.lock", "requirements.lock", "package.json", "package-lock.json"):
+        shutil.copy2(ROOT / filename, tmp_path / filename)
+    shutil.copy2(ROOT / "Dockerfile", tmp_path / "Dockerfile")
+    shutil.copy2(ROOT / "Dockerfile.ephe-base", tmp_path / "Dockerfile.ephe-base")
+    workflows = tmp_path / ".github" / "workflows"
+    workflows.mkdir(parents=True)
+    (workflows / "ci.yml").write_text(workflow_body, encoding="utf-8")
+    return tmp_path
+
+
+def test_validator_accepts_local_reusable_workflow_reference(tmp_path: Path) -> None:
+    """`uses: ./.github/workflows/x.yml` is pinned by the commit under review.
+
+    It resolves out of the same tree the validator is checking and cannot carry
+    an `@ref`, so reading it as a mutable third-party action was a false
+    positive that blocked lint, test and audit-hardening/moseph-no-se1 alike.
+    """
+    root = _fixture_repo(
+        tmp_path,
+        "jobs:\n  gates:\n    uses: ./.github/workflows/audit-hardening.yml\n",
+    )
+
+    errors = [error for error in validator.validate(root) if "mutable action" in error]
+    assert errors == [], errors
+
+
+def test_validator_still_rejects_non_local_and_traversing_uses_references(tmp_path: Path) -> None:
+    """Canary for the carve-out above: it must not become a blanket bypass."""
+    root = _fixture_repo(
+        tmp_path,
+        "jobs:\n"
+        "  a:\n    uses: ./../evil/.github/workflows/x.yml\n"
+        "  b:\n    uses: ./.github/workflows/x.yml@main\n"
+        "  c:\n    uses: ./scripts/not-a-workflow.sh\n"
+        "  d:\n    uses: other/repo/.github/workflows/x.yml@main\n",
+    )
+
+    flagged = {
+        error.rsplit("mutable action ", 1)[1]
+        for error in validator.validate(root)
+        if "mutable action" in error
+    }
+    assert flagged == {
+        "./../evil/.github/workflows/x.yml",
+        "./.github/workflows/x.yml@main",
+        "./scripts/not-a-workflow.sh",
+        "other/repo/.github/workflows/x.yml@main",
+    }, flagged
+
+
 def test_validator_rejects_unapproved_python_runtime_even_when_digest_pinned(
     tmp_path: Path,
 ) -> None:

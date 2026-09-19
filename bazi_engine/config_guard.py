@@ -12,7 +12,16 @@ from __future__ import annotations
 
 import os
 
-_PRODUCTION_ENVS = {"production", "prod", "staging"}
+from .runtime_contract import (
+    ENV_PROFILE,
+    PROFILE_PRODUCTION,
+    classify_runtime_profile,
+    normalise_fufire_env,
+    proxy_trust_violation,
+    rate_limit_pepper_violation,
+    shared_limiter_counters_outlive_process,
+    unknown_profile_violation,
+)
 
 
 def _truthy(value: str | None) -> bool:
@@ -22,20 +31,23 @@ def _truthy(value: str | None) -> bool:
 def assert_production_auth_config() -> None:
     """Raise RuntimeError if a production-profile deployment has no auth config.
 
-    A deployment counts as production when ``FUFIRE_ENV`` is one of
-    ``production``/``prod``/``staging`` (case-insensitive). Auth is considered
-    configured when either the static ``FUFIRE_API_KEYS`` list is non-empty or
-    a KeyStore backend is configured (``KEY_STORE_BACKEND`` != none).
+    Whether a deployment counts as production is decided by the packaged
+    runtime contract via ``classify_runtime_profile``; this module never
+    restates that value set. Auth is considered configured when either the
+    static ``FUFIRE_API_KEYS`` list is non-empty or a KeyStore backend is
+    configured (``KEY_STORE_BACKEND`` != none).
 
-    No-op for any other ``FUFIRE_ENV`` value (including unset) — the local
-    dev-mode bypass in ``auth.require_api_key`` keeps working.
+    No-op for a non-production profile (including unset) — the local dev-mode
+    bypass in ``auth.require_api_key`` keeps working. Rejecting an *unknown*
+    profile belongs to ``assert_runtime_config``, the startup entry point, so
+    this helper stays a narrow auth check that callers can reuse on its own.
     """
-    env = os.getenv("FUFIRE_ENV", "").strip().lower()
-    if env not in _PRODUCTION_ENVS:
+    if classify_runtime_profile() != PROFILE_PRODUCTION:
         return
     from bazi_engine.auth import _load_keys, _store_is_configured
 
     if not _load_keys() and not _store_is_configured():
+        env = normalise_fufire_env(os.getenv(ENV_PROFILE))
         raise RuntimeError(
             f"FUFIRE_ENV={env} but auth disabled: FUFIRE_API_KEYS is empty and no "
             "KeyStore is configured. Refusing to start (fail-closed, FUFIRE-006)."
@@ -97,17 +109,59 @@ def _assert_release_feature_policy() -> None:
         )
 
 
+def _assert_rate_limit_pepper(*, required: bool) -> None:
+    """FUF-159: the shared limiter's pseudonymisation secret must be usable.
+
+    The normative constraint (minimum strength) lives in the packaged runtime
+    contract, not here, so the contract and this guard cannot drift apart. The
+    raised message is built by ``runtime_contract`` and never echoes the value.
+    """
+    violation = rate_limit_pepper_violation(required=required)
+    if violation is not None:
+        raise RuntimeError(violation)
+
+
+def _assert_proxy_trust_policy() -> None:
+    """FUF-159: reject unsafe or unevidenced trusted-proxy configuration.
+
+    This guard does NOT enable proxy trust and does NOT supply a value for
+    ``FORWARDED_ALLOW_IPS``. Leaving it unset keeps the server's own
+    loopback-only default. A wildcard is refused outright; any other deviation
+    requires ``FUFIRE_TRUSTED_PROXY_EVIDENCE_ID`` to point at recorded ingress
+    evidence. No ingress CIDR is assumed, inferred or shipped anywhere in this
+    repository — that binding is a separate, unresolved runtime-evidence task.
+    """
+    violation = proxy_trust_violation()
+    if violation is not None:
+        raise RuntimeError(violation)
+
+
 def assert_runtime_config() -> None:
     """Validate the complete deployment profile without exposing secrets.
 
-    Local development remains permissive. Container images set
-    ``FUFIRE_REQUIRE_EXPLICIT_ENV=1`` so a deployment cannot accidentally
-    start without declaring its environment.
+    Local development remains permissive for the profiles the contract declares
+    for it. Container images set ``FUFIRE_REQUIRE_EXPLICIT_ENV=1`` so a
+    deployment cannot accidentally start without declaring its environment.
     """
-    env = os.getenv("FUFIRE_ENV", "").strip().lower()
+    env = normalise_fufire_env(os.getenv(ENV_PROFILE))
     if _truthy(os.getenv("FUFIRE_REQUIRE_EXPLICIT_ENV")) and not env:
         raise RuntimeError("FUFIRE_ENV must be set explicitly for this runtime")
-    if env not in _PRODUCTION_ENVS:
+
+    # FUF-159 fail-closed: a declared-but-uncontracted profile (a typo such as
+    # ``prodcution``) aborts here. Falling through to the permissive branch
+    # would skip every production check below while the operator believes the
+    # production guard is active — the failure mode this whole module exists to
+    # prevent. Checked before anything else: no other validation is meaningful
+    # while the profile the deployment claims to run under is unknown.
+    unknown_profile = unknown_profile_violation()
+    if unknown_profile is not None:
+        raise RuntimeError(unknown_profile)
+
+    # Profile-independent: a secret that is set but unusable is a configuration
+    # error everywhere, not something to silently ignore outside production.
+    _assert_rate_limit_pepper(required=False)
+
+    if classify_runtime_profile() != PROFILE_PRODUCTION:
         return
 
     assert_production_auth_config()
@@ -118,3 +172,5 @@ def assert_runtime_config() -> None:
     replica_count = _production_replica_count()
     _assert_production_dependencies(replica_count)
     _assert_release_feature_policy()
+    _assert_rate_limit_pepper(required=shared_limiter_counters_outlive_process())
+    _assert_proxy_trust_policy()

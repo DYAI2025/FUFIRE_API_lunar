@@ -5,8 +5,25 @@ On first run, generates baseline snapshots to tests/snapshots/.
 On subsequent runs, compares current output to stored snapshot and fails on
 ANY numerical deviation.
 
-Set UPDATE_SNAPSHOTS=1 to regenerate baselines:
-    UPDATE_SNAPSHOTS=1 pytest tests/test_snapshot_stability.py
+UPDATE_SNAPSHOTS=1 regenerates baselines, and the ACTIVE BACKEND -- not the
+command -- selects which tree is written (see _ephemeris_tag). NEITHER tree may
+be rebaselined from a developer laptop; both come from the manual
+.github/workflows/update-swieph-snapshots.yml workflow, which runs on
+ubuntu-latest and uploads a review-only patch:
+
+    gh workflow run update-swieph-snapshots.yml --ref <branch> \
+        -f reason='<why>' -f target={swieph|moseph}
+
+Two traps, both measured under FUF-157:
+  1. On a machine WITH SE1 files, a bare `UPDATE_SNAPSHOTS=1 pytest` rewrites
+     tests/snapshots/swieph/ and silently leaves tests/snapshots/moseph/ stale.
+  2. MOSEPH is the analytic Moshier backend, computed from libm transcendentals
+     rather than interpolated from the SE1 tables, so its output is
+     PLATFORM-DEPENDENT. macOS-generated moseph baselines left 17/200 cases red
+     on the Linux gate: 16 on $.bodies.TrueNorthNode.speed (near-zero node
+     speed, just over _FLOAT_ATOL/_FLOAT_RTOL below) and one on
+     $.solar_terms_count, an int that flipped 23 -> 24 and has no tolerance.
+     SWIEPH is table-driven and does not have this problem.
 """
 from __future__ import annotations
 

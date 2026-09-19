@@ -10,13 +10,14 @@ from typing import Any, Dict, Literal, Optional
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
+from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from .. import __version__ as _ENGINE_VERSION
 from ..ephemeris import SwissEphBackend
 from ..exc import BaziEngineError
 from ..fusion import PLANET_TO_WUXING, WUXING_ORDER
-from ..limiter import get_storage_status
+from ..limiter import INFRA_PROBE_LIMIT, get_storage_status, infra_limiter
 from ..time_utils import resolve_local_iso
 from ..western import compute_western_chart
 from .shared import ZODIAC_SIGNS_DE
@@ -48,7 +49,20 @@ class HealthResponse(BaseModel):
 
 
 class BuildResponse(BaseModel):
+    """Build/candidate identity.
+
+    The ``provider``/``commit_sha``/``release_id``/``image_ref`` quartet is the
+    provider-neutral surface (FUF-159): any platform can populate it through the
+    explicit ``FUFIRE_BUILD_*`` variables, so runtime evidence can identify a
+    deployed candidate without the engine knowing which platform it runs on.
+    The ``railway_*``/``fly_*`` fields are retained unchanged for compatibility.
+    """
+
     version: str
+    provider: Optional[str] = None
+    commit_sha: Optional[str] = None
+    release_id: Optional[str] = None
+    image_ref: Optional[str] = None
     railway_commit_sha: Optional[str] = None
     railway_deploy_id: Optional[str] = None
     fly_alloc_id: Optional[str] = None
@@ -69,12 +83,27 @@ class WuxingMappingResponse(BaseModel):
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 def _build_metadata() -> Dict[str, str]:
+    """Return the build/candidate identity, provider-neutral first.
+
+    ``FUFIRE_BUILD_*`` are explicit, platform-independent variables a deployment
+    sets itself; they take precedence. Where they are absent the historical
+    Railway variables still populate the neutral fields, so an existing Railway
+    deployment keeps reporting the same commit/deploy identity it always did.
+    No platform-specific variable name is invented here for any other provider —
+    a new platform supplies the neutral ``FUFIRE_BUILD_*`` set.
+    """
     meta: Dict[str, str] = {"version": _BUILD_VERSION}
     if os.environ.get("EXPOSE_BUILD_METADATA"):
-        meta["railway_commit_sha"] = os.environ.get("RAILWAY_GIT_COMMIT_SHA", "")
-        meta["railway_deploy_id"] = os.environ.get("RAILWAY_DEPLOYMENT_ID", "")
+        railway_commit = os.environ.get("RAILWAY_GIT_COMMIT_SHA", "")
+        railway_deploy = os.environ.get("RAILWAY_DEPLOYMENT_ID", "")
+        meta["railway_commit_sha"] = railway_commit
+        meta["railway_deploy_id"] = railway_deploy
         meta["fly_alloc_id"] = os.environ.get("FLY_ALLOC_ID", "")
         meta["fly_region"] = os.environ.get("FLY_REGION", "")
+        meta["provider"] = os.environ.get("FUFIRE_BUILD_PROVIDER", "")
+        meta["commit_sha"] = os.environ.get("FUFIRE_BUILD_COMMIT_SHA", "") or railway_commit
+        meta["release_id"] = os.environ.get("FUFIRE_BUILD_RELEASE_ID", "") or railway_deploy
+        meta["image_ref"] = os.environ.get("FUFIRE_BUILD_IMAGE_REF", "")
     return meta
 
 
@@ -138,13 +167,15 @@ def _health_payload() -> Dict[str, Any]:
 
 
 @router.get("/health", response_model=HealthResponse)
-def health_check() -> Dict[str, Any]:
+@infra_limiter.limit(INFRA_PROBE_LIMIT)
+def health_check(request: Request) -> Dict[str, Any]:
     """Liveness check. Returns engine status and per-dependency health (ephemeris). No authentication required. Use `/ready` for load-balancer probes."""
     return _health_payload()
 
 
 @router.get("/ready", response_model=HealthResponse)
-def readiness_check() -> Dict[str, Any] | JSONResponse:
+@infra_limiter.limit(INFRA_PROBE_LIMIT)
+def readiness_check(request: Request) -> Dict[str, Any] | JSONResponse:
     """Readiness endpoint for load balancers and orchestration."""
     payload = _health_payload()
     if payload["status"] != "healthy":

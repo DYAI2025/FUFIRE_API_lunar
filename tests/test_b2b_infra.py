@@ -363,8 +363,16 @@ class TestTieredRateLimiting:
             os.environ.pop("FUFIRE_API_KEYS", None)
             _load_keys.cache_clear()
 
-    def test_rate_limit_key_func_uses_api_key(self):
-        """Rate limiter must key off the API key, not the IP."""
+    def test_rate_limit_key_func_keys_off_the_api_key_identity(self):
+        """Rate limiter must key off the API-key identity, not the address.
+
+        FUF-159: the identity is now the pseudonym ``k:<tier>:<digest>``, not the
+        raw key. These assertions previously pinned the raw key, which is exactly
+        the value slowapi persists in storage and writes into its 429 log line —
+        see tests/test_limiter_identity_privacy.py for the boundary proof.
+        """
+        import re
+
         from starlette.requests import Request as _Req
 
         from bazi_engine.limiter import get_rate_limit_key
@@ -380,10 +388,15 @@ class TestTieredRateLimiting:
         }
         req = _Req(scope)
         req.state.key_info = type("KI", (), {"key": "ff_pro_testkey", "tier": "pro"})()
-        assert get_rate_limit_key(req) == "ff_pro_testkey"
 
-    def test_rate_limit_key_func_falls_back_to_ip(self):
-        """Without key_info (legacy routes), fall back to remote address."""
+        identity = get_rate_limit_key(req)
+        assert re.fullmatch(r"k:pro:[0-9a-f]{32}", identity), identity
+        assert "ff_pro_testkey" not in identity
+
+    def test_rate_limit_key_func_falls_back_to_the_address_identity(self):
+        """Without key_info (legacy routes), key off the pseudonymised address."""
+        import re
+
         from starlette.requests import Request as _Req
 
         from bazi_engine.limiter import get_rate_limit_key
@@ -398,7 +411,10 @@ class TestTieredRateLimiting:
             "client": ("127.0.0.1", 8000),
         }
         req = _Req(scope)
-        assert get_rate_limit_key(req) == "127.0.0.1"
+
+        identity = get_rate_limit_key(req)
+        assert re.fullmatch(r"ip:[0-9a-f]{32}", identity), identity
+        assert "127.0.0.1" not in identity
 
 
 class TestOpenApiExamples:

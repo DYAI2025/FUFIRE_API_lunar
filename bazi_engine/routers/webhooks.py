@@ -8,12 +8,13 @@ import os
 from datetime import timezone
 from typing import Any, Dict, List, Literal, Optional, cast
 
-from fastapi import APIRouter, Header, HTTPException, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from ..bazi import compute_bazi
 from ..exc import BaziEngineError
 from ..fusion import compute_fusion_analysis
+from ..limiter import WEBHOOK_INTEGRATION_LIMIT, limiter, webhook_integration_key
 from ..services.auth import verify_request_auth
 from ..services.geocoding import geocode_place
 from ..time_utils import LocalTimeError, resolve_local_iso
@@ -68,13 +69,16 @@ class WebhookFusionSection(BaseModel):
     harmonyIndex: float
     harmonyIndexRaw: Optional[float] = None
     harmonyInterpretation: str
-    cosmicState: str
+    # FUF-166: the producer types. compute_fusion_analysis() returns
+    # cosmic_state as a rounded float and fusion_interpretation as the
+    # narrative string; the router maps both straight through.
+    cosmicState: float
     westernDominantElement: str
     baziDominantElement: str
     wuXingWestern: Dict[str, float]
     wuXingBazi: Dict[str, float]
     elementalComparison: Dict[str, Any]
-    interpretation: Dict[str, Any]
+    interpretation: str
 
 
 class WebhookSummary(BaseModel):
@@ -115,14 +119,28 @@ def _voice_fusion_summary(fusion: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-@router.post("/webhooks/chart", response_model=WebhookChartResponse)
-async def elevenlabs_chart_webhook(
+async def require_webhook_auth(
     request: Request,
     elevenlabs_signature: Optional[str] = Header(None, alias="elevenlabs-signature"),
     x_api_key: Optional[str] = Header(None, alias="x-api-key"),
     authorization: Optional[str] = Header(None),
-) -> Dict[str, Any]:
-    """ElevenLabs Agent Tool: Astrology chart for a birth date."""
+) -> bytes:
+    """Authenticate the ElevenLabs webhook and return its verified raw body.
+
+    This is the SAME authentication that used to run inline at the top of
+    ``elevenlabs_chart_webhook`` — same env vars, same HMAC path, same fallback
+    policy, same 503/401 envelopes. Only its position moved, and that position
+    is the point of FUF-156B: FastAPI solves a route's dependencies before it
+    calls the route's endpoint function, and ``@limiter.limit`` wraps that
+    endpoint function. Authenticating here therefore runs strictly BEFORE
+    slowapi's ``_check_request_limit``, so a flood of bad signatures cannot
+    drain the legitimate integration's bucket.
+
+    ``await request.body()`` caches on the request (``Request._body``), so
+    reading the body here does not consume it for the endpoint — but the
+    endpoint uses this return value rather than re-reading, which keeps the
+    "parsed body == authenticated body" guarantee explicit.
+    """
     tool_secret = os.environ.get("ELEVENLABS_TOOL_SECRET")
     if not tool_secret:
         raise HTTPException(status_code=503, detail={
@@ -148,6 +166,20 @@ async def elevenlabs_chart_webhook(
             "detail": {},
         })
 
+    return raw_body
+
+
+@router.post("/webhooks/chart", response_model=WebhookChartResponse)
+@limiter.limit(WEBHOOK_INTEGRATION_LIMIT, key_func=webhook_integration_key)
+async def elevenlabs_chart_webhook(
+    request: Request,
+    raw_body: bytes = Depends(require_webhook_auth),
+) -> Dict[str, Any]:
+    """ElevenLabs Agent Tool: Astrology chart for a birth date.
+
+    ``request`` is unused by the handler body but required by slowapi: the
+    ``@limiter.limit`` wrapper looks the parameter up by that exact name.
+    """
     try:
         data = json.loads(raw_body)
         req = ElevenLabsChartRequest(**data)

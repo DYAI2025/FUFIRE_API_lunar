@@ -7,10 +7,37 @@ heavy endpoints unboundedly. This test makes that class of bug impossible.
 from fastapi.routing import APIRoute
 
 from bazi_engine.app import app
-from bazi_engine.limiter import limiter
+from bazi_engine.limiter import infra_limiter, limiter
 
 # Routes that are deliberately NOT rate-limited must be listed here with a reason.
 UNLIMITED_ALLOWLIST: set[str] = set()
+
+# FUF-156A: public infrastructure probes. Not API-key protected, so the
+# require_api_key sweep above cannot see them, yet each one runs a live
+# ephemeris call per request. They are limited by the dedicated memory-only
+# ``infra_limiter`` rather than the shared application limiter — see
+# bazi_engine/limiter.py for why a Redis outage must stay reportable.
+#
+# Scope note: the remaining FUF-156 surfaces (GET /api, GET /v1/api) are NOT
+# listed anywhere in this file yet. They are deliberately still unimplemented,
+# and the executable audit-hardening security-boundary gate — not this file — is
+# what holds them red until then.
+INFRA_PROBE_ROUTES: set[tuple[str, str]] = {
+    ("GET", "/health"),
+    ("GET", "/v1/health"),
+    ("GET", "/ready"),
+    ("GET", "/v1/ready"),
+}
+
+# FUF-156B: authenticated internal integration surfaces. HMAC-protected rather
+# than API-key protected, so the require_api_key sweep cannot see them either,
+# yet one valid signature drives geocoding plus BaZi, Western and Fusion
+# computation per request. These ride the SHARED application limiter, because
+# their counters must stay consistent across replicas wherever Redis is
+# configured — the opposite of the infra-probe decision above.
+AUTHENTICATED_INTEGRATION_ROUTES: set[tuple[str, str]] = {
+    ("POST", "/internal/api/webhooks/chart"),
+}
 
 
 def _is_protected(route: APIRoute) -> bool:
@@ -28,9 +55,15 @@ def _is_limited(route: APIRoute) -> bool:
     # slowapi keys both registries by "<module>.<qualname>" (extension.py:698-704).
     # Static string limits land in _route_limits; callable limits (our
     # tier_limit) land in _dynamic_route_limits — check both.
+    #
+    # A route counts as limited when EITHER limiter owns it: the shared
+    # application limiter, or the dedicated infrastructure-probe limiter.
     fn = route.endpoint
     key = f"{fn.__module__}.{fn.__qualname__}"
-    return key in limiter._route_limits or key in limiter._dynamic_route_limits
+    return any(
+        key in lim._route_limits or key in lim._dynamic_route_limits
+        for lim in (limiter, infra_limiter)
+    )
 
 
 def test_every_protected_route_is_rate_limited() -> None:
@@ -45,3 +78,114 @@ def test_every_protected_route_is_rate_limited() -> None:
         }
     )
     assert not missing, "Protected routes without @limiter.limit:\n" + "\n".join(missing)
+
+
+def test_every_infra_probe_route_is_rate_limited() -> None:
+    """FUF-156A: the four public health/readiness mounts carry an explicit limit.
+
+    These are unauthenticated, so ``_is_protected`` skips them — without this
+    check a missing decorator on a route that runs an ephemeris call per request
+    would go unnoticed.
+    """
+    found: set[tuple[str, str]] = set()
+    missing: set[tuple[str, str]] = set()
+
+    for route in app.routes:
+        if not isinstance(route, APIRoute):
+            continue
+        for method in route.methods:
+            pair = (method, route.path)
+            if pair in INFRA_PROBE_ROUTES:
+                found.add(pair)
+                if not _is_limited(route):
+                    missing.add(pair)
+
+    unmounted = INFRA_PROBE_ROUTES - found
+    assert not unmounted, f"infra probe routes are not mounted at all: {sorted(unmounted)}"
+    assert not missing, "Infra probe routes without an explicit limit:\n" + "\n".join(
+        f"{m} {p}" for m, p in sorted(missing)
+    )
+
+
+def test_infra_probe_routes_are_owned_by_the_infra_limiter() -> None:
+    """They must be on the memory-only limiter, not the Redis-backed one.
+
+    Putting a readiness probe on the shared limiter is the defect this slice
+    exists to prevent: with a required Redis unreachable the shared limiter
+    raises, and the probe would report an opaque 500 instead of the structured
+    dependency failure it exists to report.
+    """
+    for route in app.routes:
+        if not isinstance(route, APIRoute):
+            continue
+        for method in route.methods:
+            if (method, route.path) not in INFRA_PROBE_ROUTES:
+                continue
+            fn = route.endpoint
+            key = f"{fn.__module__}.{fn.__qualname__}"
+            in_infra = (
+                key in infra_limiter._route_limits
+                or key in infra_limiter._dynamic_route_limits
+            )
+            in_app = key in limiter._route_limits or key in limiter._dynamic_route_limits
+            assert in_infra, f"{method} {route.path} is not on the infra limiter"
+            assert not in_app, (
+                f"{method} {route.path} is also on the shared application limiter — "
+                "a Redis outage would turn it into an opaque 500"
+            )
+
+
+def test_every_authenticated_integration_route_is_rate_limited() -> None:
+    """FUF-156B: the internal ElevenLabs webhook carries an explicit limit.
+
+    It is neither API-key protected nor an infra probe, so both sweeps above
+    skip it — without this check the most expensive unauthenticated-reachable
+    compute path in the app could silently lose its decorator again.
+    """
+    found: set[tuple[str, str]] = set()
+    missing: set[tuple[str, str]] = set()
+
+    for route in app.routes:
+        if not isinstance(route, APIRoute):
+            continue
+        for method in route.methods:
+            pair = (method, route.path)
+            if pair in AUTHENTICATED_INTEGRATION_ROUTES:
+                found.add(pair)
+                if not _is_limited(route):
+                    missing.add(pair)
+
+    unmounted = AUTHENTICATED_INTEGRATION_ROUTES - found
+    assert not unmounted, f"authenticated integration routes are not mounted at all: {sorted(unmounted)}"
+    assert not missing, "Authenticated integration routes without an explicit limit:\n" + "\n".join(
+        f"{m} {p}" for m, p in sorted(missing)
+    )
+
+
+def test_authenticated_integration_routes_are_owned_by_the_application_limiter() -> None:
+    """They must be on the Redis-capable shared limiter, not the memory-only one.
+
+    infra_limiter is pinned to process memory so a readiness probe survives a
+    Redis outage. Production webhook traffic has the opposite requirement: its
+    counters must be shared across replicas whenever Redis is configured, so
+    putting this route on infra_limiter would silently give every replica its
+    own full quota.
+    """
+    for route in app.routes:
+        if not isinstance(route, APIRoute):
+            continue
+        for method in route.methods:
+            if (method, route.path) not in AUTHENTICATED_INTEGRATION_ROUTES:
+                continue
+            fn = route.endpoint
+            key = f"{fn.__module__}.{fn.__qualname__}"
+            in_app = key in limiter._route_limits or key in limiter._dynamic_route_limits
+            in_infra = (
+                key in infra_limiter._route_limits
+                or key in infra_limiter._dynamic_route_limits
+            )
+            assert in_app, f"{method} {route.path} is not on the shared application limiter"
+            assert not in_infra, (
+                f"{method} {route.path} is on the memory-only infra limiter — "
+                "its counters would not be shared across replicas"
+            )

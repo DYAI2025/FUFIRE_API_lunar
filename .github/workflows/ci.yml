@@ -14,7 +14,25 @@ permissions:
   contents: read
 
 jobs:
+  # FUF-158 preflight. `uv sync --frozen` / `uv export --frozen` install the
+  # committed lock deterministically but never verify it against pyproject.toml,
+  # so a stale lock stays green. `uv lock --check` is the non-mutating freshness
+  # proof and must pass BEFORE any job installs from that lock or builds an
+  # artifact out of it. Every lock-consuming job below therefore needs this one;
+  # `codegen` does not, because it is Node/npm-only and never reads uv.lock.
+  lock-freshness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install pip==26.1.2 uv==0.11.29
+      - name: Require resolver-fresh uv.lock
+        run: uv lock --check
+
   test:
+    needs: lock-freshness
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -35,8 +53,9 @@ jobs:
           sudo apt-get install -y libswe-dev
 
       - name: Install Python dependencies
-        # uv.lock is the canonical Python resolver output. --frozen makes any
-        # pyproject/lock drift a hard failure instead of silently re-resolving.
+        # lock-freshness is the non-mutating pyproject/uv.lock freshness gate.
+        # --frozen consumes the committed lock deterministically; it is not
+        # treated as a standalone freshness proof.
         run: |
           python -m pip install pip==26.1.2 uv==0.11.29
           uv sync --frozen --extra dev
@@ -77,6 +96,7 @@ jobs:
           SE_EPHE_PATH: /tmp/ephe
 
   typecheck:
+    needs: lock-freshness
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -96,6 +116,7 @@ jobs:
         run: uv run mypy bazi_engine --ignore-missing-imports
 
   lint:
+    needs: lock-freshness
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -118,6 +139,7 @@ jobs:
         run: uv run python scripts/assert_toolchain_versions.py
 
   complexity:
+    needs: lock-freshness
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -137,6 +159,7 @@ jobs:
         run: uv run python scripts/check_complexity.py --check
 
   security:
+    needs: lock-freshness
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -189,6 +212,7 @@ jobs:
           if-no-files-found: error
 
   docker-build:
+    needs: lock-freshness
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -226,6 +250,7 @@ jobs:
           '
 
   distribution:
+    needs: lock-freshness
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -360,13 +385,21 @@ jobs:
             spec/openapi/openapi.json
             openapi.provenance.json
 
+  # Root-cause regression gates from the 2026-09-17 codebase review. This is a
+  # reusable workflow so the canonical CI remains the single release authority.
+  audit-hardening:
+    needs: lock-freshness
+    uses: ./.github/workflows/audit-hardening.yml
+
   # This is the only check that branch protection needs to require. It runs
   # even when an upstream job failed or was skipped and fails closed unless
-  # every mandatory job completed successfully.
+  # every mandatory job completed successfully, including the FUF-158 lock
+  # freshness preflight and the audit hardening root-cause gate.
   release-gate:
     name: release-gate
     if: always()
     needs:
+      - lock-freshness
       - test
       - typecheck
       - lint
@@ -376,12 +409,14 @@ jobs:
       - distribution
       - codegen
       - contract-artifact
+      - audit-hardening
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
       - name: Require every release job to succeed
         env:
+          LOCK_FRESHNESS_RESULT: ${{ needs['lock-freshness'].result }}
           TEST_RESULT: ${{ needs.test.result }}
           TYPECHECK_RESULT: ${{ needs.typecheck.result }}
           LINT_RESULT: ${{ needs.lint.result }}
@@ -391,6 +426,7 @@ jobs:
           DISTRIBUTION_RESULT: ${{ needs.distribution.result }}
           CODEGEN_RESULT: ${{ needs.codegen.result }}
           CONTRACT_ARTIFACT_RESULT: ${{ needs['contract-artifact'].result }}
+          AUDIT_HARDENING_RESULT: ${{ needs['audit-hardening'].result }}
         run: |
           python - <<'PY'
           import os

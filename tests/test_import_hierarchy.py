@@ -37,6 +37,9 @@ LAYERS: Dict[str, int] = {
     "exc":         0,  # exception hierarchy — zero internal deps
     "resource_loader": 0,  # stdlib-only immutable package-resource boundary
     "provenance":  1,  # only imports __version__ — no domain deps
+    # FUF-159: stdlib + the Layer-0 resource boundary only, so the fail-closed
+    # startup guard (Layer 5) and the limiter can both depend on it downward.
+    "runtime_contract": 1,
     "types":       1,
     "ephemeris":   2,
     "time_utils":  2,

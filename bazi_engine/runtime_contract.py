@@ -1,0 +1,1108 @@
+"""FUF-159 — the versioned, provider-neutral runtime configuration contract.
+
+This module is the single place that reads
+``bazi_engine/resources/runtime_contract.v1.json`` and turns it into three
+things the rest of the engine consumes:
+
+1. **Fail-closed predicates** for ``config_guard`` (the pepper and proxy-trust
+   policies read their normative constraints from the contract, so the file and
+   the startup guard cannot drift apart).
+2. **A stable pseudonymisation primitive** for the shared rate limiter, so a raw
+   API key or a raw client address never becomes a persisted or logged limiter
+   identity.
+3. **A secret-safe readback** — ``python -m bazi_engine.runtime_contract
+   --readback --json`` — that reports what a deployment has configured without
+   ever emitting a secret's value, prefix or suffix.
+
+Deliberately stdlib-only apart from the Layer-0 package-resource boundary: the
+readback has to work inside the source-free runtime image, and importing the
+FastAPI application to answer "is this deployment configured correctly?" would
+defeat the purpose.
+
+Provider neutrality is load-bearing. The contract inventories *names, ownership,
+required status and allowed shapes*. Which platform supplies which value is a
+deployment binding and is not encoded here. In particular this module neither
+sets nor widens ``FORWARDED_ALLOW_IPS``: it only makes an unsafe or unevidenced
+widening impossible to start. The concrete trusted-proxy binding depends on
+ingress evidence that is not yet recorded.
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import hmac
+import json
+import logging
+import os
+import re
+import secrets
+import sys
+from datetime import datetime, timezone
+from functools import lru_cache
+from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, TypeGuard
+
+from .resource_loader import load_json_object_resource
+
+_log = logging.getLogger(__name__)
+
+CONTRACT_SCHEMA_ID = "fufire.runtime-config-contract.v1"
+CONTRACT_PACKAGE = "bazi_engine.resources"
+CONTRACT_RESOURCE = "runtime_contract.v1.json"
+
+PROFILE_PRODUCTION = "production"
+PROFILE_DEVELOPMENT = "development"
+# Not a profile a deployment can run under: a declared FUFIRE_ENV value that the
+# contract does not list at all. Kept distinct from PROFILE_DEVELOPMENT so a typo
+# can never be mistaken for a request for the permissive profile.
+PROFILE_INVALID = "invalid"
+
+# Variable names this module references by literal, so the drift gate in
+# tests/test_runtime_contract.py can see that the fail-closed rows really do
+# have an enforcement site.
+ENV_PROFILE = "FUFIRE_ENV"
+ENV_RL_PEPPER = "FUFIRE_RL_PEPPER"
+ENV_FORWARDED_ALLOW_IPS = "FORWARDED_ALLOW_IPS"
+ENV_TRUSTED_PROXY_EVIDENCE_ID = "FUFIRE_TRUSTED_PROXY_EVIDENCE_ID"
+ENV_REPLICA_COUNT = "FUFIRE_REPLICA_COUNT"
+ENV_REQUIRE_REDIS = "FUFIRE_REQUIRE_REDIS"
+ENV_REDIS_URL = "REDIS_URL"
+ENV_REDIS_PRIVATE_URL = "REDIS_PRIVATE_URL"
+
+# Length of the hex pseudonym that reaches limiter storage and logs. 128 bits of
+# a SHA-256 HMAC: far beyond collision risk for a rate-limit namespace, and short
+# enough to keep storage keys readable in an incident.
+PSEUDONYM_LENGTH = 32
+
+_TRUTHY = {"1", "true", "yes", "on"}
+_DEFAULT_PEPPER_MIN_LENGTH = 32
+
+# How a configured value is compared against a row's declared value lists is
+# contract data: a row may declare ``value_normalization``, and the contract's
+# ``value_normalizations`` block names the vocabulary. This table only
+# IMPLEMENTS that vocabulary — it names no variable — and ``validate_contract``
+# refuses a contract whose vocabulary or rows use a form missing here.
+DEFAULT_VALUE_NORMALIZATION = "exact"
+_VALUE_NORMALIZERS: dict[str, Callable[[str], str]] = {
+    "exact": lambda value: value,
+    "lower": str.lower,
+    "upper": str.upper,
+}
+_VALUE_LIST_FIELDS = (
+    "allowed_values",
+    "production_allowed_values",
+    "production_forbidden_values",
+)
+
+# Presence is contract data in the same way. A row may declare
+# ``presence_semantics`` (how its consumer decides the variable is configured at
+# all), a blank policy (whether a set-but-blank value is refused instead of read
+# as absent), list item rules, and a conditional requirement. The contract's
+# ``presence_semantics``, ``blank_policies``, ``conditional_requirements`` and
+# ``requirement_conditions`` blocks name the vocabulary; these tables only
+# IMPLEMENT it and name no variable.
+DEFAULT_PRESENCE_SEMANTICS = "non_blank"
+
+
+def _list_items(raw: str) -> list[str]:
+    """A list row's items as its consumers parse them: comma-split, trimmed, blanks dropped."""
+    return [item.strip() for item in raw.split(",") if item.strip()]
+
+
+_PRESENCE_TESTS: dict[str, Callable[[str], bool]] = {
+    "non_blank": lambda raw: raw.strip() != "",
+    "comma_separated_non_empty_items": lambda raw: bool(_list_items(raw)),
+}
+# Presence forms that read the value as a list of items rather than one value.
+_LIST_PRESENCE_SEMANTICS = frozenset({"comma_separated_non_empty_items"})
+# Rules that read a list row's parsed items one at a time, in the production
+# profile only. Legal only on a row whose presence form reads a list.
+_LIST_ITEM_RULES = ("production_forbidden_items", "production_forbidden_item_substrings")
+# Rules that compare the WHOLE value as a single scalar. Read against a list
+# they would refuse a valid multi-item value, so a list row may not declare
+# them. ``production_forbidden_values`` stays legal on a list row: a whole-value
+# match implies the list consists of exactly that item.
+_SCALAR_VALUE_RULES = (
+    "allowed_values",
+    "production_allowed_values",
+    "value_pattern",
+    "production_required_truthy",
+    "production_forbidden_truthy",
+)
+DEFAULT_BLANK_POLICY = "unset"
+BLANK_POLICY_INVALID = "invalid"
+_BLANK_POLICIES = frozenset({DEFAULT_BLANK_POLICY, BLANK_POLICY_INVALID})
+# Blank-policy fields and the one profile each is scoped to (None: every
+# profile). Both take a value from the contract's ``blank_policies`` block.
+_BLANK_POLICY_FIELDS: dict[str, Optional[str]] = {
+    "blank_policy": None,
+    "production_blank_policy": PROFILE_PRODUCTION,
+}
+# Conditional-requirement fields and the one profile each is scoped to (None:
+# every profile). A ``*_truthy`` field names the flag row whose truthiness makes
+# the declaring row required; a field in ``_CONDITION_LIST_FIELDS`` instead
+# lists condition terms and makes the row required while ANY of them holds.
+_CONDITIONAL_REQUIREMENT_FIELDS: dict[str, Optional[str]] = {
+    "required_when_truthy": None,
+    "production_required_when_truthy": PROFILE_PRODUCTION,
+    "production_required_when_any": PROFILE_PRODUCTION,
+}
+_CONDITION_LIST_FIELDS = frozenset({"production_required_when_any"})
+# The condition terms a list field may combine. The contract's
+# ``requirement_conditions`` block must name exactly these.
+_REQUIREMENT_CONDITIONS = ("truthy", "integer_gt")
+# A value_pattern that admits unsigned decimal integers only: anchored, and
+# built from ASCII-digit atoms with plain quantifiers. Only a row declaring one
+# can be the target of an integer comparison.
+_UNSIGNED_INTEGER_PATTERN = re.compile(
+    r"\^(?:(?:\[[0-9](?:-[0-9])?\]|[0-9])(?:[*+?]|\{[0-9]+(?:,[0-9]*)?\})?)+\$"
+)
+# Every field a variable row may carry. A misspelt field would otherwise be
+# silently ignored — and with it the rule it was meant to declare.
+_KNOWN_ROW_FIELDS = frozenset(
+    {
+        "name",
+        "owner_area",
+        "consumer",
+        "secret",
+        "required_profiles",
+        "readback",
+        "fail_closed",
+        "description",
+        "constraints",
+        "required_when",
+        "satisfied_by",
+        "safe_default_values",
+        "evidence_variable",
+        "value_pattern",
+        "value_normalization",
+        "presence_semantics",
+        *_BLANK_POLICY_FIELDS,
+        *_LIST_ITEM_RULES,
+        *_VALUE_LIST_FIELDS,
+        *_SCALAR_VALUE_RULES,
+        *_CONDITIONAL_REQUIREMENT_FIELDS,
+    }
+)
+
+
+def _truthy(value: Optional[str]) -> bool:
+    return (value or "").strip().lower() in _TRUTHY
+
+
+# ── Contract access ──────────────────────────────────────────────────────────
+
+@lru_cache(maxsize=1)
+def load_contract() -> dict[str, Any]:
+    """Load the packaged contract, fail-closed.
+
+    Reads through the Layer-0 resource boundary, so a distribution that shipped
+    without the contract raises instead of silently running unvalidated. The
+    comparison metadata is validated on this path, so a malformed contract
+    aborts the startup guard and the readback alike.
+    """
+    document = load_json_object_resource(CONTRACT_PACKAGE, CONTRACT_RESOURCE)
+    if document.get("schema") != CONTRACT_SCHEMA_ID:
+        raise RuntimeError(
+            f"runtime contract declares schema {document.get('schema')!r}, "
+            f"expected {CONTRACT_SCHEMA_ID!r}"
+        )
+    validate_contract(document)
+    return document
+
+
+def validate_contract(document: Mapping[str, Any]) -> None:
+    """Refuse a contract whose comparison or presence metadata is malformed.
+
+    A contract that names an unsupported comparison or presence form, declares a
+    value list in a spelling its own form could never match, lets a production
+    allowlist escape its allowed set, conditions a requirement on a missing,
+    secret, list-valued or (for an integer comparison) non-numeric row, declares
+    an item rule on a row that is not read as a list, or carries a duplicate row
+    or a field this engine does not know is rejected here instead of being
+    loaded with a silently-defaulted rule (fail-closed).
+    """
+    normalizations = _validated_vocabulary(
+        document, "value_normalizations", DEFAULT_VALUE_NORMALIZATION, _VALUE_NORMALIZERS,
+        "value normalizations",
+    )
+    presence = _validated_vocabulary(
+        document, "presence_semantics", DEFAULT_PRESENCE_SEMANTICS, _PRESENCE_TESTS,
+        "presence semantics",
+    )
+    blank_policies = _validated_vocabulary(
+        document, "blank_policies", DEFAULT_BLANK_POLICY, _BLANK_POLICIES, "blank policies"
+    )
+    _validate_exact_vocabulary(
+        document, "conditional_requirements", _CONDITIONAL_REQUIREMENT_FIELDS, "fields"
+    )
+    _validate_exact_vocabulary(
+        document, "requirement_conditions", _REQUIREMENT_CONDITIONS, "conditions"
+    )
+    rows = _validated_rows(document.get("variables"))
+    by_name = {entry["name"]: entry for entry in rows}
+    for entry in rows:
+        _validate_known_fields(entry)
+        form = _validated_row_form(entry, normalizations)
+        _validate_value_lists(entry, form)
+        _validate_presence(entry, presence, blank_policies)
+    # Cross-row rules read OTHER rows' metadata, so they run only once every
+    # row's own tokens are known to be well-formed.
+    for entry in rows:
+        _validate_satisfied_by(entry, set(by_name))
+        _validate_conditional_requirements(entry, by_name)
+    _validate_production_profile_values(document, rows)
+
+
+def _validated_rows(raw: object) -> list[Mapping[str, Any]]:
+    if not isinstance(raw, list) or not all(
+        isinstance(entry, Mapping) and isinstance(entry.get("name"), str) for entry in raw
+    ):
+        raise RuntimeError(
+            "runtime contract must declare variables as a list of rows that each "
+            "carry a string name"
+        )
+    # Lookups by name resolve to one row; a duplicate would silently shadow the
+    # rules of the other.
+    names = [entry["name"] for entry in raw]
+    duplicates = sorted({name for name in names if names.count(name) > 1})
+    if duplicates:
+        raise RuntimeError(f"runtime contract declares duplicate variable rows {duplicates}")
+    return raw
+
+
+def _validated_vocabulary(
+    document: Mapping[str, Any],
+    block: str,
+    default: str,
+    implemented: Iterable[str],
+    noun: str,
+) -> frozenset[str]:
+    """A contract vocabulary block: must name its default and nothing unimplemented."""
+    raw = document.get(block)
+    if not isinstance(raw, Mapping) or default not in raw:
+        raise RuntimeError(
+            f"runtime contract must declare a {block} vocabulary "
+            f"that includes the default {default!r}"
+        )
+    unimplemented = sorted(set(raw) - set(implemented))
+    if unimplemented:
+        raise RuntimeError(
+            f"runtime contract declares {noun} this engine does not implement: {unimplemented}"
+        )
+    return frozenset(raw)
+
+
+def _validate_exact_vocabulary(
+    document: Mapping[str, Any], block: str, implemented: Iterable[str], noun: str
+) -> None:
+    """A vocabulary block with no default: it names exactly what is implemented here."""
+    raw = document.get(block)
+    expected = set(implemented)
+    if not isinstance(raw, Mapping) or set(raw) != expected:
+        declared = sorted(raw) if isinstance(raw, Mapping) else raw
+        raise RuntimeError(
+            f"runtime contract must declare a {block} vocabulary naming "
+            f"exactly the implemented {noun} {sorted(expected)}, not {declared!r}"
+        )
+
+
+def _validated_row_token(
+    entry: Mapping[str, Any], field: str, default: str, vocabulary: frozenset[str]
+) -> str:
+    token = entry.get(field, default)
+    if not isinstance(token, str) or token not in vocabulary:
+        raise RuntimeError(
+            f"runtime contract row {entry.get('name')} declares unsupported {field} {token!r}"
+        )
+    return token
+
+
+def _validate_known_fields(entry: Mapping[str, Any]) -> None:
+    unknown = sorted(set(entry) - _KNOWN_ROW_FIELDS)
+    if unknown:
+        raise RuntimeError(
+            f"runtime contract row {entry['name']} declares unknown fields {unknown}; "
+            "an unrecognised field would be silently ignored"
+        )
+
+
+def _validated_row_form(entry: Mapping[str, Any], vocabulary: frozenset[str]) -> str:
+    name = entry.get("name")
+    form = _validated_row_token(entry, "value_normalization", DEFAULT_VALUE_NORMALIZATION, vocabulary)
+    # A comparison form only means something for a closed value set. Allowing it
+    # elsewhere would quietly widen value_pattern rows and free-form values.
+    if form != DEFAULT_VALUE_NORMALIZATION and "allowed_values" not in entry:
+        raise RuntimeError(
+            f"runtime contract row {name} declares value_normalization {form!r} "
+            "without an allowed_values set"
+        )
+    return form
+
+
+def _validate_value_lists(entry: Mapping[str, Any], form: str) -> None:
+    name = entry["name"]
+    for field in _VALUE_LIST_FIELDS:
+        if field not in entry:
+            continue
+        values = entry[field]
+        if not isinstance(values, list):
+            raise RuntimeError(
+                f"runtime contract row {name} declares {field} as "
+                f"{type(values).__name__}, not a list"
+            )
+        for value in values:
+            if not isinstance(value, str) or _normaliser(form)(value.strip()) != value:
+                raise RuntimeError(
+                    f"runtime contract row {name} declares {field} value {value!r}, "
+                    f"which is not canonical under value_normalization {form!r}"
+                )
+    outside = sorted(
+        set(entry.get("production_allowed_values", [])) - set(entry.get("allowed_values", []))
+    )
+    if outside:
+        raise RuntimeError(
+            f"runtime contract row {name} permits production values outside its "
+            f"allowed_values: {outside}"
+        )
+
+
+def _validate_satisfied_by(entry: Mapping[str, Any], names: set[str]) -> None:
+    # satisfied_by reads the alternative in that row's declared form, so a
+    # dangling name would silently compare it exactly instead.
+    alternatives = entry.get("satisfied_by", [])
+    if not isinstance(alternatives, list) or any(
+        not isinstance(a, str) or a not in names for a in alternatives
+    ):
+        raise RuntimeError(
+            f"runtime contract row {entry['name']} is satisfied_by {alternatives!r}, "
+            "which does not name contract rows"
+        )
+
+
+def _validate_presence(
+    entry: Mapping[str, Any], presence: frozenset[str], blank_policies: frozenset[str]
+) -> None:
+    form = _validated_row_token(entry, "presence_semantics", DEFAULT_PRESENCE_SEMANTICS, presence)
+    for field in _BLANK_POLICY_FIELDS:
+        _validated_row_token(entry, field, DEFAULT_BLANK_POLICY, blank_policies)
+    _validate_list_item_rules(entry, form)
+    if form not in _LIST_PRESENCE_SEMANTICS:
+        return
+    clash = [field for field in _SCALAR_VALUE_RULES if field in entry]
+    if clash:
+        raise RuntimeError(
+            f"runtime contract row {entry['name']} reads its value as a list but also "
+            f"declares {clash[0]}, which compares the whole value as one scalar"
+        )
+
+
+def _validate_list_item_rules(entry: Mapping[str, Any], form: str) -> None:
+    """An item rule needs a list row and item values a parsed item could equal.
+
+    Items are trimmed and never contain a comma, so a blank, padded or
+    comma-bearing rule value could never fire — it would be a silently dead rule.
+    """
+    declared = [field for field in _LIST_ITEM_RULES if field in entry]
+    if declared and form not in _LIST_PRESENCE_SEMANTICS:
+        raise RuntimeError(
+            f"runtime contract row {entry['name']} declares {declared[0]}, which reads "
+            f"list items, but its presence_semantics {form!r} does not read a list"
+        )
+    for field in declared:
+        if not _is_item_rule(entry[field]):
+            raise RuntimeError(
+                f"runtime contract row {entry['name']} declares {field} {entry[field]!r}; "
+                "expected a non-empty list of trimmed, non-blank strings without commas"
+            )
+
+
+def _is_item_rule(values: object) -> bool:
+    """A value list a parsed (trimmed, comma-free, non-blank) item can match."""
+    return (
+        isinstance(values, list)
+        and bool(values)
+        and all(isinstance(v, str) and v and v == v.strip() and "," not in v for v in values)
+    )
+
+
+def _conditions(entry: Mapping[str, Any], field: str) -> list[tuple[str, Any]]:
+    """The ``(term, argument)`` pairs a conditional-requirement field declares.
+
+    A ``*_truthy`` field is one ``truthy`` term on the row it names. A list
+    field must be a non-empty list of single-key terms from the implemented
+    vocabulary; any other shape raises rather than being skipped.
+    """
+    value = entry[field]
+    if field not in _CONDITION_LIST_FIELDS:
+        return [("truthy", value)]
+    terms = value if isinstance(value, list) else []
+    parsed = [
+        next(iter(term.items())) for term in terms if isinstance(term, Mapping) and len(term) == 1
+    ]
+    if not terms or len(parsed) != len(terms) or any(
+        kind not in _REQUIREMENT_CONDITIONS for kind, _ in parsed
+    ):
+        raise RuntimeError(
+            f"runtime contract row {entry['name']} declares a malformed {field} {value!r}; "
+            f"expected a non-empty list of single-key terms from {list(_REQUIREMENT_CONDITIONS)}"
+        )
+    return parsed
+
+
+def _is_integer_comparison(argument: object) -> TypeGuard[Mapping[str, Any]]:
+    """``{"variable": <row name>, "value": <int>}`` — a bool is not an integer here."""
+    return (
+        isinstance(argument, Mapping)
+        and set(argument) == {"variable", "value"}
+        and isinstance(argument["variable"], str)
+        and isinstance(argument["value"], int)
+        and not isinstance(argument["value"], bool)
+    )
+
+
+def _validate_conditional_requirements(
+    entry: Mapping[str, Any], by_name: Mapping[str, Mapping[str, Any]]
+) -> None:
+    """Every condition must read ANOTHER row that is neither secret nor a list.
+
+    A flag is read with the engine's truthy set and an integer comparison with
+    ``int()``, both only meaningful for a scalar switch: credential material or
+    a list-valued row can never be what makes another row required. An integer
+    comparison additionally needs a row whose declared form is an integer.
+    """
+    name = entry["name"]
+    for field in _CONDITIONAL_REQUIREMENT_FIELDS:
+        if field not in entry:
+            continue
+        for kind, argument in _conditions(entry, field):
+            term = f"{kind} " if field in _CONDITION_LIST_FIELDS else ""
+            label = f"{field} {term}{argument!r}"
+            if kind == "truthy":
+                _validate_switch_row(name, label, argument, by_name)
+                continue
+            if not _is_integer_comparison(argument):
+                raise RuntimeError(
+                    f"runtime contract row {name} is {label}, which is not "
+                    '{"variable": <row name>, "value": <integer>}'
+                )
+            target = _validate_switch_row(name, label, argument["variable"], by_name)
+            pattern = target.get("value_pattern")
+            if not isinstance(pattern, str) or not _UNSIGNED_INTEGER_PATTERN.fullmatch(pattern):
+                raise RuntimeError(
+                    f"runtime contract row {name} is {label}, a row without an unsigned-integer "
+                    "value_pattern; only a numeric row can be compared as an integer"
+                )
+
+
+def _validate_switch_row(
+    name: str, label: str, switch: object, by_name: Mapping[str, Mapping[str, Any]]
+) -> Mapping[str, Any]:
+    """The row a condition reads: another, non-secret, scalar contract row."""
+    if not isinstance(switch, str) or switch == name or switch not in by_name:
+        raise RuntimeError(
+            f"runtime contract row {name} is {label}, which does not name another contract row"
+        )
+    row = by_name[switch]
+    if row.get("secret") is not False:
+        raise RuntimeError(
+            f"runtime contract row {name} is {label}, a secret row; "
+            "credential material is never a switch"
+        )
+    if row.get("presence_semantics", DEFAULT_PRESENCE_SEMANTICS) in _LIST_PRESENCE_SEMANTICS:
+        raise RuntimeError(
+            f"runtime contract row {name} is {label}, a list-valued row; "
+            "only a scalar row can be a switch"
+        )
+    return row
+
+
+def _validate_production_profile_values(
+    document: Mapping[str, Any], rows: list[Mapping[str, Any]]
+) -> None:
+    """The production profile's aliases obey the FUFIRE_ENV row they select on.
+
+    An empty alias list is refused: it would classify ``FUFIRE_ENV=production``
+    as development and skip every production check. Membership alone proves the
+    canonical form, because the row's allowed values were validated canonical.
+    """
+    profile_row = next((e for e in rows if e["name"] == ENV_PROFILE), {})
+    allowed = set(profile_row.get("allowed_values", []))
+    values = document["profiles"][PROFILE_PRODUCTION].get("fufire_env_values")
+    if not isinstance(values, list) or not values:
+        raise RuntimeError(
+            f"runtime contract production profile must list at least one {ENV_PROFILE} value"
+        )
+    outside = [v for v in values if not isinstance(v, str) or v not in allowed]
+    if outside:
+        raise RuntimeError(
+            f"runtime contract production profile values {outside!r} are not "
+            f"{ENV_PROFILE} allowed values"
+        )
+
+
+def contract_version() -> str:
+    return str(load_contract()["contract_version"])
+
+
+def variables() -> tuple[dict[str, Any], ...]:
+    return tuple(load_contract()["variables"])
+
+
+def variable(name: str) -> Optional[dict[str, Any]]:
+    for entry in variables():
+        if entry["name"] == name:
+            return entry
+    return None
+
+
+def _env(env: Optional[Mapping[str, str]]) -> Mapping[str, str]:
+    return os.environ if env is None else env
+
+
+def _normaliser(form: object) -> Callable[[str], str]:
+    normaliser = _VALUE_NORMALIZERS.get(form) if isinstance(form, str) else None
+    if normaliser is None:
+        raise RuntimeError(
+            f"runtime contract declares an unsupported value_normalization {form!r}; "
+            "refusing to compare (fail-closed)"
+        )
+    return normaliser
+
+
+def normalise_value(entry: Mapping[str, Any], raw: Optional[str]) -> str:
+    """Return ``raw`` in the comparison form its contract row declares.
+
+    Every value is whitespace-trimmed; the row's ``value_normalization`` then
+    picks the case form, ``exact`` when the row declares none. The readback
+    validator, ``satisfied_by`` and the profile classifier all compare through
+    this one function — none of them decides a form by variable name.
+    """
+    form = entry.get("value_normalization", DEFAULT_VALUE_NORMALIZATION)
+    return _normaliser(form)((raw or "").strip())
+
+
+def normalise_fufire_env(raw: Optional[str]) -> str:
+    """Canonical comparison form for a declared profile value.
+
+    Read from the ``FUFIRE_ENV`` row's declared ``value_normalization`` rather
+    than restated here, so the profile classifier, the startup guard and the
+    readback compare the profile one way.
+    """
+    return normalise_value(variable(ENV_PROFILE) or {}, raw)
+
+
+def allowed_fufire_env_values() -> frozenset[str]:
+    """Every ``FUFIRE_ENV`` value the contract declares legal.
+
+    The contract's ``FUFIRE_ENV`` row owns this set and nothing else may restate
+    it. A non-empty value outside it is a typo or a mis-wired deployment.
+    """
+    entry = variable(ENV_PROFILE) or {}
+    return frozenset(
+        normalise_fufire_env(str(value)) for value in entry.get("allowed_values", ())
+    )
+
+
+def production_fufire_env_values() -> frozenset[str]:
+    """The allowed values that select the fail-closed production profile."""
+    profile = load_contract()["profiles"][PROFILE_PRODUCTION]
+    return frozenset(
+        normalise_fufire_env(str(value)) for value in profile["fufire_env_values"]
+    )
+
+
+def classify_runtime_profile(env: Optional[Mapping[str, str]] = None) -> str:
+    """Classify a deployment as production, development or invalid.
+
+    THE authoritative profile classifier: the startup guard and the readback
+    both derive from it, so a value can never be production-shaped to one and
+    development-shaped to the other.
+
+    An unset value classifies as ``development`` — "no profile declared" is the
+    local developer's case, and it is policed separately by
+    ``FUFIRE_REQUIRE_EXPLICIT_ENV``, which every container image sets. A
+    non-empty value outside the contract's allowed set classifies as
+    ``invalid`` and must never be silently served the permissive profile.
+    """
+    current = normalise_fufire_env(_env(env).get(ENV_PROFILE))
+    if not current:
+        return PROFILE_DEVELOPMENT
+    if current in production_fufire_env_values():
+        return PROFILE_PRODUCTION
+    if current in allowed_fufire_env_values():
+        return PROFILE_DEVELOPMENT
+    return PROFILE_INVALID
+
+
+def unknown_profile_violation(env: Optional[Mapping[str, str]] = None) -> Optional[str]:
+    """Return why the declared profile is not a contracted value, or None.
+
+    ``FUFIRE_ENV`` is a non-secret row whose readback policy is ``value``, so
+    echoing the rejected value is safe — and it is what makes a typo
+    diagnosable from a crash log instead of a silent downgrade.
+    """
+    if classify_runtime_profile(env) != PROFILE_INVALID:
+        return None
+    declared = normalise_fufire_env(_env(env).get(ENV_PROFILE))
+    allowed = ", ".join(sorted(allowed_fufire_env_values()))
+    return (
+        f"{ENV_PROFILE}={declared!r} is not a value the runtime contract allows "
+        f"({allowed}). A mis-declared profile would silently skip every "
+        "production check. Refusing to start (fail-closed)."
+    )
+
+
+def resolve_profile(env: Optional[Mapping[str, str]] = None) -> str:
+    """Return the contract profile used by the READBACK payload.
+
+    Derived from ``classify_runtime_profile`` so it cannot drift from the
+    startup guard. The readback's ``profile`` field deliberately stays
+    two-valued: an invalid value is reported there by the ``FUFIRE_ENV`` row's
+    own ``allowed_values`` check (issue ``invalid_value``), which keeps every
+    other row's ``required_profiles`` evaluation meaningful instead of grading
+    them against a profile the contract has no entry for.
+    """
+    profile = classify_runtime_profile(env)
+    return PROFILE_DEVELOPMENT if profile == PROFILE_INVALID else profile
+
+
+# ── Rate-limit pseudonymisation ──────────────────────────────────────────────
+
+def pepper_min_length() -> int:
+    entry = variable(ENV_RL_PEPPER) or {}
+    constraints = entry.get("constraints") or {}
+    return int(constraints.get("min_length", _DEFAULT_PEPPER_MIN_LENGTH))
+
+
+def rate_limit_pepper_violation(
+    env: Optional[Mapping[str, str]] = None, *, required: bool
+) -> Optional[str]:
+    """Return a secret-free description of why the pepper is unusable, or None.
+
+    Never includes the configured value, a prefix, a suffix or its length — a
+    fail-closed message must not become the leak it exists to prevent.
+    """
+    raw = _env(env).get(ENV_RL_PEPPER)
+    minimum = pepper_min_length()
+    if raw is None:
+        if required:
+            return (
+                f"{ENV_RL_PEPPER} must be configured: the shared rate limiter's "
+                "counters outlive this process, so its pseudonymous identities "
+                "need an operator-supplied pepper that is stable across replicas "
+                "and restarts."
+            )
+        return None
+    if not raw.strip():
+        return f"{ENV_RL_PEPPER} is set but blank; refusing to start (fail-closed)."
+    if len(raw.strip()) < minimum:
+        return (
+            f"{ENV_RL_PEPPER} is shorter than the required minimum of {minimum} "
+            "characters; refusing to start (fail-closed)."
+        )
+    return None
+
+
+@lru_cache(maxsize=1)
+def rate_limit_pepper() -> bytes:
+    """Return the HMAC pepper for shared-limiter identities.
+
+    An operator-supplied ``FUFIRE_RL_PEPPER`` is validated and used verbatim.
+    With none configured this falls back to a process-local random value, which
+    is correct ONLY where limiter counters are themselves process-local: the
+    production profile refuses to start without a configured pepper wherever the
+    counters are shared (see ``config_guard``).
+
+    Cached for process lifetime, because a pepper that rotated mid-process would
+    split one caller's counter in two. Call ``rate_limit_pepper.cache_clear()``
+    in tests after changing the environment.
+    """
+    raw = os.environ.get(ENV_RL_PEPPER)
+    if raw is not None and raw.strip():
+        violation = rate_limit_pepper_violation(required=False)
+        if violation is not None:
+            raise RuntimeError(violation)
+        return raw.strip().encode("utf-8")
+    _log.warning(
+        "%s is not configured — using a process-local rate-limit pepper. "
+        "Shared/Redis-backed limiter counters would be sharded per process.",
+        ENV_RL_PEPPER,
+    )
+    return secrets.token_bytes(32)
+
+
+def pseudonymise(raw: str) -> str:
+    """Return a stable, non-reversible identity for ``raw``.
+
+    The return value is what slowapi writes into BOTH the limiter storage key
+    and the ``"ratelimit %s (%s) exceeded at endpoint: %s"`` WARNING log line,
+    so it must never contain the input.
+    """
+    digest = hmac.new(rate_limit_pepper(), raw.encode("utf-8"), hashlib.sha256)
+    return digest.hexdigest()[:PSEUDONYM_LENGTH]
+
+
+def shared_limiter_counters_outlive_process(
+    env: Optional[Mapping[str, str]] = None,
+) -> bool:
+    """True when shared-limiter counters survive a restart or span replicas.
+
+    Any of these makes a process-local pepper wrong: an explicitly required
+    Redis, more than one replica, or a configured Redis connection URI.
+    """
+    source = _env(env)
+    if _truthy(source.get(ENV_REQUIRE_REDIS)):
+        return True
+    if source.get(ENV_REDIS_URL) or source.get(ENV_REDIS_PRIVATE_URL):
+        return True
+    raw = (source.get(ENV_REPLICA_COUNT) or "").strip()
+    try:
+        return int(raw) > 1
+    except ValueError:
+        return False
+
+
+# ── Proxy-trust policy (guard only — never a binding) ────────────────────────
+
+def proxy_trust_violation(env: Optional[Mapping[str, str]] = None) -> Optional[str]:
+    """Return why the configured proxy trust is unacceptable, or None.
+
+    This never proposes, sets or widens a value. A wildcard is rejected
+    unconditionally; any other deviation from the server default requires a
+    recorded ingress-evidence reference. No CIDR is assumed or invented here —
+    that evidence is owned by a separate, unresolved runtime-evidence task.
+    """
+    source = _env(env)
+    entry = variable(ENV_FORWARDED_ALLOW_IPS) or {}
+    raw = source.get(ENV_FORWARDED_ALLOW_IPS)
+    if raw is None:
+        return None
+    value = raw.strip()
+
+    forbidden = {str(v).strip() for v in entry.get("production_forbidden_values", [])}
+    if value in forbidden:
+        return (
+            f"{ENV_FORWARDED_ALLOW_IPS}={value!r} enables wildcard proxy trust: "
+            "every caller could then forge the forwarded client address. "
+            "Refusing to start (fail-closed)."
+        )
+
+    safe_defaults = {str(v).strip() for v in entry.get("safe_default_values", [""])}
+    if value in safe_defaults:
+        return None
+
+    evidence_name = str(entry.get("evidence_variable", ENV_TRUSTED_PROXY_EVIDENCE_ID))
+    if not (source.get(evidence_name) or "").strip():
+        return (
+            f"{ENV_FORWARDED_ALLOW_IPS} deviates from the server default, so "
+            f"{evidence_name} must reference the recorded ingress evidence that "
+            "justifies trusting that peer set. Refusing to start (fail-closed)."
+        )
+    return None
+
+
+# ── Readback evaluation ──────────────────────────────────────────────────────
+
+def is_configured(entry: Mapping[str, Any], raw: Optional[str]) -> bool:
+    """True when ``raw`` counts as configured under the row's presence semantics.
+
+    The row's declared ``presence_semantics`` decides — ``non_blank`` when it
+    declares none — so a comma-only key list is unconfigured exactly where its
+    consumer parses zero items, without the evaluator knowing which row that is.
+    """
+    form = entry.get("presence_semantics", DEFAULT_PRESENCE_SEMANTICS)
+    test = _PRESENCE_TESTS.get(form) if isinstance(form, str) else None
+    if test is None:
+        raise RuntimeError(
+            f"runtime contract declares an unsupported presence_semantics {form!r}; "
+            "refusing to evaluate presence (fail-closed)"
+        )
+    return raw is not None and test(raw)
+
+
+def _requirement(
+    entry: Mapping[str, Any], profile: str, source: Mapping[str, str]
+) -> Optional[str]:
+    """Why the row is required in this deployment, or None when it is not.
+
+    A row is required by its ``required_profiles``, or by a conditional
+    requirement with a condition that holds in a profile the field is scoped to.
+    """
+    name = entry["name"]
+    if profile in entry.get("required_profiles", []):
+        return f"{name} is required in the {profile} profile"
+    for field, scope in _CONDITIONAL_REQUIREMENT_FIELDS.items():
+        if field not in entry or scope not in (None, profile):
+            continue
+        for kind, argument in _conditions(entry, field):
+            reason = _condition_reason(entry, field, kind, argument, source)
+            if reason is not None:
+                where = "" if scope is None else f" in the {profile} profile"
+                return f"{name} is required because {reason}{where}"
+    return None
+
+
+def _condition_reason(
+    entry: Mapping[str, Any], field: str, kind: str, argument: object, source: Mapping[str, str]
+) -> Optional[str]:
+    """Why one condition term holds in ``source``, or None when it does not.
+
+    The integer comparison parses exactly as the consumer does (``int()`` of the
+    trimmed value). An unparseable value never holds; startup refuses such a
+    value earlier, in that row's own check, before it reaches the dependent one.
+    """
+    if kind == "truthy" and isinstance(argument, str) and argument:
+        return f"{argument} is enabled" if _truthy(source.get(argument)) else None
+    if kind == "integer_gt" and _is_integer_comparison(argument):
+        variable_name, threshold = argument["variable"], argument["value"]
+        try:
+            current = int((source.get(variable_name) or "").strip())
+        except ValueError:
+            return None
+        return f"{variable_name} is greater than {threshold}" if current > threshold else None
+    raise RuntimeError(
+        f"runtime contract row {entry['name']} declares a malformed {field} {entry[field]!r}; "
+        "refusing to evaluate its requirement (fail-closed)"
+    )
+
+
+def _satisfied_by_alternative(
+    entry: Mapping[str, Any], source: Mapping[str, str]
+) -> bool:
+    for alternative in entry.get("satisfied_by", []):
+        name = str(alternative)
+        row = variable(name) or {}
+        raw = source.get(name)
+        # Presence and the null backend are both read in the row's declared form.
+        if is_configured(row, raw) and normalise_value(row, raw) != normalise_value(row, "none"):
+            return True
+    return False
+
+
+def _blank_issue(
+    entry: Mapping[str, Any], raw: Optional[str], profile: str
+) -> Optional[tuple[str, str]]:
+    """A set-but-blank value on a row whose consumer refuses blank, else None.
+
+    ``blank_policy`` applies in every profile, ``production_blank_policy`` in
+    the production profile only — each mirrors where its consumer runs.
+    """
+    policies = {field: entry.get(field, DEFAULT_BLANK_POLICY) for field in _BLANK_POLICY_FIELDS}
+    for field, policy in policies.items():
+        if not isinstance(policy, str) or policy not in _BLANK_POLICIES:
+            raise RuntimeError(
+                f"runtime contract declares an unsupported {field} {policy!r}; "
+                "refusing to evaluate blank values (fail-closed)"
+            )
+    if raw is None or raw.strip():
+        return None
+    for field, scope in _BLANK_POLICY_FIELDS.items():
+        if policies[field] != BLANK_POLICY_INVALID or scope not in (None, profile):
+            continue
+        where = "" if scope is None else f"in the {profile} profile "
+        return (
+            "blank_value",
+            f"{entry['name']} is set but blank; {where}its consumer "
+            "applies the default only when the variable is absent",
+        )
+    return None
+
+
+def _variable_issue(
+    entry: Mapping[str, Any],
+    raw: Optional[str],
+    profile: str,
+    source: Mapping[str, str],
+) -> Optional[tuple[str, str]]:
+    """Return ``(code, message)`` for the first violated rule, else None."""
+    name = entry["name"]
+    configured = is_configured(entry, raw)
+    production = profile == PROFILE_PRODUCTION
+
+    requirement = _requirement(entry, profile, source)
+    if requirement is not None and not configured:
+        if not _satisfied_by_alternative(entry, source):
+            return ("missing_required", requirement)
+
+    blank = _blank_issue(entry, raw, profile)
+    if blank is not None:
+        return blank
+
+    if production and entry.get("production_required_truthy") and not _truthy(raw):
+        return ("must_be_enabled", f"{name} must be enabled in the {profile} profile")
+
+    if production and entry.get("production_forbidden_truthy") and _truthy(raw):
+        return ("forbidden_value", f"{name} must not be enabled in the {profile} profile")
+
+    if not configured:
+        return None
+    # The row's declared form, never a variable-name branch: a row compares
+    # case-insensitively only when the contract says its consumer does.
+    value = normalise_value(entry, raw)
+    return _configured_value_issue(entry, value, production)
+
+
+def _declared_values(entry: Mapping[str, Any], field: str) -> set[str]:
+    """A declared value list in the same comparison form as the configured value."""
+    return {normalise_value(entry, str(v)) for v in entry.get(field, [])}
+
+
+def _configured_value_issue(
+    entry: Mapping[str, Any], value: str, production: bool
+) -> Optional[tuple[str, str]]:
+    name = entry["name"]
+
+    if production and value in _declared_values(entry, "production_forbidden_values"):
+        return ("forbidden_value", f"{name} holds a value forbidden in the production profile")
+
+    if entry.get("allowed_values") is not None and value not in _declared_values(entry, "allowed_values"):
+        return ("invalid_value", f"{name} is outside its allowed value set")
+
+    production_allowed = entry.get("production_allowed_values") is not None
+    if production and production_allowed and value not in _declared_values(entry, "production_allowed_values"):
+        return ("invalid_value", f"{name} is outside the production-allowed value set")
+
+    pattern = entry.get("value_pattern")
+    if pattern is not None and not re.fullmatch(str(pattern), value):
+        return ("invalid_value", f"{name} does not match its required form")
+
+    return _forbidden_item_issue(entry, value, production)
+
+
+def _forbidden_item_issue(
+    entry: Mapping[str, Any], value: str, production: bool
+) -> Optional[tuple[str, str]]:
+    """A production list item the row's item rules forbid, else None.
+
+    Items are parsed exactly as the consumer parses them and compared exactly
+    (case-sensitively), so the readback refuses what the consumer refuses and
+    nothing more. The offending item is not echoed.
+    """
+    declared = [field for field in _LIST_ITEM_RULES if field in entry]
+    if not production or not declared:
+        return None
+    forbidden = entry.get("production_forbidden_items", [])
+    substrings = entry.get("production_forbidden_item_substrings", [])
+    if not all(_is_item_rule(entry[field]) for field in declared):
+        raise RuntimeError(
+            f"runtime contract row {entry['name']} declares malformed list item rules; "
+            "refusing to evaluate its items (fail-closed)"
+        )
+    for item in _list_items(value):
+        if item in forbidden or any(part in item for part in substrings):
+            return ("forbidden_value", f"{entry['name']} holds an item forbidden in the production profile")
+    return None
+
+
+def _variable_record(
+    entry: Mapping[str, Any],
+    raw: Optional[str],
+    profile: str,
+    source: Mapping[str, str],
+    issue: Optional[tuple[str, str]],
+) -> dict[str, Any]:
+    configured = is_configured(entry, raw)
+    record: dict[str, Any] = {
+        "name": entry["name"],
+        "ownerArea": entry["owner_area"],
+        "consumer": entry["consumer"],
+        "secret": bool(entry["secret"]),
+        "configured": configured,
+        "valid": issue is None,
+        "sourceClass": "env" if configured else "unset",
+        "requiredHere": _requirement(entry, profile, source) is not None,
+        "readback": entry["readback"],
+        "failClosed": entry["fail_closed"],
+    }
+    # A value is emitted ONLY for a non-secret row whose readback policy marks it
+    # explicitly safe. Secrets never get a value, prefix, suffix or length.
+    if configured and not entry["secret"] and entry["readback"] == "value":
+        record["value"] = str(raw).strip()
+    if issue is not None:
+        record["issue"] = issue[0]
+    return record
+
+
+def _cross_variable_violations(
+    source: Mapping[str, str], profile: str
+) -> list[dict[str, str]]:
+    violations: list[dict[str, str]] = []
+    pepper_required = profile == PROFILE_PRODUCTION and shared_limiter_counters_outlive_process(source)
+    pepper = rate_limit_pepper_violation(source, required=pepper_required)
+    if pepper is not None:
+        violations.append(
+            {"variable": ENV_RL_PEPPER, "code": "pepper_policy", "message": pepper}
+        )
+    if profile == PROFILE_PRODUCTION:
+        proxy = proxy_trust_violation(source)
+        if proxy is not None:
+            violations.append(
+                {
+                    "variable": ENV_FORWARDED_ALLOW_IPS,
+                    "code": "proxy_trust_policy",
+                    "message": proxy,
+                }
+            )
+    return violations
+
+
+def evaluate(env: Optional[Mapping[str, str]] = None) -> dict[str, Any]:
+    """Return the secret-safe readback payload for the current environment."""
+    from . import __version__ as engine_version
+
+    source = _env(env)
+    profile = resolve_profile(source)
+
+    records: list[dict[str, Any]] = []
+    violations: list[dict[str, str]] = []
+    for entry in variables():
+        raw = source.get(entry["name"])
+        issue = _variable_issue(entry, raw, profile, source)
+        records.append(_variable_record(entry, raw, profile, source, issue))
+        if issue is not None:
+            violations.append(
+                {"variable": entry["name"], "code": issue[0], "message": issue[1]}
+            )
+
+    violations.extend(_cross_variable_violations(source, profile))
+
+    return {
+        "schema": CONTRACT_SCHEMA_ID,
+        "contractVersion": contract_version(),
+        "profile": profile,
+        "engineVersion": engine_version,
+        "evaluatedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "valid": not violations,
+        "violationCount": len(violations),
+        "violations": violations,
+        "variables": records,
+    }
+
+
+# ── CLI ──────────────────────────────────────────────────────────────────────
+
+def main(argv: Optional[Sequence[str]] = None) -> int:
+    parser = argparse.ArgumentParser(
+        prog="python -m bazi_engine.runtime_contract",
+        description="Secret-safe runtime configuration readback (FUF-159).",
+    )
+    parser.add_argument(
+        "--readback",
+        action="store_true",
+        help="Evaluate the current environment against the packaged contract.",
+    )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Emit JSON (the only supported output format).",
+    )
+    args = parser.parse_args(argv)
+    _ = args.readback, args.json
+
+    payload = evaluate()
+    print(json.dumps(payload, indent=2, sort_keys=False))
+    return 0 if payload["valid"] else 1
+
+
+if __name__ == "__main__":  # pragma: no cover - exercised via subprocess in tests
+    sys.exit(main())
